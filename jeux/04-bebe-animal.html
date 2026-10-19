@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Le bébé animal</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍼%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:#ffe5ec;cursor:pointer}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#start .choose{display:flex;flex-wrap:wrap;gap:5vmin;justify-content:center;max-width:90vw}
+#start .pick{width:30vmin;height:30vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20vmin;box-shadow:0 1.5vmin 0 rgba(0,0,0,.12);animation:pulse 1.4s ease-in-out infinite}
+#start .pick:nth-child(2){animation-delay:.35s}#start .pick:nth-child(3){animation-delay:.7s}#start .pick:nth-child(4){animation-delay:1.05s}
+
+#room{position:fixed;inset:0;background:linear-gradient(#fff1e6 0 70%,#e8d6cb 70%);overflow:hidden}
+#room::before{content:"";position:absolute;left:0;right:0;top:0;height:70%;background:radial-gradient(circle,#ffd6e0 5px,transparent 6px) 0 0/60px 60px;opacity:.7}
+#babyBox{position:absolute;left:50%;top:43%;height:min(60vh,64vmin);aspect-ratio:300/340;transform:translate(-50%,-50%);cursor:pointer}
+#bb{width:100%;height:100%;overflow:visible}
+
+/* Visages */
+#bb .eyes-c,#bb .eyes-h,#bb .m-o,#bb .m-cry,#bb .tears,#bb .zzz{display:none}
+#bb.cry .eyes-o,#bb.happy .eyes-o,#bb.drink .eyes-o,#bb.sleep .eyes-o{display:none}
+#bb.cry .eyes-c,#bb.sleep .eyes-c{display:inline}
+#bb.happy .eyes-h,#bb.drink .eyes-h{display:inline}
+#bb.cry .m-s,#bb.drink .m-s,#bb.sleep .m-s{display:none}
+#bb.cry .m-cry,#bb.cry .tears{display:inline}
+#bb.drink .m-o,#bb.sleep .m-o{display:inline}
+#bb.sleep .zzz{display:inline}
+#bb .cheek{opacity:.4;transition:opacity .3s}
+#bb.happy .cheek{opacity:.9}
+#bb .eyes-o{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+#bb .m-o{transform-box:fill-box;transform-origin:center}
+#bb.drink .m-o{animation:suck .45s ease-in-out infinite}
+@keyframes suck{50%{transform:scale(.6,.8)}}
+#bb .tears path{animation:tear 1s ease-in infinite}
+#bb .tears path:nth-child(2){animation-delay:.5s}
+@keyframes tear{from{transform:translateY(0);opacity:1}to{transform:translateY(45px);opacity:0}}
+#bb .zzz{animation:zzz 2s ease-in-out infinite}
+@keyframes zzz{50%{transform:translate(8px,-14px)}}
+#bb .mud{opacity:0;transition:opacity .8s}
+#bb.dirty .mud{opacity:.9}
+
+/* Mouvements */
+#baby{transform-origin:150px 340px}
+#head{transform-origin:150px 225px;transition:transform .8s}
+#body{transform-origin:150px 330px;animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scaleY(1.025)}}
+#bb.cry #head{animation:sob .5s ease-in-out infinite}
+@keyframes sob{25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+#bb.sleep #head{transform:rotate(-14deg) translateY(10px)}
+#bb.no #head{animation:nohead .9s ease-in-out}
+@keyframes nohead{20%{transform:rotate(-12deg)}45%{transform:rotate(12deg)}70%{transform:rotate(-8deg)}}
+#baby.bounce{animation:bounce .45s ease-in-out 3}
+@keyframes bounce{50%{transform:translateY(-28px) scale(1.03,.97)}}
+#baby.rock{animation:rock 1s ease-in-out 3}
+@keyframes rock{25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+#baby.wiggle{animation:wiggle .6s ease-in-out}
+@keyframes wiggle{20%{transform:rotate(-7deg) scale(1.05)}40%{transform:rotate(7deg) scale(1.05)}60%{transform:rotate(-4deg)}80%{transform:rotate(3deg)}}
+
+/* Accessoires */
+#bottle{opacity:0;transform:translateX(280px)}
+#bb.food #bottle{animation:feed 3.2s ease-in-out forwards}
+@keyframes feed{0%{opacity:1;transform:translateX(280px)}18%,82%{opacity:1;transform:translateX(0)}100%{opacity:1;transform:translateX(280px)}}
+#bb .milk{transform-box:fill-box;transform-origin:100% 50%}
+#bb.food .milk{animation:drain 2s .6s linear forwards}
+@keyframes drain{to{transform:scaleX(.12)}}
+#tub{transform:translateY(230px);opacity:0;transition:transform .5s cubic-bezier(.3,1.3,.5,1),opacity .25s}
+#bb.bath #tub{transform:none;opacity:1}
+#tub .duck{animation:duck 1.2s ease-in-out infinite}
+@keyframes duck{50%{transform:translateY(-6px) rotate(-6deg)}}
+#tub .rise{opacity:0}
+#bb.bath #tub .rise{animation:rise 1.4s ease-out infinite}
+#bb.bath #tub .rise:nth-of-type(2n){animation-delay:.5s}
+#bb.bath #tub .rise:nth-of-type(3n){animation-delay:.9s}
+@keyframes rise{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-150px)}}
+#foam{opacity:0;transition:opacity .4s}
+#bb.bath #foam{opacity:1}
+#blanket{transform:translateY(200px);opacity:0;transition:transform .7s ease-out,opacity .3s}
+#bb.sleep #blanket{transform:none;opacity:1}
+#teddyP{opacity:0;transform-box:fill-box;transform-origin:center;transition:opacity .3s}
+#bb.hug #teddyP{opacity:1;animation:popin .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes popin{from{transform:scale(0)}}
+#ball{opacity:0}
+#bb.ball #ball{opacity:1;animation:ballb 2.4s ease-in-out forwards}
+@keyframes ballb{0%{transform:translate(360px,-120px)}20%{transform:translate(300px,300px)}35%{transform:translate(262px,150px)}50%{transform:translate(224px,300px)}65%{transform:translate(186px,210px)}80%,100%{transform:translate(150px,288px)}}
+
+/* Bulle de besoin, boutons, nuit */
+#bubble{position:absolute;left:calc(50% + min(19vh,20vmin));top:4%;width:min(22vmin,20vh);height:min(18vmin,16vh);background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1vmin 0 rgba(0,0,0,.08);transform:scale(0);transform-origin:0 100%;transition:transform .4s cubic-bezier(.3,1.6,.5,1);pointer-events:none;z-index:3}
+#bubble::before,#bubble::after{content:"";position:absolute;background:#fff;border-radius:50%}
+#bubble::before{left:-1vmin;bottom:-2vmin;width:5vmin;height:5vmin}
+#bubble::after{left:-4.5vmin;bottom:-5vmin;width:2.8vmin;height:2.8vmin}
+#bubble.on{transform:scale(1)}
+#bubble.on.pulse{animation:bpulse .5s}
+@keyframes bpulse{50%{transform:scale(1.2)}}
+#need{font-size:min(11vmin,10vh)}
+#bar{position:absolute;left:0;right:0;bottom:3vh;display:flex;justify-content:center;gap:4vmin;transition:transform .6s;z-index:3}
+#room.night #bar{transform:translateY(40vh)}
+.tool{width:min(18vmin,22vw);height:min(18vmin,22vw);border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:min(11vmin,13vw);box-shadow:0 1.4vmin 0 rgba(0,0,0,.12);cursor:pointer}
+.tool.press{animation:press .3s}
+@keyframes press{50%{transform:scale(.85)}}
+#nightOv{position:absolute;inset:0;background:rgba(20,20,70,.6);opacity:0;transition:opacity 1.2s;pointer-events:none;z-index:2}
+#room.dim #nightOv,#room.night #nightOv{opacity:1}
+#moon{position:absolute;left:8vw;top:6vh;font-size:14vmin;opacity:0;transition:opacity 1.5s;pointer-events:none;z-index:2}
+#room.night #moon,#room.dim #moon{opacity:1}
+#fx{position:absolute;inset:0;pointer-events:none;z-index:4}
+.fly{position:fixed;left:0;top:0;font-size:12vmin;pointer-events:none;z-index:50}
+.heart{position:absolute;font-size:7vmin;pointer-events:none;animation:heart 1.4s ease-out forwards}
+@keyframes heart{from{transform:translate(0,0) scale(.3);opacity:1}to{transform:translate(var(--dx),-30vmin) scale(1.2);opacity:0}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="room">
+  <div id="moon" class="emo">🌙</div>
+  <div id="babyBox"></div>
+  <div id="bubble"><span id="need" class="emo"></span></div>
+  <div id="fx"></div>
+  <div id="nightOv"></div>
+  <div id="bar"></div>
+</div>
+<div id="start"><div class="choose">
+  <div class="pick emo" data-b="bear">🐻</div><div class="pick emo" data-b="panda">🐼</div>
+  <div class="pick emo" data-b="bunny">🐰</div><div class="pick emo" data-b="cat">🐱</div>
+</div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "../sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "../index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== Le bébé animal ===== */
+const TYPES = {
+  bear:  { main: "#c68b59", light: "#f1d3b3", limb: "#c68b59", ear: "round", earCol: "#c68b59", earIn: "#f1d3b3", eye: "#2b2d42" },
+  panda: { main: "#f8f9fa", light: "#ffffff", limb: "#2b2d42", ear: "round", earCol: "#2b2d42", earIn: "#2b2d42", eye: "#ffffff", patches: true },
+  bunny: { main: "#e9ecef", light: "#ffffff", limb: "#e9ecef", ear: "long", earIn: "#ffb3c6", eye: "#2b2d42" },
+  cat:   { main: "#f4a261", light: "#ffe8d6", limb: "#f4a261", ear: "cat", earIn: "#ffb3c6", eye: "#2b2d42", whiskers: true }
+};
+const NEEDS = [
+  { id: "food", icon: "🍼" }, { id: "bath", icon: "🛁" }, { id: "sleep", icon: "🛏️" }, { id: "play", icon: "🧸" }
+];
+const LULLABY = [[392, 1], [392, 1], [392, 1], [440, 1], [494, 2], [440, 2], [392, 1], [494, 1], [440, 1], [440, 1], [392, 4]];
+K.preload(["glou", "eclaboussure", "bulles", "canard", "boite-a-musique", "rire", "bisou", "boing", "whoosh", "pop", "ding"]);
+
+function babySVG(T) {
+  const O = 'stroke="#3d2c2e" stroke-width="4"';
+  let ears = "";
+  if (T.ear === "round") ears = `<circle cx="72" cy="62" r="32" fill="${T.earCol}" ${O}/><circle cx="228" cy="62" r="32" fill="${T.earCol}" ${O}/><circle cx="72" cy="62" r="15" fill="${T.earIn}"/><circle cx="228" cy="62" r="15" fill="${T.earIn}"/>`;
+  if (T.ear === "long") ears = `<ellipse cx="112" cy="18" rx="22" ry="64" fill="${T.main}" ${O} transform="rotate(-10 112 18)"/><ellipse cx="188" cy="18" rx="22" ry="64" fill="${T.main}" ${O} transform="rotate(10 188 18)"/><ellipse cx="112" cy="22" rx="10" ry="46" fill="${T.earIn}" transform="rotate(-10 112 22)"/><ellipse cx="188" cy="22" rx="10" ry="46" fill="${T.earIn}" transform="rotate(10 188 22)"/>`;
+  if (T.ear === "cat") ears = `<polygon points="62,95 80,20 132,58" fill="${T.main}" ${O} stroke-linejoin="round"/><polygon points="238,95 220,20 168,58" fill="${T.main}" ${O} stroke-linejoin="round"/><polygon points="80,76 87,42 112,60" fill="${T.earIn}"/><polygon points="220,76 213,42 188,60" fill="${T.earIn}"/>`;
+  const patches = T.patches ? `<ellipse cx="114" cy="130" rx="24" ry="30" fill="#2b2d42" transform="rotate(-25 114 130)"/><ellipse cx="186" cy="130" rx="24" ry="30" fill="#2b2d42" transform="rotate(25 186 130)"/>` : "";
+  const whiskers = T.whiskers ? `<path d="M100 172 L60 164 M100 180 L60 184 M200 172 L240 164 M200 180 L240 184" stroke="#3d2c2e" stroke-width="3" stroke-linecap="round"/>` : "";
+  const E = T.eye, glint = T.patches ? "#2b2d42" : "#fff";
+  return `<svg id="bb" viewBox="0 0 300 340">
+  <defs><pattern id="stripes" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="30" height="30" fill="#a2d2ff"/><rect width="15" height="30" fill="#cde8ff"/></pattern></defs>
+  <g id="baby">
+    <g id="body">
+      <ellipse cx="108" cy="322" rx="30" ry="18" fill="${T.limb}" ${O}/><ellipse cx="192" cy="322" rx="30" ry="18" fill="${T.limb}" ${O}/>
+      <ellipse cx="150" cy="262" rx="80" ry="70" fill="${T.main}" ${O}/>
+      <ellipse cx="150" cy="274" rx="48" ry="44" fill="${T.light}"/>
+      <circle class="mud" cx="130" cy="280" r="14" fill="#7f5539"/><circle class="mud" cx="185" cy="250" r="10" fill="#7f5539"/>
+    </g>
+    <text id="teddyP" x="150" y="318" font-size="86" text-anchor="middle" class="emo">🧸</text>
+    <ellipse cx="80" cy="255" rx="20" ry="40" fill="${T.limb}" ${O} transform="rotate(28 80 255)"/>
+    <ellipse cx="220" cy="255" rx="20" ry="40" fill="${T.limb}" ${O} transform="rotate(-28 220 255)"/>
+    <g id="tub">
+      <circle class="rise" cx="90" cy="240" r="9" fill="none" stroke="#fff" stroke-width="3"/>
+      <circle class="rise" cx="150" cy="235" r="12" fill="none" stroke="#fff" stroke-width="3"/>
+      <circle class="rise" cx="210" cy="240" r="8" fill="none" stroke="#fff" stroke-width="3"/>
+      <circle class="rise" cx="120" cy="238" r="6" fill="none" stroke="#fff" stroke-width="3"/>
+      <circle class="rise" cx="185" cy="236" r="10" fill="none" stroke="#fff" stroke-width="3"/>
+      <g fill="#fff">
+        <circle cx="40" cy="248" r="16"/><circle cx="70" cy="240" r="20"/><circle cx="104" cy="244" r="18"/><circle cx="138" cy="238" r="20"/>
+        <circle cx="172" cy="244" r="18"/><circle cx="206" cy="238" r="20"/><circle cx="240" cy="244" r="18"/><circle cx="264" cy="250" r="14"/>
+      </g>
+      <text class="duck emo" x="228" y="252" font-size="44" text-anchor="middle">🦆</text>
+      <path d="M14 252 H286 L266 334 Q262 344 248 344 H52 Q38 344 34 334 Z" fill="#ffffff" ${O}/>
+      <path d="M22 282 H278" stroke="#8ecae6" stroke-width="10"/>
+    </g>
+    <g id="blanket"><path d="M22 350 V252 Q22 222 54 222 H246 Q278 222 278 252 V350 Z" fill="url(#stripes)" ${O}/></g>
+    <g id="head">
+      ${ears}
+      <circle cx="150" cy="135" r="92" fill="${T.main}" ${O}/>
+      ${patches}
+      <circle class="mud" cx="112" cy="84" r="12" fill="#7f5539"/><circle class="mud" cx="196" cy="100" r="9" fill="#7f5539"/><circle class="mud" cx="214" cy="180" r="8" fill="#7f5539"/>
+      <ellipse cx="150" cy="172" rx="40" ry="30" fill="${T.light}"/>
+      <circle class="cheek" cx="94" cy="170" r="15" fill="#ff8fab"/><circle class="cheek" cx="206" cy="170" r="15" fill="#ff8fab"/>
+      <g class="eyes-o"><circle cx="115" cy="132" r="12" fill="${E}"/><circle cx="185" cy="132" r="12" fill="${E}"/>
+        <circle cx="119" cy="128" r="4" fill="${glint}"/><circle cx="189" cy="128" r="4" fill="${glint}"/></g>
+      <g class="eyes-c" fill="none" stroke="${E}" stroke-width="5" stroke-linecap="round"><path d="M101 132 Q115 142 129 132"/><path d="M171 132 Q185 142 199 132"/></g>
+      <g class="eyes-h" fill="none" stroke="${E}" stroke-width="5" stroke-linecap="round"><path d="M101 136 Q115 120 129 136"/><path d="M171 136 Q185 120 199 136"/></g>
+      <ellipse cx="150" cy="160" rx="12" ry="9" fill="#3d2c2e"/>
+      ${whiskers}
+      <path class="m-s" d="M132 180 Q150 197 168 180" fill="none" stroke="#3d2c2e" stroke-width="5" stroke-linecap="round"/>
+      <ellipse class="m-o" cx="150" cy="186" rx="10" ry="12" fill="#7a2e3a"/>
+      <path class="m-cry" d="M128 196 Q150 170 172 196 Q150 188 128 196 Z" fill="#7a2e3a"/>
+      <g class="tears" fill="#74c0fc"><path d="M108 148 Q101 160 108 166 Q115 160 108 148 Z"/><path d="M192 148 Q185 160 192 166 Q199 160 192 148 Z"/></g>
+      <text class="zzz emo" x="240" y="60" font-size="44">💤</text>
+      <g id="foam" fill="#fff"><circle cx="110" cy="52" r="20"/><circle cx="140" cy="40" r="24"/><circle cx="172" cy="44" r="21"/><circle cx="198" cy="58" r="16"/></g>
+    </g>
+    <g transform="translate(160 188) rotate(-22)"><g id="bottle">
+      <path d="M0 0 Q4 -9 14 -9 L22 -9 L22 9 L14 9 Q4 9 0 0 Z" fill="#ffd6a5" ${O}/>
+      <rect x="22" y="-15" width="12" height="30" rx="3" fill="#ffafcc" ${O}/>
+      <rect x="34" y="-22" width="92" height="44" rx="10" fill="#bde0fe" ${O}/>
+      <rect class="milk" x="38" y="-18" width="84" height="36" rx="6" fill="#ffffff"/>
+    </g></g>
+    <g id="ball"><text x="0" y="30" font-size="86" text-anchor="middle" class="emo">🧸</text></g>
+  </g>
+</svg>`;
+}
+
+const room = document.getElementById("room"), box = document.getElementById("babyBox");
+const bubble = document.getElementById("bubble"), needEl = document.getElementById("need"), bar = document.getElementById("bar"), fx = document.getElementById("fx");
+let bb = null, baby = null, queue = [], cur = null, busy = false, sleeping = false, hintTimer = null, nextTimer = null;
+
+function again(el, c) { el.classList.remove(c); el.getBoundingClientRect(); el.classList.add(c); }
+function mood(m) { ["cry", "happy", "drink", "sleep"].forEach(c => bb.classList.remove(c)); if (m) bb.classList.add(m); }
+function center(el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }
+function lullaby(n = LULLABY.length, speed = 0.5) {
+  let t = 0;
+  LULLABY.slice(0, n).forEach(([f, d]) => { K.tone(f, d * speed * 1.4, "sine", 0.14, null, t); t += d * speed; });
+}
+function whimper() { K.tone(560, 0.35, "triangle", 0.08, 400); K.tone(520, 0.45, "triangle", 0.08, 360, 0.45); }
+function hearts(n = 7) {
+  const b = box.getBoundingClientRect(), r = room.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const h = document.createElement("span"); h.className = "heart emo"; h.textContent = K.pick(["❤️", "💖", "💕", "⭐"]);
+    h.style.left = (b.left - r.left + b.width * K.rand(0.2, 0.8)) + "px"; h.style.top = (b.top - r.top + b.height * K.rand(0.05, 0.4)) + "px";
+    h.style.setProperty("--dx", K.rand(-15, 15) + "vmin"); h.style.animationDelay = (i * 0.08) + "s";
+    fx.appendChild(h); setTimeout(() => h.remove(), 1800);
+  }
+}
+function happy(ms = 2500) {
+  mood("happy"); again(baby, "wiggle"); hearts();
+  K.snd("rire", { dur: 1.8 });
+  setTimeout(() => { if (bb.classList.contains("happy")) mood(cur ? "cry" : null); }, ms);
+}
+
+function buildBar() {
+  NEEDS.forEach(n => {
+    const b = document.createElement("div"); b.className = "tool emo"; b.textContent = n.icon;
+    b.addEventListener("pointerdown", e => { e.stopPropagation(); useTool(n, b); });
+    bar.appendChild(b);
+  });
+}
+
+function nextNeed() {
+  clearTimeout(nextTimer);
+  if (!queue.length) { goodNight(); return; }
+  cur = queue.shift();
+  needEl.textContent = cur.icon;
+  bubble.classList.add("on");
+  mood("cry");
+  if (cur.id === "bath") bb.classList.add("dirty");
+  whimper();
+  clearInterval(hintTimer);
+  hintTimer = setInterval(() => { if (cur && !busy) { whimper(); again(bubble, "pulse"); } }, 8000);
+}
+
+function useTool(n, btn) {
+  again(btn, "press");
+  if (busy || sleeping) return;
+  busy = true;
+  if (!cur) { flyOff(n, btn); setTimeout(() => { busy = false; happy(); }, 700); return; }
+  if (n.id === cur.id) { doAction(n); return; }
+  // Mauvais choix : le bébé secoue gentiment la tête, sans punition
+  flyOff(n, btn);
+  bb.classList.remove("no"); bb.getBoundingClientRect(); bb.classList.add("no");
+  setTimeout(() => { bb.classList.remove("no"); busy = false; again(bubble, "pulse"); whimper(); }, 1100);
+}
+
+// L'objet vole vers le bébé puis rebondit ailleurs
+function flyOff(n, btn) {
+  const a = center(btn), b = center(box);
+  const f = document.createElement("div"); f.className = "fly emo"; f.textContent = n.icon;
+  document.body.appendChild(f);
+  const s = f.getBoundingClientRect(), ax = a.x - s.width / 2, ay = a.y - s.height / 2, bx = b.x + b.w * 0.2, by = b.y - b.h * 0.1;
+  f.animate([
+    { transform: "translate(" + ax + "px," + ay + "px) scale(.8)" },
+    { transform: "translate(" + bx + "px," + by + "px) scale(1.1)", offset: 0.45 },
+    { transform: "translate(" + (bx + 220) + "px," + (by - 120) + "px) rotate(200deg)", offset: 0.65 },
+    { transform: "translate(" + (bx + 360) + "px," + (innerHeight + 100) + "px) rotate(540deg)" }
+  ], { duration: 1300, easing: "ease-in", fill: "forwards" });
+  K.snd("whoosh"); K.snd("boing", { delay: 0.55 });
+  setTimeout(() => f.remove(), 1350);
+}
+
+function doAction(n) {
+  clearInterval(hintTimer);
+  bubble.classList.remove("on");
+  if (n.id === "food") {
+    mood("drink"); bb.classList.add("food");
+    K.snd("glou", { delay: 0.6, dur: 2 });
+    setTimeout(() => { bb.classList.remove("food"); finish(); }, 3300);
+  } else if (n.id === "bath") {
+    mood("happy"); bb.classList.add("bath");
+    K.snd("eclaboussure", { dur: 1.5 }); K.snd("bulles", { delay: 0.8, dur: 1.8 }); K.snd("canard", { delay: 1.8, dur: 1.2 });
+    setTimeout(() => bb.classList.remove("dirty"), 1400);
+    setTimeout(() => { bb.classList.remove("bath"); finish(); }, 3400);
+  } else if (n.id === "sleep") {
+    mood("sleep"); room.classList.add("dim");
+    K.snd("boite-a-musique", { dur: 4, fb: () => lullaby(6, 0.45) });
+    setTimeout(() => { room.classList.remove("dim"); again(baby, "wiggle"); finish(); }, 4300);
+  } else {
+    mood("happy");
+    if (Math.random() < 0.5) { bb.classList.add("hug"); again(baby, "rock"); setTimeout(() => bb.classList.remove("hug"), 3000); }
+    else { bb.classList.add("ball"); again(baby, "bounce"); [0.48, 1.2].forEach(d => K.snd("boing", { delay: d, vol: 0.6 })); setTimeout(() => bb.classList.remove("ball"), 3000); }
+    K.snd("rire", { delay: 0.3, dur: 2 });
+    setTimeout(finish, 3000);
+  }
+}
+
+function finish() {
+  cur = null;
+  bb.classList.remove("dirty");
+  happy(2200);
+  K.snd("bisou", { delay: 0.4 }); K.snd("ding", { delay: 0.2, vol: 0.5, dur: 1.2 });
+  busy = false;
+  nextTimer = setTimeout(nextNeed, 4500);
+}
+
+function goodNight() {
+  sleeping = true; cur = null;
+  bubble.classList.remove("on");
+  bb.classList.remove("dirty");
+  mood("sleep");
+  room.classList.add("night");
+  K.snd("boite-a-musique", { dur: 10, fb: () => lullaby() });
+}
+
+function wakeUp() {
+  sleeping = false;
+  room.classList.remove("night");
+  happy(); K.sfx.chime();
+  queue = K.shuffle(NEEDS);
+  nextTimer = setTimeout(nextNeed, 3000);
+}
+
+box.addEventListener("pointerdown", e => {
+  e.stopPropagation();
+  if (!bb) return;
+  if (sleeping) { wakeUp(); return; }
+  if (busy) return;
+  happy(1800);
+});
+
+buildBar();
+K.onStart(e => {
+  const p = e && e.target && e.target.closest ? e.target.closest("[data-b]") : null;
+  const type = p ? p.dataset.b : K.pick(Object.keys(TYPES));
+  box.innerHTML = babySVG(TYPES[type]);
+  bb = document.getElementById("bb"); baby = document.getElementById("baby");
+  happy(1500);
+  queue = K.shuffle(NEEDS);
+  nextTimer = setTimeout(nextNeed, 3000);
+});
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

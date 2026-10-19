@@ -41,7 +41,7 @@ Rules that every game in this repo (including the Peppa game, `00-peppa-pig.html
 
 ## 4b. Creative games
 
-Her favourite kind: no goal, she makes something. Coloriage magique (05), Mes autocollants (22), La pâtisserie (23), Grattage magique (24), Peinture libre (26), Le salon de coiffure (27), La fabrique à monstres (28), Maquillage (29), Les décorations (30) and Le salon des copains (36) share these rules.
+Her favourite kind: no goal, she makes something. Coloriage magique (05), Mes autocollants (22), La pâtisserie (23), Grattage magique (24), Peinture libre (26), Les décorations (30) and Le salon des copains (36) share these rules.
 
 - A palette of tools (colours, objects) sits on the side in landscape and at the bottom in portrait. The chosen tool gets a dark ring and stays chosen until she picks another one.
 - One tap applies the tool. Sliding may repeat it (sprinkling toppings), but is never required.
@@ -76,12 +76,12 @@ Her favourite kind: no goal, she makes something. Coloriage magique (05), Mes au
 - One state object per game; content (levels, rooms, items, poses) is data, not code, so adding content does not touch the engine.
 - Animations and timers that matter for logic run on a game clock, and a test hook (`window.__game` with `step(ms)`) lets the game be checked when `requestAnimationFrame` is throttled.
 - No layout thrash during drag: move things with transforms.
-- Games 24 to 33 start their script with the same shared core (sound, game clock, list screen, saving, hold button). For a new game, copy that block from one of them, then write the game below it. La pâtisserie (23) and Les décorations (30) share one engine and differ only by their content block and the `END` setting; La fabrique à monstres (28) and Maquillage (29) share the character builder. Le salon des copains (36) merges 27, 28 and 29 into one game (decided 2026-10-17): one friend per list item, a 🐾 button switches between animals, children and monsters, part buttons change eyes, mouth, face paint, hat and accessory, and the hair tools work on every head. A colour acts where she taps: hair lock, skin or shirt. Once the owner validates 36, the three older games leave the menu.
+- Games 24 to 36 start their script with the same shared core (sound, game clock, list screen, saving, hold button). For a new game, copy that block from one of them, then write the game below it. La pâtisserie (23) and Les décorations (30) share one engine and differ only by their content block and the `END` setting. Le salon des copains (36) replaced three older games, the hair salon (27), the monster maker (28) and face painting (29), merged into one (decided 2026-10-17; 27-29 were deleted on 2026-10-19 and stay in the git history): one friend per list item, a 🐾 button switches between animals, children and monsters, part buttons change eyes, mouth, face paint, hat and accessory, and the hair tools work on every head. A colour acts where she taps: hair lock, skin or shirt.
 - Chained movements (a tween started from the end of another one) must survive the clock update: the shared core keeps tweens created during the update. A character with several moves uses a pose rig: a few numbers (lean, head, legs, squash, height) tweened from pose to pose, as the cat in game 35.
 
 ## 8. Catalog integration
 
-- File name: `NN-nom-du-jeu.html`, next free number.
+- File name: `jeux/NN-nom-du-jeu.html`, next free number. Games live in `jeux/`; the menu `index.html` and the shared files (`icone.png`, `sons/`, `peppa/`) stay at the repo root, so a game links to them with `../` (house button: `../index.html`).
 - Every new game first gets its tile in the **🧪 En test** section at the top of `index.html`, never directly in a final section. The owner plays it with his daughter, validates it, and only then is the tile moved to the right section (decided 2026-10-14). Games that existed before that date stay where they are until the owner sorts them.
 - One tile in `index.html` (emoji or image, title, one-line description).
 - The menu must not need scrolling on a tablet or computer: a script picks the biggest tile size (96 to 240 px) at which every section fits in the window, and small sections share a row. Each section is a `<section class="blk">` (title + grid) inside `#games`; add `small` to a section of 1 to 3 games so it can sit next to another one. On a phone the tiles stay at 110 px and the page scrolls.

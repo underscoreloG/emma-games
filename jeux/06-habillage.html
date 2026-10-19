@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Habille Nounours</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎩%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:#ffd6a5;cursor:pointer}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:#9c6644}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+body{background:linear-gradient(#e0fbfc,#c2dfe3)}
+#app{position:fixed;inset:0;display:flex;flex-direction:row}
+#left{flex:1.1;display:flex;align-items:center;justify-content:center;position:relative}
+#left::after{content:"";position:absolute;left:12%;right:12%;bottom:4vh;height:5vh;border-radius:50%;background:rgba(0,0,0,.08)}
+#bearBox{position:relative;height:78vh;max-width:92%;aspect-ratio:300/460;z-index:1;cursor:pointer;margin-top:8vh}
+#bear{width:100%;height:100%;overflow:visible}
+#bearAll{transform-origin:150px 450px}
+#bearAll.wiggle{animation:wiggle .7s ease-in-out}
+#bearAll.hop{animation:hop .6s ease-out}
+@keyframes wiggle{20%{transform:rotate(-5deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(2deg)}}
+@keyframes hop{40%{transform:translateY(-30px) scale(1.03,.97)}}
+.eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.happyEyes{display:none}
+#bear.happy .eyes{display:none}
+#bear.happy .happyEyes{display:inline}
+
+/* Vêtements dessinés à la taille de Nounours */
+.cl{opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center}
+.cl.on{opacity:1;pointer-events:auto;cursor:pointer;animation:dropin .45s cubic-bezier(.3,1.5,.5,1)}
+.cl.recolor{animation:recolor .4s ease-out}
+.cl.off{opacity:1;animation:falloff .9s ease-in forwards}
+@keyframes dropin{from{transform:translateY(-60px) scale(1.25);opacity:0}}
+@keyframes recolor{50%{transform:scale(1.12)}}
+@keyframes falloff{25%{transform:translate(20px,-40px) rotate(15deg)}100%{transform:translate(60px,520px) rotate(80deg);opacity:0}}
+#i-balloon.on .float{animation:float 2s ease-in-out infinite}
+@keyframes float{50%{transform:translate(4px,-8px)}}
+
+#i-wand.on .twinkle{transform-box:fill-box;transform-origin:center;animation:twinkle 1.2s ease-in-out infinite}
+@keyframes twinkle{50%{transform:rotate(20deg) scale(1.15)}}
+#tray{flex:1.25;display:grid;grid-template-columns:repeat(5,1fr);gap:1.6vmin;padding:3vmin 3vmin 3vmin 1vmin;align-content:center}
+.item.dice.roll{animation:roll .6s ease-out}
+@keyframes roll{to{transform:rotate(360deg)}}
+.item{aspect-ratio:1;border-radius:3vmin;background:#fff;display:flex;align-items:center;justify-content:center;font-size:min(8vmin,7vw);box-shadow:0 1vmin 0 rgba(0,0,0,.1);cursor:pointer}
+.item.press{animation:press .3s}
+.item.special{background:#ffd166}
+@keyframes press{50%{transform:scale(.85)}}
+@media (orientation:portrait){
+  #app{flex-direction:column}
+  #bearBox{height:40vh;margin-top:6vh}
+  #tray{padding:2vmin 3vmin 3vmin;flex:none;grid-template-columns:repeat(6,1fr)}
+  .item{font-size:min(7vw,5vh)}
+}
+.flyer{position:fixed;left:0;top:0;pointer-events:none;z-index:50;line-height:1;font-size:10vmin}
+.spark{position:fixed;font-size:7vmin;margin:-3.5vmin 0 0 -3.5vmin;pointer-events:none;animation:spark .9s ease-out forwards;z-index:60}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:40}
+#flash.go{animation:flash .6s ease-out}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+#frame{position:absolute;inset:3vh 6%;border:1.6vmin solid #fff;border-radius:3vmin;box-shadow:0 0 0 .6vmin #ffd166,0 1.5vmin 3vmin rgba(0,0,0,.15);opacity:0;transform:scale(1.1);transition:opacity .3s,transform .3s;pointer-events:none;z-index:2}
+#frame.on{opacity:1;transform:none}
+#frame span{position:absolute;font-size:8vmin}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="app">
+  <div id="left">
+    <div id="frame"><span class="emo" style="left:-4vmin;top:-4vmin">⭐</span><span class="emo" style="right:-4vmin;top:-4vmin">🌟</span><span class="emo" style="left:-4vmin;bottom:-4vmin">🌟</span><span class="emo" style="right:-4vmin;bottom:-4vmin">⭐</span></div>
+    <div id="bearBox">
+      <svg id="bear" viewBox="0 0 300 460">
+        <g id="bearAll">
+          <!-- jambes et pieds -->
+          <g fill="#b07d4f" stroke="#6b4423" stroke-width="5"><ellipse cx="105" cy="405" rx="38" ry="42"/><ellipse cx="195" cy="405" rx="38" ry="42"/></g>
+          <!-- bras et corps -->
+          <g fill="#b07d4f" stroke="#6b4423" stroke-width="5">
+            <ellipse cx="62" cy="265" rx="26" ry="62" transform="rotate(25 62 265)"/>
+            <ellipse cx="238" cy="265" rx="26" ry="62" transform="rotate(-25 238 265)"/>
+            <ellipse cx="150" cy="292" rx="92" ry="112"/>
+          </g>
+          <ellipse cx="150" cy="308" rx="56" ry="70" fill="#e6c9a8"/>
+          <!-- pantalon et short : ils couvrent le bas du ventre et les jambes -->
+          <g class="cl" id="i-pants" data-slot="legs" style="--c:#3a86ff">
+            <path d="M64 326 Q150 346 236 326 L240 372 L234 424 H160 L153 384 Q150 378 147 384 L140 424 H66 L60 372 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M68 414 H138 M162 414 H232" stroke="rgba(255,255,255,.55)" stroke-width="5"/>
+            <path d="M150 342 V376" stroke="rgba(0,0,0,.2)" stroke-width="3"/>
+          </g>
+          <g class="cl" id="i-shorts" data-slot="legs" style="--c:#ff9f1c">
+            <path d="M64 326 Q150 346 236 326 L242 398 H158 L152 374 Q150 370 148 374 L142 398 H58 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M62 388 H142 M158 388 H238" stroke="rgba(255,255,255,.55)" stroke-width="5"/>
+          </g>
+          <!-- chaussures : par-dessus le bas du pantalon -->
+          <g class="cl" id="i-sneakers" data-slot="feet" style="--c:#3a86ff">
+            <path d="M64 420 Q66 394 105 396 Q144 394 146 420 L148 440 Q105 454 62 440 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M154 420 Q156 394 195 396 Q234 394 236 420 L238 440 Q195 454 152 440 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M66 438 Q105 450 146 438 M156 438 Q195 450 236 438" stroke="#fff" stroke-width="7" fill="none"/>
+            <path d="M92 404 L118 404 M92 414 L118 414 M182 404 L208 404 M182 414 L208 414" stroke="#fff" stroke-width="4"/>
+          </g>
+          <g class="cl" id="i-boots" data-slot="feet" style="--c:#ef476f">
+            <path d="M68 398 H142 L144 440 Q105 454 64 440 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M158 398 H232 L236 440 Q195 454 156 440 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <rect x="64" y="390" width="82" height="15" rx="6" fill="#fff" stroke="#2b2d42" stroke-width="4"/>
+            <rect x="154" y="390" width="82" height="15" rx="6" fill="#fff" stroke="#2b2d42" stroke-width="4"/>
+          </g>
+          <g class="cl" id="i-tee" data-slot="body" style="--c:#06d6a0">
+            <ellipse cx="72" cy="232" rx="32" ry="27" transform="rotate(25 72 232)" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <ellipse cx="228" cy="232" rx="32" ry="27" transform="rotate(-25 228 232)" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M86 204 Q150 186 214 204 Q240 262 230 346 Q150 364 70 346 Q60 262 86 204 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M120 196 Q150 214 180 196" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="150,250 158,270 180,271 163,284 169,305 150,293 131,305 137,284 120,271 142,270" fill="#fff"/>
+          </g>
+          <g class="cl" id="i-dress" data-slot="body" style="--c:#ff70a6">
+            <circle cx="80" cy="222" r="26" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <circle cx="220" cy="222" r="26" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M90 204 Q150 188 210 204 Q222 252 214 298 L244 388 Q150 408 56 388 L86 298 Q78 252 90 204 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M86 298 Q150 310 214 298" stroke="#fff" stroke-width="8" fill="none"/>
+            <g fill="#fff"><circle cx="112" cy="338" r="7"/><circle cx="150" cy="356" r="7"/><circle cx="188" cy="338" r="7"/><circle cx="92" cy="374" r="7"/><circle cx="130" cy="384" r="7"/><circle cx="170" cy="384" r="7"/><circle cx="208" cy="374" r="7"/><circle cx="130" cy="250" r="6"/><circle cx="170" cy="250" r="6"/></g>
+          </g>
+          <g class="cl" id="i-coat" data-slot="body" style="--c:#fb8500">
+            <ellipse cx="68" cy="252" rx="31" ry="52" transform="rotate(25 68 252)" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <ellipse cx="232" cy="252" rx="31" ry="52" transform="rotate(-25 232 252)" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M84 200 Q150 184 216 200 Q246 280 238 388 Q150 404 62 388 Q54 280 84 200 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M112 196 L150 250 L188 196" fill="none" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M150 250 V396" stroke="#2b2d42" stroke-width="3"/>
+            <g fill="#fff" stroke="#2b2d42" stroke-width="3"><circle cx="136" cy="280" r="7"/><circle cx="136" cy="318" r="7"/><circle cx="136" cy="356" r="7"/></g>
+            <path d="M90 330 Q106 336 122 330 M178 330 Q194 336 210 330" fill="none" stroke="#2b2d42" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          <!-- moufles au bout des bras -->
+          <g class="cl" id="i-gloves" data-slot="paws" style="--c:#8338ec">
+            <ellipse cx="38" cy="318" rx="21" ry="23" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <circle cx="56" cy="306" r="9" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M24 300 Q40 292 54 300" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <ellipse cx="262" cy="318" rx="21" ry="23" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <circle cx="244" cy="306" r="9" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M246 300 Q260 292 276 300" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/>
+          </g>
+          <!-- tête -->
+          <g fill="#b07d4f" stroke="#6b4423" stroke-width="5">
+            <circle cx="82" cy="48" r="32"/><circle cx="218" cy="48" r="32"/>
+            <circle cx="150" cy="115" r="85"/>
+          </g>
+          <circle cx="82" cy="48" r="16" fill="#e6c9a8"/><circle cx="218" cy="48" r="16" fill="#e6c9a8"/>
+          <ellipse cx="150" cy="145" rx="42" ry="32" fill="#e6c9a8"/>
+          <ellipse cx="150" cy="128" rx="15" ry="11" fill="#3d2314"/>
+          <path d="M130 155 Q150 172 170 155" fill="none" stroke="#3d2314" stroke-width="5" stroke-linecap="round"/>
+          <g class="eyes"><ellipse cx="118" cy="100" rx="10" ry="12" fill="#3d2314"/><ellipse cx="182" cy="100" rx="10" ry="12" fill="#3d2314"/></g>
+          <g class="happyEyes" fill="none" stroke="#3d2314" stroke-width="5" stroke-linecap="round"><path d="M106 104 Q118 88 130 104"/><path d="M170 104 Q182 88 194 104"/></g>
+          <circle cx="100" cy="138" r="13" fill="#ff8fab" opacity=".5"/><circle cx="200" cy="138" r="13" fill="#ff8fab" opacity=".5"/>
+          <!-- cou -->
+          <g class="cl" id="i-scarf" data-slot="neck" style="--c:#ef233c">
+            <path d="M184 206 L204 200 L218 276 L190 282 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M78 186 Q150 222 222 186 L226 212 Q150 248 74 212 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M100 204 L104 226 M130 212 L132 234 M170 212 L168 234 M200 204 L196 226 M194 236 L212 232 M198 256 L215 252" stroke="#fff" stroke-width="5"/>
+          </g>
+          <g class="cl" id="i-bow" data-slot="neck" style="--c:#8338ec">
+            <path d="M150 204 L108 182 Q100 204 108 226 Z M150 204 L192 182 Q200 204 192 226 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <circle cx="150" cy="204" r="11" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+          </g>
+          <!-- yeux -->
+          <g class="cl" id="i-glasses" data-slot="eyes" style="--c:#2b2d42">
+            <path d="M94 96 L66 86 M206 96 L234 86 M140 98 Q150 88 160 98" style="stroke:var(--c)" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <circle cx="118" cy="100" r="24" fill="rgba(255,255,255,.3)" style="stroke:var(--c)" stroke-width="7"/>
+            <circle cx="182" cy="100" r="24" fill="rgba(255,255,255,.3)" style="stroke:var(--c)" stroke-width="7"/>
+          </g>
+          <g class="cl" id="i-sunglasses" data-slot="eyes" style="--c:#ef476f">
+            <path d="M92 94 L66 84 M208 94 L234 84 M144 96 H156" style="stroke:var(--c)" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <path d="M88 86 H146 Q146 124 118 124 Q88 124 88 86 Z M154 86 H212 Q212 124 182 124 Q154 124 154 86 Z" fill="#2b2d42" style="stroke:var(--c)" stroke-width="7" stroke-linejoin="round"/>
+            <path d="M98 94 L110 94 M164 94 L176 94" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+          </g>
+          <!-- chapeaux -->
+          <g class="cl" id="i-crown" data-slot="hat">
+            <path d="M90 56 L94 0 L122 30 L150 -12 L178 30 L206 0 L210 56 Z" fill="#ffd166" stroke="#b5838d" stroke-width="5" stroke-linejoin="round"/>
+            <circle cx="150" cy="38" r="9" fill="#ef233c"/><circle cx="116" cy="42" r="6" fill="#3a86ff"/><circle cx="184" cy="42" r="6" fill="#06d6a0"/>
+          </g>
+          <g class="cl" id="i-tophat" data-slot="hat" style="--c:#ef233c">
+            <rect x="110" y="-22" width="80" height="70" rx="6" fill="#2b2d42"/>
+            <rect x="110" y="30" width="80" height="14" style="fill:var(--c)"/>
+            <ellipse cx="150" cy="48" rx="68" ry="13" fill="#2b2d42"/>
+          </g>
+          <g class="cl" id="i-cap" data-slot="hat" style="--c:#3a86ff">
+            <path d="M150 52 Q236 46 254 66 Q204 74 150 64 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <path d="M78 62 Q78 -4 150 -4 Q222 -4 222 62 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+            <circle cx="150" cy="-4" r="8" fill="#fff" stroke="#2b2d42" stroke-width="3"/>
+            <path d="M150 4 V60" stroke="rgba(255,255,255,.5)" stroke-width="4"/>
+          </g>
+          <g class="cl" id="i-party" data-slot="hat" style="--c:#06d6a0">
+            <polygon points="150,-44 112,54 188,54" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M136 -8 L160 2 M125 20 L172 36 M118 40 L180 52" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="150" cy="-46" r="12" fill="#ffd166" stroke="#2b2d42" stroke-width="4"/>
+          </g>
+          <g class="cl" id="i-straw" data-slot="hat" style="--c:#ff70a6">
+            <ellipse cx="150" cy="52" rx="108" ry="22" fill="#f4d58d" stroke="#b08968" stroke-width="4"/>
+            <path d="M90 52 Q94 -12 150 -12 Q206 -12 210 52 Z" fill="#f4d58d" stroke="#b08968" stroke-width="4"/>
+            <path d="M92 30 Q150 22 208 30 L209 46 Q150 38 91 46 Z" style="fill:var(--c)"/>
+            <g transform="translate(196 36)"><circle r="9" fill="#fff"/><circle cx="-9" r="7" fill="#ffd166"/><circle cx="9" r="7" fill="#ffd166"/><circle cy="-9" r="7" fill="#ffd166"/><circle cy="9" r="7" fill="#ffd166"/><circle r="6" fill="#fb8500"/></g>
+          </g>
+          <!-- dans la main -->
+          <g class="cl" id="i-balloon" data-slot="hand" style="--c:#ef233c">
+            <g class="float">
+              <path d="M264 320 Q284 262 262 196" stroke="#2b2d42" stroke-width="3" fill="none"/>
+              <ellipse cx="262" cy="150" rx="40" ry="48" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4"/>
+              <path d="M254 198 L270 198 L262 188 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="3"/>
+              <ellipse cx="248" cy="132" rx="9" ry="15" fill="#fff" opacity=".5" transform="rotate(20 248 132)"/>
+            </g>
+          </g>
+          <g class="cl" id="i-umbrella" data-slot="hand" style="--c:#8338ec">
+            <path d="M264 330 V206" stroke="#2b2d42" stroke-width="6"/>
+            <path d="M264 330 Q264 344 252 340" stroke="#2b2d42" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <path d="M194 208 Q264 120 334 208 Q317 198 299 208 Q282 198 264 208 Q246 198 229 208 Q212 198 194 208 Z" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M264 142 V208 M229 208 Q238 164 264 142 M299 208 Q290 164 264 142" stroke="rgba(255,255,255,.5)" stroke-width="3" fill="none"/>
+          </g>
+          <g class="cl" id="i-wand" data-slot="hand" style="--c:#ffd166">
+            <path d="M264 322 L290 236" stroke="#2b2d42" stroke-width="7" stroke-linecap="round"/>
+            <g class="twinkle"><polygon points="296,192 301.9,207.9 318.8,208.6 305.5,219.1 310.1,235.4 296,226 281.9,235.4 286.5,219.1 273.2,208.6 290.1,207.9" style="fill:var(--c)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/></g>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div id="tray"></div>
+</div>
+<div id="flash"></div>
+<div id="start"><div class="deco emo">🧸🎩</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "../sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "../index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== Habille Nounours ===== */
+const ITEMS = [
+  { e: "👑", id: "crown" }, { e: "🎩", id: "tophat" }, { e: "🧢", id: "cap" }, { e: "👒", id: "straw" },
+  { e: "👓", id: "glasses" }, { e: "🕶️", id: "sunglasses" }, { e: "🧣", id: "scarf" }, { e: "🎀", id: "bow" },
+  { e: "🥳", id: "party" }, { e: "👕", id: "tee" }, { e: "👗", id: "dress" }, { e: "🧥", id: "coat" },
+  { e: "👖", id: "pants" }, { e: "🩳", id: "shorts" }, { e: "👟", id: "sneakers" }, { e: "👢", id: "boots" },
+  { e: "🧤", id: "gloves" }, { e: "🎈", id: "balloon" }, { e: "🌂", id: "umbrella" }, { e: "🪄", id: "wand" }
+];
+// Habillage au hasard : chance de mettre quelque chose à chaque endroit
+const SLOTS = { hat: 0.85, eyes: 0.45, neck: 0.5, body: 0.9, legs: 0.55, feet: 0.8, hand: 0.5, paws: 0.3 };
+const COLORS = ["#ef233c", "#fb8500", "#ffd60a", "#06d6a0", "#3a86ff", "#8338ec", "#ff70a6", "#2b2d42"];
+K.preload(["pop", "rire", "boing", "whoosh", "ding", "photo", "bravo"]);
+const bear = document.getElementById("bear"), bearAll = document.getElementById("bearAll"), tray = document.getElementById("tray");
+const worn = {};  // emplacement -> id du vêtement porté
+
+function again(el, c) { el.classList.remove(c); el.getBoundingClientRect(); el.classList.add(c); }
+function center(el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+function part(id) { return document.getElementById("i-" + id); }
+function sparkle(x, y) {
+  const s = document.createElement("div"); s.className = "spark emo"; s.textContent = K.pick(["✨", "⭐", "💫"]);
+  s.style.left = x + "px"; s.style.top = y + "px"; document.body.appendChild(s); setTimeout(() => s.remove(), 900);
+}
+function react() {
+  again(bearAll, "wiggle"); bear.classList.add("happy");
+  clearTimeout(react.t); react.t = setTimeout(() => bear.classList.remove("happy"), 1400);
+  K.snd("rire", { delay: 0.1, dur: 1.2, vol: 0.8 });
+}
+
+function takeOff(slot) {
+  const id = worn[slot]; if (!id) return;
+  const g = part(id);
+  g.classList.remove("on", "recolor"); again(g, "off");
+  setTimeout(() => g.classList.remove("off"), 900);
+  delete worn[slot];
+}
+
+function wear(item, btn) {
+  const g = part(item.id), slot = g.dataset.slot;
+  if (worn[slot] === item.id) {
+    // Déjà porté : on change sa couleur
+    if (g.style.getPropertyValue("--c")) {
+      const cur = g.style.getPropertyValue("--c").trim();
+      const next = COLORS[(COLORS.indexOf(cur) + 1) % COLORS.length];
+      g.style.setProperty("--c", next);
+    }
+    again(g, "recolor"); K.snd("ding", { dur: 1, vol: 0.6 }); react();
+    const c = center(g); sparkle(c.x, c.y);
+    return;
+  }
+  takeOff(slot);
+  worn[slot] = item.id;
+  // L'icône vole jusqu'à Nounours, puis le vrai vêtement apparaît à sa taille
+  const from = center(btn), to = center(g);
+  const f = document.createElement("div"); f.className = "flyer emo"; f.textContent = item.e;
+  document.body.appendChild(f);
+  const w = f.getBoundingClientRect();
+  const ax = from.x - w.width / 2, ay = from.y - w.height / 2, bx = to.x - w.width / 2, by = to.y - w.height / 2;
+  f.animate([
+    { transform: "translate(" + ax + "px," + ay + "px) scale(.6)" },
+    { transform: "translate(" + (ax + bx) / 2 + "px," + (Math.min(ay, by) - 90) + "px) scale(1.1) rotate(-20deg)" },
+    { transform: "translate(" + bx + "px," + by + "px) scale(.4)", opacity: 0.3 }
+  ], { duration: 550, easing: "ease-in-out", fill: "forwards" });
+  K.snd("whoosh", { vol: 0.6 });
+  setTimeout(() => {
+    f.remove();
+    if (worn[slot] !== item.id) return;
+    g.classList.remove("off"); again(g, "on");
+    K.snd("pop"); react();
+    const c = center(g); for (let i = 0; i < 3; i++) setTimeout(() => sparkle(c.x + K.rand(-40, 40), c.y + K.rand(-40, 40)), i * 80);
+  }, 550);
+}
+
+function allOff() {
+  Object.keys(worn).forEach(takeOff);
+  again(bearAll, "hop"); K.snd("boing");
+}
+
+function photo() {
+  const fl = document.getElementById("flash"), fr = document.getElementById("frame");
+  again(fl, "go"); fr.classList.add("on"); bear.classList.add("happy");
+  K.snd("photo"); K.snd("bravo", { delay: 0.5, dur: 2, vol: 0.7 });
+  const b = document.getElementById("bearBox").getBoundingClientRect();
+  for (let i = 0; i < 10; i++) setTimeout(() => sparkle(b.left + Math.random() * b.width, b.top + Math.random() * b.height), 300 + i * 90);
+  setTimeout(() => { fr.classList.remove("on"); bear.classList.remove("happy"); }, 3200);
+}
+
+// Le dé : Nounours se déshabille, puis chaque vêtement tiré au sort vole jusqu'à lui, dans une couleur au hasard
+let rolling = false;
+function randomOutfit(btn) {
+  if (rolling) return;
+  rolling = true; again(btn, "roll");
+  Object.keys(worn).forEach(takeOff);
+  K.snd("boing");
+  let picks = [];
+  for (const [slot, p] of Object.entries(SLOTS)) {
+    if (Math.random() < p) picks.push(K.pick(ITEMS.filter(it => part(it.id).dataset.slot === slot)));
+  }
+  if (picks.length < 2) picks = K.shuffle(ITEMS).slice(0, 3).filter((it, i, a) => a.findIndex(o => part(o.id).dataset.slot === part(it.id).dataset.slot) === i);
+  picks.forEach((it, i) => setTimeout(() => {
+    const g = part(it.id);
+    if (g.style.getPropertyValue("--c")) g.style.setProperty("--c", K.pick(COLORS));
+    wear(it, btn);
+  }, 700 + i * 280));
+  setTimeout(() => { rolling = false; }, 700 + picks.length * 280 + 600);
+}
+
+ITEMS.forEach(it => {
+  const b = document.createElement("div"); b.className = "item emo"; b.textContent = it.e;
+  b.addEventListener("pointerdown", e => { e.stopPropagation(); if (rolling) return; again(b, "press"); wear(it, b); });
+  tray.appendChild(b);
+});
+[["🎲", randomOutfit, "dice"], ["📷", photo], ["🔄", allOff]].forEach(([ico, fn, cls]) => {
+  const b = document.createElement("div"); b.className = "item special emo " + (cls || ""); b.textContent = ico;
+  b.addEventListener("pointerdown", e => { e.stopPropagation(); again(b, "press"); fn(b); });
+  tray.appendChild(b);
+});
+
+// Taper un vêtement porté le fait tomber, taper Nounours le fait rire
+document.querySelectorAll(".cl").forEach(g => g.addEventListener("pointerdown", e => {
+  if (!g.classList.contains("on")) return;
+  e.stopPropagation();
+  takeOff(g.dataset.slot); K.snd("boing");
+}));
+document.getElementById("bearBox").addEventListener("pointerdown", () => { react(); again(bearAll, "hop"); });
+
+K.onStart(() => { K.sfx.chime(); });
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Le chat rentre à la maison</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐱%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+:root{--bs:min(max(9vmin,72px),84px);--ink:#2b2d42;--bg:#fff4e0;--accent:#e76f51}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg)}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:#ffd6a5}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--accent)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:var(--bs);height:var(--bs);border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+/* Blue square with 4 white squares: back to the inner list */
+.gb{position:fixed;top:max(10px,env(safe-area-inset-top));left:calc(max(10px,env(safe-area-inset-left)) + var(--bs) + 10px);width:var(--bs);height:var(--bs);border-radius:18px;border:0;background:#a0c4ff;display:none;grid-template-columns:1fr 1fr;gap:calc(var(--bs)*.07);padding:calc(var(--bs)*.2);box-shadow:0 5px 0 rgba(0,0,0,.15);z-index:40}
+.gb i{background:#fff;border-radius:18%}
+.gb:active,.act:active{transform:scale(.9)}
+#app{position:fixed;inset:0;display:flex;flex-direction:row;padding:2vmin;gap:2vmin}
+#board{flex:1;min-width:0;min-height:0;position:relative;background:#fff;border-radius:3vmin;box-shadow:0 1.2vmin 0 rgba(0,0,0,.08);overflow:hidden}
+#pic{position:absolute;left:2%;right:2%;bottom:2%;top:calc(var(--bs) + 14px)}
+#pic svg,.thumb svg,.thumb img{width:100%;height:100%;display:block}
+#acts{position:absolute;top:max(10px,calc(env(safe-area-inset-top) - 2vmin));right:12px;display:flex;gap:10px;z-index:5}
+.act{width:var(--bs);height:var(--bs);border:0;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:calc(var(--bs)*.52);box-shadow:0 5px 0 rgba(0,0,0,.15);background:#cdb4db;position:relative;overflow:hidden}
+.act.y{background:#ffe066}.act svg{width:58%;height:58%}
+/* Hold button: must be kept pressed, a stray tap does nothing */
+.act.holdb::before{content:"";position:absolute;inset:0;background:#ef476f;transform:scaleY(0);transform-origin:bottom}
+.act.holdb.hold::before{transform:scaleY(1);transition:transform .9s linear}
+.act.holdb span{position:relative}
+#pal{--ps:min(max(10vmin,76px),calc(86vh / var(--rows,7)));display:grid;grid-template-columns:repeat(3,var(--ps));grid-auto-rows:var(--ps);gap:1.1vh;align-content:center}
+.sw{border-radius:50%;border:.7vmin solid #fff;box-shadow:0 .7vmin 0 rgba(0,0,0,.18);transition:transform .15s}
+.sw.light{border-color:#ced4da}
+.sw.rainbow{background:conic-gradient(#ef233c,#fb8500,#ffd60a,#38b000,#3a86ff,#8338ec,#ff70a6,#ef233c)}
+.tp{border-radius:26%;background:#fff;box-shadow:0 .7vmin 0 rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:calc(var(--ps)*.56);transition:transform .15s}
+.tp svg{width:78%;height:78%}
+.sel{transform:scale(1.14);box-shadow:0 0 0 .9vmin var(--ink),0 .7vmin 0 rgba(0,0,0,.18)}
+.r{stroke:var(--ink);stroke-width:5;stroke-linejoin:round;stroke-linecap:round;transition:fill .25s}
+.d{pointer-events:none}
+#gallery{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;align-items:center;justify-content:center;padding-top:calc(var(--bs) + 10px)}
+#gallery.open{display:flex;animation:fadein .25s ease-out}
+@keyframes fadein{from{opacity:0}}
+#thumbs{display:grid;grid-template-columns:repeat(var(--gc,3),1fr);gap:2.4vmin;width:min(94vw,calc((100vh - var(--bs) - 9vmin)*var(--gw,2)))}
+.thumb{position:relative;aspect-ratio:4/3;background:#fff;border-radius:2.5vmin;padding:3%;box-shadow:0 .8vmin 0 rgba(0,0,0,.1)}
+.thumb:active{transform:scale(.96)}
+.thumb .r{stroke-width:7}
+.thumb.done::after{content:"⭐";position:absolute;right:-1vmin;top:-1.5vmin;font-size:5vmin;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+@media (orientation:portrait){
+  #app{flex-direction:column}
+  #pal{--ps:min(calc(88vw / var(--pp,7)),13vmin);grid-template-columns:repeat(var(--pp,7),var(--ps));gap:1.3vw;justify-content:center}
+  #thumbs{grid-template-columns:repeat(var(--gcp,2),1fr);width:min(94vw,calc((100vh - var(--bs) - 12vmin)*var(--gwp,.88)))}
+}
+.spark{position:fixed;font-size:7vmin;margin:-3.5vmin 0 0 -3.5vmin;pointer-events:none;animation:spark .9s ease-out forwards;z-index:60}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){#start .play{animation:none!important}.spark{animation-duration:.3s}}
+:root{--gc:2;--gw:1.33;--gcp:2;--gwp:1.33}
+#pic{inset:0;border-radius:3vmin;overflow:hidden}
+#pic svg{overflow:visible}
+#weather{position:absolute;inset:0;pointer-events:none}
+#weather.rain{background-image:repeating-linear-gradient(100deg,transparent 0 22px,rgba(255,255,255,.55) 22px 24px);background-size:100px 100px;animation:rain .5s linear infinite}
+#weather.snow{background-image:radial-gradient(circle,rgba(255,255,255,.95) 0 3px,transparent 4px),radial-gradient(circle,rgba(255,255,255,.8) 0 2px,transparent 3px);background-size:90px 90px,60px 60px;background-position:0 0,30px 20px;animation:snow 4s linear infinite}
+@keyframes rain{to{background-position:-30px 100px}}
+@keyframes snow{to{background-position:20px 90px,10px 80px}}
+#hintArrow{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#weather{animation:none!important}#hintArrow{animation:none}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="app"><div id="board"><div id="pic"></div><div id="weather"></div>
+  <div id="acts"><button id="again" class="act emo" type="button" aria-label="Recommencer" style="background:#caffbf;display:none">🔁</button></div>
+</div></div>
+<button id="gridBtn" class="gb" type="button" aria-label="Liste"><i></i><i></i><i></i><i></i></button>
+<div id="gallery"><div id="thumbs"></div></div>
+<a id="sortie" href="../index.html" aria-label="Retour au menu"><svg viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5"/></svg></a>
+<div id="start"><div class="deco emo">🐱🏠</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+"use strict";
+/* ===== Shared core: sound (no voice), game clock, list screen, saving ===== */
+const $ = id => document.getElementById(id);
+let ac = null, master = null;
+function audio() {
+  if (!ac) {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+  }
+  if (ac.state === "suspended") ac.resume();
+}
+function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+  if (!ac) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+}
+function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+  if (!ac) return;
+  const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+  s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+}
+const SFX = {
+  pop: () => tone(480 + Math.random() * 260, 0.12, "sine", 0.3, 1200),
+  plop: () => tone(330, 0.16, "sine", 0.35, 170),
+  soft: () => tone(240, 0.1, "sine", 0.12, 200),
+  click: () => tone(1400, 0.05, "square", 0.06),
+  whoosh: () => noise(0.35, 0.2, 1800),
+  crunch: () => { noise(0.09, 0.5, 2600); noise(0.12, 0.4, 1500, 0.1); tone(180, 0.08, "square", 0.08, 90); },
+  snip: () => { noise(0.05, 0.4, 6000); tone(2400, 0.04, "square", 0.05, 1800); noise(0.05, 0.3, 5000, 0.08); },
+  boing: () => { tone(160, 0.4, "sine", 0.3, 480); tone(170, 0.4, "triangle", 0.08, 520); },
+  grow: () => tone(300, 0.25, "sine", 0.2, 700),
+  giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09)),
+  chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+  tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+  back: () => tone(700, 0.15, "sine", 0.2, 350)
+};
+// Game clock: timers and tweens run on it, so the game can be stepped when requestAnimationFrame is throttled
+let now = 0, timers = [], tweens = [];
+const ticks = [];
+const calm = !!(window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches);
+function after(ms, fn) { timers.push({ at: now + ms, fn }); }
+// Game movements always play, even when the device asks for reduced motion: skipping them made jumps and falls look broken.
+// Reduced motion only calms the decorative looping animations (CSS).
+function tween(ms, fn, done) { tweens.push({ t0: now, ms, fn, done }); fn(0); }
+function clearClock() { timers = []; tweens = []; }
+function tick(dt) {
+  now += dt;
+  const due = timers.filter(t => t.at <= now); timers = timers.filter(t => t.at > now); due.forEach(t => t.fn());
+  // tweens started by a finishing tween (chained moves) are kept: they land in the fresh list
+  const running = tweens; tweens = [];
+  const left = running.filter(w => { const k = Math.min(1, (now - w.t0) / w.ms); w.fn(k); if (k >= 1 && w.done) w.done(); return k < 1; });
+  tweens = left.concat(tweens);
+  ticks.forEach(f => f(dt));
+}
+let lastT = 0;
+function frame(t) { tick(Math.min(50, lastT ? t - lastT : 16)); lastT = t; requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+function spark(x, y, e) {
+  const s = document.createElement("div"); s.className = "spark emo"; s.textContent = e || "✨";
+  s.style.left = x + "px"; s.style.top = y + "px"; document.body.appendChild(s); setTimeout(() => s.remove(), 950);
+}
+function burst() {
+  SFX.tada(); const x = innerWidth / 2, y = innerHeight / 2;
+  spark(x, y, "⭐"); spark(x - innerWidth * .2, y - innerHeight * .15); spark(x + innerWidth * .2, y - innerHeight * .1); spark(x, y + innerHeight * .2);
+}
+function load(key, def) { try { const m = JSON.parse(localStorage.getItem(key)); if (m && typeof m === "object") return m; } catch (_) {} return def; }
+function store(key, o) { try { localStorage.setItem(key, JSON.stringify(o)); } catch (_) {} }
+const popAt = k => k < 0.6 ? 0.3 + k / 0.6 * 0.9 : 1.2 - (k - 0.6) / 0.4 * 0.2;
+const hopAt = k => Math.sin(k * Math.PI);
+const rand = n => Math.floor(Math.random() * n);
+function scenePt(svg, cx, cy) { const m = svg.getScreenCTM(); return m ? [(cx - m.e) / m.a, (cy - m.f) / m.d] : [0, 0]; }
+function screenPt(svg, x, y) { const m = svg.getScreenCTM(); return m ? [m.a * x + m.e, m.d * y + m.f] : [innerWidth / 2, innerHeight / 2]; }
+// Inner list: a full screen of thumbnails, opened by the blue 4-square button
+const gallery = {
+  o: null, isOpen: false,
+  setup(o) {
+    this.o = o;
+    $("thumbs").addEventListener("pointerdown", e => { const el = e.target.closest(".thumb"); if (el) this.pick(+el.dataset.i); });
+    $("gridBtn").addEventListener("pointerdown", () => this.show());
+    this.show(true);
+  },
+  pick(i) { this.hide(); SFX.whoosh(); this.o.open(i); },
+  show(quiet) {
+    const o = this.o; if (o.leave && !quiet) o.leave();
+    let h = "";
+    for (let i = 0; i < o.n; i++) h += `<div class="thumb${o.done && o.done(i) ? " done" : ""}" data-i="${i}">${o.thumb(i)}</div>`;
+    $("thumbs").innerHTML = h; $("gallery").classList.add("open"); $("gridBtn").style.display = "none"; this.isOpen = true;
+    if (!quiet) SFX.back();
+  },
+  hide() { $("gallery").classList.remove("open"); $("gridBtn").style.display = "grid"; this.isOpen = false; }
+};
+// A button that must be held (about 1 s) before it acts
+function holdButton(el, fn) {
+  let t = null;
+  const stop = () => { clearTimeout(t); t = null; el.classList.remove("hold"); };
+  el.addEventListener("pointerdown", () => { el.classList.add("hold"); SFX.soft(); t = setTimeout(() => { stop(); fn(); }, 900); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(n => el.addEventListener(n, stop));
+}
+$("start").addEventListener("pointerdown", () => { audio(); $("start").style.display = "none"; SFX.chime(); if (window.onStart) window.onStart(); });
+addEventListener("pointerdown", audio);
+["contextmenu", "gesturestart", "dblclick", "selectstart", "dragstart"].forEach(t => addEventListener(t, e => e.preventDefault()));
+addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+window.__game = { step(ms) { for (let t = 0; t < ms; t += 16) tick(16); }, gallery };
+
+/* ===== The game ===== */
+// The cat walks home. Each tap makes it walk a little (holding keeps it walking). On the way it meets
+// things and plays with them by itself; at the end the door opens, the cat goes in and falls asleep.
+const KEY = "chat-v1", mem = load(KEY, { done: [] });
+if (!Array.isArray(mem.done)) mem.done = [];
+const WW = 4800, GY = 760, HOUSE = 4450, SPEED = 240, SC = 1.1;
+const ROUTES = [
+  { sky: ["#bde0fe", "#eef8ff"], ground: "#8bd17c", hill: "#b7e4c7", cat: "#f4a261", house: "#ffadad", weather: "",
+    deco: [["🌞", 300, 120, 120], ["☁️", 1400, 150, 120], ["🌳", 2300, 560, 260], ["☁️", 3100, 130, 110], ["🌼", 3900, 700, 70]],
+    items: [["flower", 900], ["butterfly", 1700], ["puddle", 2600], ["fish", 3400]] },
+  { sky: ["#a9b4c2", "#dfe7ef"], ground: "#74a57f", hill: "#9cc5a1", cat: "#adb5bd", house: "#ffd6a5", weather: "rain",
+    deco: [["☁️", 400, 120, 150], ["☁️", 1500, 110, 140], ["🌂", 2200, 690, 90], ["☁️", 3000, 120, 150], ["🍄", 3800, 715, 70]],
+    items: [["puddle", 900], ["yarn", 1700], ["puddle", 2600], ["fish", 3400]] },
+  { sky: ["#1d2b64", "#3a4a8a"], ground: "#4f772d", hill: "#31572c", cat: "#2b2d42", house: "#cdb4db", weather: "", night: 1,
+    deco: [["🌙", 600, 130, 120], ["⭐", 1100, 90, 50], ["⭐", 1900, 160, 40], ["⭐", 2700, 100, 50], ["🦉", 3300, 520, 90], ["⭐", 4000, 120, 45]],
+    items: [["mouse", 900], ["bird", 1700], ["yarn", 2600], ["fish", 3400]] },
+  { sky: ["#dbe9f6", "#f8fbff"], ground: "#ffffff", hill: "#e9f2fb", cat: "#ffffff", house: "#a0c4ff", weather: "snow",
+    deco: [["☁️", 500, 120, 140], ["🌲", 1300, 580, 220], ["☁️", 2100, 130, 120], ["🌲", 3000, 570, 230], ["☁️", 3900, 120, 130]],
+    items: [["snowman", 900], ["bird", 1700], ["puddle", 2600], ["fish", 3400]] }
+];
+// how far before a thing the cat stops (its nose is about 150 ahead of its feet)
+const TRIG = { puddle: 250, flower: 170, fish: 150, yarn: 155, snowman: 185, butterfly: 175, mouse: 230, bird: 230 };
+const INK = "#2b2d42";
+let cur = -1, R = null, cat = null, cam = 0, items = [], walkMs = 0, busy = false, home = false, phase = 0, stepT = 0, idleMs = 0, blinkT = 0, blinkF = 1;
+const held = new Set();
+// --- the cat, drawn facing right, feet at (0,0). Every moving part is its own group (a small rig).
+function catArt(c, id) {
+  const I = n => id ? ` id="${n}"` : "", dark = c === "#2b2d42" ? "#4a4e69" : "rgba(0,0,0,.18)", st = `stroke="${INK}" stroke-width="5"`;
+  const leg = (k, x, far) => `<g${I("leg" + k)}><rect x="${x - 9}" y="-56" width="18" height="56" rx="9" fill="${far && c === "#ffffff" ? "#dee2e6" : c}" ${st}/>${far ? `<rect x="${x - 9}" y="-56" width="18" height="56" rx="9" fill="rgba(0,0,0,.12)"/>` : ""}</g>`;
+  return `<g${I("lean")}><g${I("cbody")}>` + leg(2, 52, 1) + leg(3, -30, 1) +
+    `<g${I("tail")}><path d="M-62 -82Q-112 -112 -96 -168" fill="none" stroke="${INK}" stroke-width="24" stroke-linecap="round"/><path d="M-62 -82Q-112 -112 -96 -168" fill="none" stroke="${c}" stroke-width="15" stroke-linecap="round"/></g>` +
+    `<ellipse cx="0" cy="-84" rx="74" ry="40" fill="${c}" ${st}/><path d="M-30 -120Q-24 -100 -32 -82M-4 -123Q2 -102 -6 -84M22 -120Q28 -100 20 -82" fill="none" stroke="${dark}" stroke-width="7" stroke-linecap="round"/>` +
+    leg(0, 40, 0) + leg(1, -44, 0) +
+    `<g${I("chead")}><path d="M44 -140L48 -182L74 -150ZM80 -152L104 -180L106 -134Z" fill="${c}" ${st} stroke-linejoin="round"/><circle cx="74" cy="-118" r="40" fill="${c}" ${st}/>` +
+    `<g${I("eyes")}><ellipse cx="74" cy="-122" rx="6" ry="8" fill="${INK}"/><ellipse cx="96" cy="-120" rx="6" ry="8" fill="${INK}"/></g><path d="M104 -106l8 -2l-4 7Z" fill="#ff8fab"/>` +
+    `<path d="M108 -101L140 -108M108 -96L140 -92" stroke="${INK}" stroke-width="3" stroke-linecap="round"/></g></g></g>`;
+}
+// --- poses: the rig is driven by a few numbers, tweened from one pose to the next
+const REST = { y: 0, sq: 1, lean: 0, head: 0, legs: [0, 0, 0, 0], tail: 0, eye: 1 };
+let P = null;
+const copyPose = p => ({ ...p, legs: p.legs.slice() });
+const ease = t => t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+function poseTo(target, ms, done) {
+  const a = copyPose(P), b = { ...a, ...target, legs: (target.legs || a.legs).slice() };
+  tween(ms, k => {
+    const e = ease(k);
+    for (const key of ["y", "sq", "lean", "head", "tail", "eye"]) P[key] = a[key] + (b[key] - a[key]) * e;
+    for (let i = 0; i < 4; i++) P.legs[i] = a.legs[i] + (b.legs[i] - a.legs[i]) * e;
+  }, done);
+}
+// steps: [{ p: pose, ms, f: function run at the start of the step, dx: distance to move during it }]
+function seq(steps, done) {
+  const go = i => {
+    if (i >= steps.length) { if (done) done(); return; }
+    const s = steps[i]; if (s.f) s.f();
+    if (s.dx) { const x0 = cat.x; tween(s.ms, k => { cat.x = x0 + s.dx * k; }); }
+    if (s.p) poseTo(s.p, s.ms, () => go(i + 1)); else after(s.ms, () => go(i + 1));
+  };
+  go(0);
+}
+const emoT = (e, x, y, s, extra) => `<text class="emo"${extra || ""} x="${x}" y="${y + s * 0.36}" font-size="${s}" text-anchor="middle">${e}</text>`;
+function itemArt(k, x, i) {
+  const a = ` data-i="${i}"`;
+  if (k === "puddle") return `<ellipse${a} cx="${x}" cy="${GY + 6}" rx="110" ry="20" fill="#74c0fc" stroke="${INK}" stroke-width="4"/>`;
+  if (k === "fish") return `<g${a}><ellipse cx="${x}" cy="${GY - 6}" rx="62" ry="14" fill="#fff" stroke="${INK}" stroke-width="4"/>${emoT("🐟", x, GY - 40, 70, ' data-f="1"')}</g>`;
+  if (k === "flower") return `<g${a}>${emoT("🌷", x, GY - 55, 110)}</g>`;
+  if (k === "butterfly") return `<g${a}>${emoT("🦋", x, GY - 250, 80)}</g>`;
+  if (k === "yarn") return `<g${a}>${emoT("🧶", 0, -40, 80)}</g>`;
+  if (k === "mouse") return `<g${a}>${emoT("🐭", x, GY - 35, 70)}</g>`;
+  if (k === "bird") return `<g${a}><rect x="${x - 10}" y="${GY - 170}" width="20" height="170" rx="6" fill="#b08968" stroke="${INK}" stroke-width="4"/>${emoT("🐦", x, GY - 210, 70)}</g>`;
+  if (k === "snowman") return `<g${a}>${emoT("⛄", x, GY - 95, 190)}</g>`;
+  return "";
+}
+function houseArt(c, night) {
+  const x = HOUSE;
+  return `<g><rect x="${x - 40}" y="${GY - 300}" width="300" height="300" fill="${c}" stroke="${INK}" stroke-width="6"/><path d="M${x - 70} ${GY - 290}L${x + 110} ${GY - 450}L${x + 290} ${GY - 290}Z" fill="#e76f51" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>` +
+    `<rect id="win" x="${x + 150}" y="${GY - 240}" width="80" height="80" rx="8" fill="${night ? "#ffe066" : "#bde0fe"}" stroke="${INK}" stroke-width="5"/><path d="M${x + 190} ${GY - 240}V${GY - 160}M${x + 150} ${GY - 200}H${x + 230}" stroke="${INK}" stroke-width="4"/>` +
+    `<rect x="${x - 10}" y="${GY - 170}" width="120" height="170" rx="10" fill="#3d2b1f"/><g id="door"><rect x="${x - 10}" y="${GY - 170}" width="120" height="170" rx="10" fill="#9c6644" stroke="${INK}" stroke-width="5"/><circle cx="${x + 90}" cy="${GY - 80}" r="7" fill="#ffd60a"/></g></g>`;
+}
+function worldSVG(i, live) {
+  const r = ROUTES[i];
+  const h = `<defs><linearGradient id="sk${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${r.sky[0]}"/><stop offset="1" stop-color="${r.sky[1]}"/></linearGradient></defs><rect x="-1200" y="-1200" width="4000" height="2200" fill="url(#sk${i})"/>`;
+  if (!live) {   // list thumbnail: the cat at the start, the house at the end
+    return `<svg viewBox="0 0 1600 900">${h}<path d="M0 560Q400 470 800 560T1600 560V900H0Z" fill="${r.hill}"/><rect y="${GY}" width="1600" height="140" fill="${r.ground}" stroke="${INK}" stroke-width="6"/>` +
+      `<g transform="translate(-3200 0)">${houseArt(r.house, r.night).replace(/ id="[^"]*"/g, "")}</g><g transform="translate(330 ${GY}) scale(1.3)">${catArt(r.cat)}</g>${emoT(r.deco[0][0], 250, 140, 120)}</svg>`;
+  }
+  let hills = `<rect x="-1200" y="600" width="${WW + 2400}" height="200" fill="${r.hill}"/>`;
+  for (let x = -400; x < WW; x += 800) hills += `<path d="M${x} 600Q${x + 200} 470 ${x + 400} 600T${x + 800} 600V${GY}H${x}Z" fill="${r.hill}"/>`;
+  return `<svg id="svg" viewBox="0 0 1600 900">${h}<g id="par">${hills}</g><g id="world">` +
+    r.deco.map(t => emoT(t[0], t[1], t[2], t[3])).join("") +
+    `<rect x="-1200" y="${GY}" width="${WW + 2400}" height="1000" fill="${r.ground}" stroke="${INK}" stroke-width="6"/>` +
+    houseArt(r.house, r.night) + `<g id="items">${r.items.map((it, k) => itemArt(it[0], it[1], k)).join("")}</g>` +
+    `<g id="cat">${catArt(r.cat, 1)}</g><text id="hintArrow" class="emo" font-size="80" text-anchor="middle" opacity="0">👉</text><text id="zz" class="emo" font-size="80" opacity="0">💤</text></g></svg>`;
+}
+function open(i) {
+  cur = i; R = ROUTES[i]; clearClock(); busy = false; home = false; walkMs = 0; idleMs = 0; held.clear();
+  $("pic").innerHTML = worldSVG(i, true);
+  $("weather").className = R.weather; $("again").style.display = "none";
+  cat = { x: 300, op: 1 }; cam = 0; phase = 0; P = copyPose(REST);
+  items = R.items.map((it, k) => ({ k: it[0], x: it[1], i: k, done: false, el: $("items").children[k] }));
+  items.forEach(it => { if (it.k === "yarn") it.el.setAttribute("transform", `translate(${it.x} ${GY})`); });
+  draw(0);
+}
+// --- sounds made for this game (WebAudio, no voice)
+const meow = () => { tone(650, 0.12, "triangle", 0.18, 900); tone(900, 0.35, "triangle", 0.18, 480, 0.12); };
+const purr = () => { for (let i = 0; i < 6; i++) noise(0.12, 0.25, 180, i * 0.16); };
+const tweet = () => { tone(2200, 0.08, "sine", 0.12, 2900); tone(2400, 0.1, "sine", 0.12, 3100, 0.13); };
+const splash = () => noise(0.45, 0.35, 2500);
+const sniff = () => noise(0.07, 0.12, 1500);
+const sneeze = () => { noise(0.08, 0.25, 3000); noise(0.25, 0.45, 1800, 0.12); };
+const thump = () => tone(150, 0.12, "sine", 0.3, 70);
+// --- drawing every frame
+function draw(dt) {
+  const walking = walkMs > 0 && !busy && !home;
+  if (walking) phase += dt * 0.012;
+  const sw = walking ? Math.sin(phase) * 25 : 0;
+  [[0, sw, 40], [1, -sw, -44], [2, -sw, 52], [3, sw, -30]].forEach(([k, a, x]) => $("leg" + k).setAttribute("transform", `rotate(${(a + P.legs[k]).toFixed(1)} ${x} -52)`));
+  $("cbody").setAttribute("transform", `translate(0 ${walking ? (-4 * Math.abs(Math.sin(phase))).toFixed(1) : 0}) scale(1 ${P.sq.toFixed(3)})`);
+  $("lean").setAttribute("transform", `rotate(${P.lean.toFixed(1)} -40 0)`);
+  $("chead").setAttribute("transform", `rotate(${P.head.toFixed(1)} 50 -112)`);
+  $("eyes").setAttribute("transform", `translate(0 -121) scale(1 ${Math.max(0.08, P.eye * blinkF).toFixed(2)}) translate(0 121)`);
+  $("tail").setAttribute("transform", `rotate(${(10 * Math.sin(now * 0.004) + P.tail).toFixed(1)} -62 -82)`);
+  $("cat").setAttribute("transform", `translate(${cat.x.toFixed(1)} ${(GY + P.y).toFixed(1)}) scale(${SC})`);
+  $("cat").setAttribute("opacity", cat.op.toFixed(2));
+  const target = Math.max(0, Math.min(WW - 1600, cat.x - 500));
+  cam += (target - cam) * Math.min(1, dt * 0.005 || 1);
+  $("world").setAttribute("transform", `translate(${(-cam).toFixed(1)} 0)`);
+  $("par").setAttribute("transform", `translate(${(-cam * 0.4).toFixed(1)} 0)`);
+  const ha = $("hintArrow"), show = idleMs > 4000 && !busy && !home;
+  ha.setAttribute("opacity", show ? "1" : "0"); ha.setAttribute("x", cat.x + 230); ha.setAttribute("y", GY - 180);
+}
+ticks.push(dt => {
+  if (cur < 0 || !$("cat")) return;
+  if (held.size && !busy && !home) walkMs = Math.max(walkMs, 250);
+  const walking = walkMs > 0 && !busy && !home;
+  idleMs = walking || busy || home ? 0 : idleMs + dt;
+  // a blink now and then
+  blinkT += dt; if (blinkT > 3200 && !home) { blinkT = 0; tween(200, k => { blinkF = 1 - 0.9 * Math.sin(k * Math.PI); }); }
+  if (walking) {
+    walkMs -= dt; cat.x += SPEED * dt / 1000;
+    stepT += dt; if (stepT > 280) { stepT = 0; tone(200, 0.04, "sine", 0.05); }
+    const it = items.find(o => !o.done && cat.x >= o.x - TRIG[o.k]);
+    if (it) event(it);
+    else if (cat.x >= HOUSE - 170) arrive();
+  }
+  draw(dt);
+});
+// A paw lifted forward to pat something (near front leg = 0)
+const pat = n => { const s = []; for (let i = 0; i < n; i++) s.push({ p: { legs: [-70, 0, 0, 0], head: 8 }, ms: 160 }, { p: { legs: [-10, 0, 0, 0] }, ms: 140, f: thump }); return s; };
+// --- what happens with each thing on the way. The cat stops, plays, then waits for the next tap
+function event(it) {
+  it.done = true; walkMs = 0; busy = true; idleMs = 0;
+  const el = it.el, end = keepWalking => poseTo(REST, 250, () => { busy = false; if (keepWalking) walkMs = 900; });
+  if (it.k === "puddle") {   // crouch, leap with the legs stretched out, land softly, splash behind
+    seq([
+      { p: { sq: 0.82, lean: -6, legs: [15, -15, 15, -15], tail: -15 }, ms: 200 },
+      { p: { y: -160, sq: 1.06, lean: -8, legs: [-55, 45, -50, 40], tail: -30 }, ms: 400, dx: 220, f: SFX.boing },
+      { p: { y: 0, sq: 1, lean: 8, legs: [-15, 25, -10, 20], tail: 10 }, ms: 400, dx: 220 },
+      { p: { sq: 0.85, lean: 0, legs: [0, 0, 0, 0] }, ms: 120, f: () => { thump(); splash(); } }
+    ], () => end(true));
+    return;
+  }
+  if (it.k === "flower") {   // lean in, sniff sniff sniff, a big sneeze, petals
+    const s = [{ p: { lean: 6, head: 18 }, ms: 300 }];
+    for (let i = 0; i < 3; i++) s.push({ p: { head: 24 }, ms: 110, f: sniff }, { p: { head: 16 }, ms: 110 });
+    s.push({ p: { head: -18, eye: 0.15, lean: -4 }, ms: 350 },
+      { p: { head: 12, lean: -12, sq: 0.9, eye: 0.1 }, ms: 90, f: () => { sneeze(); const p = screenPt($("svg"), it.x - cam, GY - 120); spark(p[0], p[1], "🌸"); spark(p[0] + 40, p[1] - 30, "🌸"); spark(p[0] - 30, p[1] - 50, "🌸"); } },
+      { p: { head: 0, lean: 0, sq: 1, eye: 1 }, ms: 300 }, { ms: 400 });
+    seq(s, () => end());
+    return;
+  }
+  if (it.k === "butterfly") {   // sit up, paws high, a little jump, the butterfly flies off
+    tween(1700, t => el.setAttribute("transform", `translate(${(300 * t).toFixed(1)} ${(-340 * t + 30 * Math.sin(t * 22)).toFixed(1)})`));
+    seq([
+      { p: { lean: -22, head: -20, legs: [-40, 0, -35, 0], tail: -20 }, ms: 300, f: meow },
+      { p: { y: -90, lean: -30, head: -25, legs: [-100, 20, -90, 15] }, ms: 300, f: SFX.giggle },
+      { p: { y: 0, lean: -10, legs: [-20, 0, -15, 0] }, ms: 300 },
+      { p: { lean: 0, head: -10 }, ms: 300, f: thump }, { ms: 300 }
+    ], () => end());
+    return;
+  }
+  if (it.k === "fish") {   // lean down, three bites (the fish gets smaller each time), then a purr with eyes closed
+    const f = el.querySelector("[data-f]"), cx = it.x, cy = GY - 40;
+    const bite = k => () => { SFX.crunch(); const s = 1 - k / 3; f.setAttribute("transform", `translate(${cx} ${cy}) scale(${s.toFixed(2)}) translate(${-cx} ${-cy})`); if (k === 3) f.setAttribute("opacity", "0"); };
+    const s = [{ p: { lean: 16, head: 22, tail: 15 }, ms: 350 }];
+    for (let k = 1; k <= 3; k++) s.push({ p: { head: 32 }, ms: 130 }, { p: { head: 20 }, ms: 160, f: bite(k) });
+    s.push({ p: { lean: 0, head: -6, eye: 0.15 }, ms: 350, f: purr }, { ms: 900 }, { p: { eye: 1, head: 0 }, ms: 200 });
+    seq(s, () => end());
+    return;
+  }
+  if (it.k === "yarn") {   // two pats with the front paw, the ball of wool rolls far away
+    const x0 = it.x;
+    seq(pat(2).concat([{ ms: 50, f: () => { SFX.boing(); tween(1300, t => { it.x = x0 + 600 * (1 - (1 - t) * (1 - t)); el.setAttribute("transform", `translate(${it.x.toFixed(1)} ${GY}) rotate(${(it.x * 0.8).toFixed(1)} 0 -40)`); }); } },
+      { p: { legs: [0, 0, 0, 0], head: -8 }, ms: 300 }, { ms: 700 }]), () => end());
+    return;
+  }
+  if (it.k === "mouse") {   // surprise: a jump straight up with the legs spread, the mouse runs away
+    tone(1800, 0.06, "sine", 0.12); tone(2100, 0.06, "sine", 0.12, null, 0.1);
+    tween(900, t => el.setAttribute("transform", `translate(${(900 * t).toFixed(1)} 0)`), () => el.setAttribute("opacity", "0"));
+    seq([
+      { p: { y: -90, sq: 1.08, legs: [-30, 30, -25, 25], tail: -40, eye: 1.3 }, ms: 220 },
+      { p: { y: 0, sq: 0.9, legs: [0, 0, 0, 0], tail: 0 }, ms: 220, f: thump },
+      { p: { sq: 1, eye: 1 }, ms: 200, f: meow }, { ms: 400 }
+    ], () => end());
+    return;
+  }
+  if (it.k === "bird") {   // the bird flies away, the cat follows it with its head
+    tweet(); after(400, tweet);
+    const b = el.querySelector("text");
+    tween(1300, t => b.setAttribute("transform", `translate(${(400 * t).toFixed(1)} ${(-500 * t).toFixed(1)})`));
+    seq([{ p: { head: -22, lean: -5 }, ms: 400 }, { p: { head: -35 }, ms: 700 }, { ms: 400, f: meow }], () => end());
+    return;
+  }
+  if (it.k === "snowman") {   // pat pat, the snowman wobbles
+    seq(pat(2).concat([{ ms: 10, f: () => { SFX.giggle(); tween(900, t => el.setAttribute("transform", `rotate(${(8 * Math.sin(t * Math.PI * 4)).toFixed(1)} ${it.x} ${GY})`)); } }, { ms: 900 }]), () => end());
+    return;
+  }
+  end();
+}
+// --- the end of the walk: the door opens, the cat goes in, the light comes on, it sleeps
+function arrive() {
+  home = true; walkMs = 0; meow();
+  const door = $("door");
+  tone(260, 0.5, "sawtooth", 0.04, 380);
+  tween(600, t => door.setAttribute("transform", `translate(${HOUSE - 10} 0) scale(${(1 - 0.85 * t).toFixed(3)} 1) translate(${-(HOUSE - 10)} 0)`));
+  after(600, () => { const x0 = cat.x; tween(1200, t => { cat.x = x0 + (HOUSE + 40 - x0) * t; cat.op = 1 - t; phase += 0.4; }, () => {
+    $("win").setAttribute("fill", "#ffe066"); purr();
+    const z = $("zz"); z.setAttribute("x", HOUSE + 190); z.setAttribute("y", GY - 280);
+    tween(800, t => z.setAttribute("opacity", t.toFixed(2)));
+    [523, 440, 392, 330, 262].forEach((f, i) => tone(f, 0.6, "sine", 0.14, null, 0.5 + i * 0.35));
+    after(2300, () => { burst(); mem.done[cur] = 1; store(KEY, mem); $("again").style.display = "flex"; });
+  }); });
+}
+function walk() {
+  if (cur < 0 || busy || home) return;
+  walkMs = Math.max(walkMs, 1600); idleMs = 0;
+}
+$("pic").addEventListener("pointerdown", e => {
+  if (cur < 0 || !$("svg")) return;
+  if (e.target.closest && e.target.closest("#cat")) {
+    meow();
+    if (!busy && !home) { busy = true; seq([{ p: { sq: 0.85 }, ms: 120 }, { p: { y: -60, sq: 1.05, legs: [-20, 20, -20, 20] }, ms: 200 }, { p: { y: 0, sq: 0.9, legs: [0, 0, 0, 0] }, ms: 200 }, { p: REST, ms: 150 }], () => { busy = false; }); }
+    return;
+  }
+  if (home || busy) { SFX.soft(); return; }
+  held.add(e.pointerId); walk();
+});
+["pointerup", "pointercancel"].forEach(n => addEventListener(n, e => held.delete(e.pointerId)));
+$("again").addEventListener("pointerdown", () => { if (cur >= 0) { open(cur); SFX.whoosh(); } });
+gallery.setup({ n: ROUTES.length, thumb: i => worldSVG(i, false), done: i => !!mem.done[i], open });
+Object.assign(__game, { mem, open: i => gallery.pick(i), walk, st: () => ({ cur, x: Math.round(cat ? cat.x : 0), busy, home, items: items.map(o => o.done), pose: P }) });
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

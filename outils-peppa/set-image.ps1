@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Key,     # cle dans l'objet IMGS de 00-peppa-pig.html (ex : suzy)
     [Parameter(Mandatory = $true)][string]$Image,   # PNG detoure (sortie de detourer.ps1)
-    [string]$Html = (Join-Path $PSScriptRoot "..\00-peppa-pig.html")
+    [string]$Html = (Join-Path $PSScriptRoot "..\jeux\00-peppa-pig.html")
 )
 # Remplace la valeur de IMGS.<Key> dans 00-peppa-pig.html par l'image en base64.
 # La cle doit deja exister dans IMGS (ex : suzy: "__IMG_SUZY__",).

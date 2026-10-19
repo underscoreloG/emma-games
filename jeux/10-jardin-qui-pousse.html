@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Le jardin qui pousse</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌻%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:var(--start,#ffd166);cursor:pointer}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--start-fg,#ef476f)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+:root{--start:#b7e4c7;--start-fg:#2d6a4f}
+body{background:#1b4332}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{position:relative;width:1600px;height:1000px;flex:none;overflow:hidden;transform-origin:center center}
+#stage>div{position:absolute}
+.o{cursor:pointer}
+#sky{left:0;top:0;width:1600px;height:1000px;background:linear-gradient(#74c0fc,#d0ebff 70%)}
+#skyE{left:0;top:0;width:1600px;height:1000px;background:linear-gradient(#ff8c42,#ffd6a5 70%);opacity:0;transition:opacity 2s}
+#skyN{left:0;top:0;width:1600px;height:1000px;background:linear-gradient(#0b1d51,#274690 70%);opacity:0;transition:opacity 2.5s}
+.evening #skyE{opacity:1}
+.night #skyN{opacity:1}
+#sun{left:1320px;top:50px;font-size:170px;transition:transform 2.5s ease-in}
+#sun.spin{animation:sunspin .8s ease-in-out}
+@keyframes sunspin{50%{transform:scale(1.25) rotate(45deg)}}
+.evening #sun{transform:translateY(560px)}
+#moon{left:1330px;top:60px;font-size:140px;opacity:0;transform:translateY(200px);transition:opacity 2s,transform 2s;pointer-events:none}
+.night #moon{opacity:1;transform:none}
+#stars{left:0;top:0;width:1600px;height:500px;pointer-events:none}
+#stars span{position:absolute;font-size:30px;opacity:0;transition:opacity 2s}
+.night #stars span{opacity:1;animation:twinkle 1.3s ease-in-out infinite alternate}
+@keyframes twinkle{to{transform:scale(.5)}}
+.cloud{top:90px;font-size:210px;animation:drift 60s linear infinite}
+@keyframes drift{from{transform:translateX(-400px)}to{transform:translateX(1900px)}}
+.night .cloud,.evening .cloud{opacity:.5}
+#hill1{left:-200px;top:470px;width:1000px;height:320px;border-radius:50%;background:#95d5b2}
+#hill2{left:700px;top:500px;width:1200px;height:300px;border-radius:50%;background:#74c69d}
+#ground{left:0;top:620px;width:1600px;height:380px;background:linear-gradient(#52b788 0 60px,#b08968 60px)}
+.plot{top:420px;width:280px;height:400px}
+.mound{position:absolute;left:30px;top:268px;width:220px;height:74px;border-radius:50%;background:radial-gradient(ellipse at 50% 30%,#9c6644,#7f5539 70%)}
+.plant{position:absolute;left:140px;top:300px;width:0;height:0}
+.plant .p{position:absolute;left:0;bottom:0;transform:translateX(-50%);transform-origin:50% 100%;font-size:0;transition:font-size .7s cubic-bezier(.3,1.6,.5,1)}
+.plant .p.wig{animation:wig .7s ease-in-out}
+@keyframes wig{25%{transform:translateX(-50%) rotate(-12deg)}75%{transform:translateX(-50%) rotate(12deg)}}
+.night .plant .p{filter:brightness(.6);transform:translateX(-50%) scale(.8)}
+.seed{position:absolute;font-size:50px;pointer-events:none;animation:seed .6s ease-in forwards}
+@keyframes seed{from{transform:translateY(-400px) rotate(0)}to{transform:translateY(0) rotate(360deg)}}
+.rcloud{position:absolute;font-size:140px;pointer-events:none;animation:rcloud 1.4s ease-in-out forwards}
+@keyframes rcloud{0%{opacity:0;transform:scale(.4)}20%,80%{opacity:1;transform:scale(1)}100%{opacity:0}}
+.drop{position:absolute;font-size:34px;pointer-events:none;animation:drop .7s ease-in forwards}
+@keyframes drop{from{transform:translateY(0);opacity:1}to{transform:translateY(240px);opacity:0}}
+#snail{top:880px;left:0;font-size:80px;animation:crawl 90s linear infinite}
+#snail.hid{animation-play-state:paused}
+@keyframes crawl{from{transform:translateX(1700px)}to{transform:translateX(-200px)}}
+#bflies{left:0;top:0;width:1600px;height:1000px;pointer-events:none}
+.bfly{position:absolute;left:0;top:0;font-size:70px;pointer-events:auto;cursor:pointer}
+.ff{position:absolute;width:14px;height:14px;border-radius:50%;background:#fff3b0;box-shadow:0 0 20px 8px rgba(255,243,176,.8);animation:ff 4s ease-in-out infinite alternate;pointer-events:none}
+@keyframes ff{0%{transform:translate(0,0);opacity:.3}50%{opacity:1}100%{transform:translate(80px,-60px);opacity:.4}}
+#nightOv{left:0;top:0;width:1600px;height:1000px;background:rgba(10,15,50,.45);opacity:0;transition:opacity 2.5s;pointer-events:none}
+.night #nightOv{opacity:1}
+#fx{left:0;top:0;width:1600px;height:1000px;pointer-events:none}
+#wake{left:680px;top:380px;width:240px;height:240px;border-radius:50%;background:#ffd166;display:none;align-items:center;justify-content:center;font-size:150px;box-shadow:0 0 60px 20px rgba(255,209,102,.6);animation:pulse 1.4s ease-in-out infinite}
+#wake.on{display:flex}
+.critter{position:absolute;pointer-events:none;animation:worm 2.6s ease-in-out forwards}
+@keyframes worm{0%{transform:translateY(40px) scaleY(.2);opacity:0}20%,75%{transform:none;opacity:1}40%{transform:rotate(-12deg)}60%{transform:rotate(10deg)}100%{transform:translateY(40px) scaleY(.2);opacity:0}}
+.bug{font-size:60px;animation:bugin .8s ease-out,bugwalk 2.4s 1s ease-in-out infinite alternate}
+.bug.away{animation:bugaway .9s ease-in forwards}
+@keyframes bugin{from{transform:translate(-200px,-300px) rotate(-40deg)}}
+@keyframes bugwalk{to{transform:translate(18px,-26px) rotate(20deg)}}
+@keyframes bugaway{to{transform:translate(260px,-420px) rotate(60deg);opacity:0}}
+.spark{position:absolute;font-size:60px;margin:-30px 0 0 -30px;pointer-events:none;animation:spark .9s ease-out forwards}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="sky"></div><div id="skyE"></div><div id="skyN"></div>
+  <div id="stars"></div>
+  <div id="sun" class="o emo">☀️</div>
+  <div id="moon" class="emo">🌙</div>
+  <div class="cloud o emo" data-c="1">☁️</div>
+  <div class="cloud o emo" data-c="2" style="top:210px;font-size:170px;animation-duration:85s;animation-delay:-40s">☁️</div>
+  <div id="hill1"></div><div id="hill2"></div>
+  <div id="ground"></div>
+  <div id="plots"></div>
+  <div id="snail" class="o emo">🐌</div>
+  <div id="bflies"></div>
+  <div id="fx"></div>
+  <div id="nightOv"></div>
+  <div id="wake" class="o emo">☀️</div>
+</div></div>
+<div id="start"><div class="deco emo">🌱🌻</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "../sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "../index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== Le jardin qui pousse ===== */
+const FLOWERS = [
+  { e: "🌷", n: "Une tulipe !" }, { e: "🌻", n: "Un tournesol !" }, { e: "🌹", n: "Une rose !" },
+  { e: "🌼", n: "Une marguerite !" }, { e: "🌸", n: "Une jolie fleur rose !" }, { e: "🌺", n: "Une grande fleur !" }
+];
+const STAGES = [{ e: "", fs: 0 }, { e: "🌰", fs: 50 }, { e: "🌱", fs: 95 }, { e: "🌿", fs: 135 }, { e: null, fs: 185 }];
+const XS = [230, 520, 800, 1080, 1370];
+const LULLABY = [[392, 1], [392, 1], [392, 1], [440, 1], [494, 2], [440, 2], [392, 1], [494, 1], [440, 1], [440, 1], [392, 4]];
+K.preload(["plop", "pluie", "ding", "fanfare", "bravo", "abeille", "oiseau", "coq", "grillons", "hibou", "boite-a-musique", "whoosh", "pop"]);
+
+const stage = document.getElementById("stage"), fx = document.getElementById("fx"), bflies = document.getElementById("bflies");
+let scale = 1, night = false, celebrated = false, planted = 0, duskTimer = null, butterflies = [];
+
+function fit() { scale = Math.min(innerWidth / 1600, innerHeight / 1000); stage.style.transform = "scale(" + scale + ")"; }
+addEventListener("resize", fit); fit();
+function again(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
+function toStage(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
+function sparkle(x, y, ch) {
+  const s = document.createElement("div"); s.className = "spark emo"; s.textContent = ch || K.pick(["✨", "⭐", "💫"]);
+  s.style.left = x + "px"; s.style.top = y + "px"; fx.appendChild(s); setTimeout(() => s.remove(), 900);
+}
+function on(el, fn) { el.addEventListener("pointerdown", e => { e.stopPropagation(); fn(el, e); }); }
+
+// Étoiles
+const starsEl = document.getElementById("stars");
+for (let i = 0; i < 16; i++) {
+  const s = document.createElement("span"); s.className = "emo"; s.textContent = "⭐";
+  s.style.left = K.rand(20, 1250) + "px"; s.style.top = K.rand(20, 420) + "px"; s.style.animationDelay = K.rand(0, 1.3) + "s";
+  starsEl.appendChild(s);
+}
+
+// Parcelles
+const plotsEl = document.getElementById("plots");
+const plots = XS.map(cx => {
+  const el = document.createElement("div"); el.className = "plot o";
+  el.style.left = (cx - 140) + "px";
+  el.innerHTML = '<div class="mound"></div><div class="plant"><span class="p emo"></span></div>';
+  stage.insertBefore(el, plotsEl);
+  const p = { el, cx, s: 0, flower: null, span: el.querySelector(".p") };
+  on(el, (_, e) => tapPlot(p, e));
+  return p;
+});
+
+function render(p) {
+  const st = STAGES[p.s];
+  p.span.textContent = p.s === 4 ? p.flower.e : st.e;
+  p.span.style.fontSize = st.fs + "px";
+}
+
+function plantSeed(p) {
+  p.flower = K.pick(FLOWERS);
+  const s = document.createElement("div"); s.className = "seed emo"; s.textContent = "🌰";
+  s.style.left = (p.cx - 25) + "px"; s.style.top = "650px";
+  fx.appendChild(s);
+  K.snd("whoosh", { vol: 0.4, rate: 1.3 });
+  setTimeout(() => {
+    s.remove(); p.s = 1; render(p);
+    K.snd("plop");
+    planted++;
+    if (Math.random() < 0.35) worm(p);
+  }, 600);
+}
+
+function rainAt(x, y, n = 8) {
+  const c = document.createElement("div"); c.className = "rcloud emo"; c.textContent = "☁️";
+  c.style.left = (x - 90) + "px"; c.style.top = y + "px"; fx.appendChild(c); setTimeout(() => c.remove(), 1400);
+  for (let i = 0; i < n; i++) setTimeout(() => {
+    const d = document.createElement("div"); d.className = "drop emo"; d.textContent = "💧";
+    d.style.left = (x + K.rand(-70, 60)) + "px"; d.style.top = (y + 110) + "px";
+    fx.appendChild(d); setTimeout(() => d.remove(), 700);
+  }, 250 + i * 90);
+  K.snd("pluie", { delay: 0.2, dur: 1.3 });
+}
+
+function grow(p) {
+  if (p.s < 1 || p.s > 3) return;
+  p.s++; render(p); again(p.span, "wig");
+  if (p.s === 4) {
+    K.snd("ding", { dur: 1.5 });
+    if (Math.random() < 0.4) setTimeout(() => ladybug(p), 900);
+    sparkle(p.cx, 480); sparkle(p.cx - 60, 540); sparkle(p.cx + 60, 520);
+    checkAll();
+  } else {
+    K.tone(300 + p.s * 120, 0.5, "sine", 0.2, 600 + p.s * 200);
+  }
+}
+
+function tapPlot(p, e) {
+  const pt = toStage(e);
+  if (night) { sparkle(pt.x, pt.y); K.tone(K.pick([1175, 1319, 1568]), 0.4, "sine", 0.08); return; }
+  if (p.s === 0) plantSeed(p);
+  else if (p.s < 4) { rainAt(p.cx, 330, 6); setTimeout(() => grow(p), 900); }
+  else { again(p.span, "wig"); sparkle(pt.x, pt.y); K.tone(K.pick([784, 988, 1175]), 0.4, "triangle", 0.15); if (Math.random() < 0.3) ladybug(p); }
+}
+
+function checkAll() {
+  if (celebrated || !plots.every(p => p.s === 4)) return;
+  celebrated = true;
+  setTimeout(() => {
+    K.snd("fanfare", { dur: 2.5 }); K.snd("bravo", { delay: 0.7, dur: 2.5 });
+    for (let i = 0; i < 4; i++) addButterfly(i === 3 ? "🐝" : "🦋");
+    duskTimer = setTimeout(dusk, 22000);
+  }, 1200);
+}
+
+// Papillons
+function addButterfly(ch) {
+  const el = document.createElement("div"); el.className = "bfly emo"; el.textContent = ch;
+  bflies.appendChild(el);
+  const b = { el, home: K.pick(XS), a: K.rand(0.4, 0.9), c: K.rand(0.9, 1.6), ph: Math.random() * 6, enter: 0 };
+  on(el, () => { b.home = K.pick(XS); if (ch === "🐝") K.snd("abeille", { dur: 1.5 }); else K.tone(1319, 0.15, "sine", 0.15, 1760); });
+  butterflies.push(b);
+}
+function flyLoop(now) {
+  const t = now / 1000;
+  butterflies.forEach(b => {
+    b.enter = Math.min(1, b.enter + 0.006);
+    const x = b.home + Math.sin(t * b.a + b.ph) * 220, y = 430 + Math.sin(t * b.c + b.ph) * 90 - (1 - b.enter) * 600;
+    const flap = 0.75 + Math.abs(Math.sin(t * 12 + b.ph)) * 0.25;
+    b.el.style.transform = "translate(" + (x - 35) + "px," + y + "px) scaleX(" + flap + ")";
+  });
+  requestAnimationFrame(flyLoop);
+}
+requestAnimationFrame(flyLoop);
+
+// Soleil, nuages, escargot
+on(document.getElementById("sun"), el => {
+  if (night) return;
+  if (celebrated) { clearTimeout(duskTimer); dusk(); return; }
+  again(el, "spin"); K.snd("oiseau", { dur: 2 });
+});
+document.querySelectorAll(".cloud").forEach(c => on(c, (el, e) => {
+  if (night) return;
+  const r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  const x = (r.left + r.width / 2 - sr.left) / scale;
+  rainAt(x, 330, 10);
+  setTimeout(() => plots.filter(p => Math.abs(p.cx - x) < 260).forEach(grow), 900);
+}));
+const snail = document.getElementById("snail");
+on(snail, el => {
+  if (el.classList.contains("hid")) return;
+  el.classList.add("hid"); el.textContent = "🐚"; K.tone(500, 0.3, "sine", 0.2, 250);
+  setTimeout(() => { el.classList.remove("hid"); el.textContent = "🐌"; }, 2800);
+});
+stage.addEventListener("pointerdown", e => {
+  const p = toStage(e); sparkle(p.x, p.y);
+  K.tone(K.pick([784, 880, 988, 1175]), 0.3, "triangle", 0.1);
+});
+
+// Fin de partie : la nuit tombe
+function dusk() {
+  if (night) return;
+  night = true;
+  stage.classList.add("evening");
+  K.snd("oiseau", { dur: 1.5, rate: 0.8, vol: 0.6 });
+  setTimeout(() => {
+    stage.classList.add("night");
+    K.snd("grillons", { dur: 6, vol: 0.5 }); K.snd("hibou", { delay: 2.5, dur: 2 });
+    butterflies.forEach(b => b.el.remove()); butterflies = [];
+    for (let i = 0; i < 12; i++) {
+      const f = document.createElement("div"); f.className = "ff";
+      f.style.left = K.rand(100, 1500) + "px"; f.style.top = K.rand(380, 850) + "px";
+      f.style.animationDelay = K.rand(0, 4) + "s"; f.style.animationDuration = K.rand(3, 6) + "s";
+      fx.appendChild(f);
+    }
+    K.snd("boite-a-musique", { delay: 1, dur: 8, vol: 0.7, fb: () => { let t = 0; LULLABY.forEach(([f, d]) => { K.tone(f, d * 0.7, "sine", 0.13, null, t + 1); t += d * 0.5; }); } });
+    setTimeout(() => document.getElementById("wake").classList.add("on"), 6000);
+  }, 2500);
+}
+on(document.getElementById("wake"), el => {
+  el.classList.remove("on");
+  fx.querySelectorAll(".ff").forEach(f => f.remove());
+  stage.classList.remove("night", "evening");
+  night = false; celebrated = false; planted = 0;
+  plots.forEach(p => { p.s = 0; p.flower = null; render(p); if (p.bug) { p.bug.remove(); p.bug = null; } });
+  K.snd("coq", { dur: 2.5 });
+});
+
+// Petites bêtes cachées : un ver qui sort de la terre, une coccinelle sur une fleur
+function worm(p) {
+  const w = document.createElement("div"); w.className = "critter emo"; w.textContent = "🪱";
+  w.style.left = (p.cx + 50) + "px"; w.style.top = "690px"; w.style.fontSize = "56px";
+  fx.appendChild(w); K.tone(1400, 0.08, "sine", 0.1, 1800, 0.3);
+  setTimeout(() => w.remove(), 2600);
+}
+function ladybug(p) {
+  if (p.bug) return;
+  const b = document.createElement("div"); b.className = "bug o emo"; b.textContent = "🐞";
+  b.style.left = (p.cx - 10) + "px"; b.style.top = "450px";
+  stage.insertBefore(b, document.getElementById("nightOv")); p.bug = b;
+  const bye = () => { if (!b.isConnected) return; b.classList.add("away"); K.snd("whoosh", { vol: 0.5, rate: 1.5 }); setTimeout(() => { b.remove(); p.bug = null; }, 900); };
+  b.addEventListener("pointerdown", e => { e.stopPropagation(); K.tone(1568, 0.1, "sine", 0.12, 2093); bye(); });
+  setTimeout(bye, 7000);
+}
+
+K.onStart(() => { K.sfx.chime(); });
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

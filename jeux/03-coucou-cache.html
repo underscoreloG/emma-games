@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Coucou caché</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌳%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:var(--start,#ffd166);cursor:pointer}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--start-fg,#ef476f)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+:root{--start:#caffbf;--start-fg:#2d6a4f}
+#scene{position:fixed;inset:0;background:linear-gradient(#bde0fe,#caffbf 60%);transition:background 1s}
+#found{position:absolute;top:2vh;left:0;right:0;text-align:center;font-size:7vmin;pointer-events:none}
+#found span{display:inline-block;margin:0 .6vmin;opacity:.25;filter:grayscale(1);transition:opacity .3s,transform .3s,filter .3s}
+#found span.on{opacity:1;filter:none;transform:scale(1.25)}
+#grid{position:absolute;inset:14vh 3vw 2vh;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:2vmin}
+@media (orientation:portrait){#grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr)}}
+.spot{position:relative;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
+.spot .animal{position:absolute;left:50%;bottom:8%;font-size:min(15vmin,14vw);transform:translate(-50%,0) scale(.2);opacity:0;transition:transform .45s cubic-bezier(.3,1.6,.5,1),opacity .2s;z-index:0}
+.spot.peek .animal{transform:translate(-50%,-45%) scale(.8);opacity:1}
+.spot.show .animal{transform:translate(-50%,-120%) scale(1);opacity:1}
+.spot.dance .animal{animation:dance .5s ease-in-out infinite alternate}
+@keyframes dance{from{transform:translate(-50%,-115%) rotate(-12deg) scale(1)}to{transform:translate(-50%,-140%) rotate(12deg) scale(1)}}
+.spot .cover{position:relative;z-index:1;font-size:min(24vmin,20vw);margin-bottom:2%;animation:enter .5s cubic-bezier(.3,1.6,.5,1) both}
+.spot.shake .cover{animation:shake .4s}
+.spot.wobble .cover{animation:wobble .9s ease-in-out}
+@keyframes shake{25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
+@keyframes wobble{10%,50%{transform:rotate(-7deg) scale(1.04)}30%,70%{transform:rotate(7deg) scale(1.04)}85%{transform:scale(1.12)}}
+@keyframes enter{from{transform:scale(0)}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="scene"><div id="found"></div><div id="grid"></div></div>
+<div id="start"><div class="deco emo">🌳🐰</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "../sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "../index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== Coucou caché ===== */
+const ANIMALS = [
+  { e: "🐮", s: "vache" }, { e: "🐷", s: "cochon" }, { e: "🐶", s: "chien" }, { e: "🐱", s: "chat" },
+  { e: "🐑", s: "mouton" }, { e: "🐔", s: "poule" }, { e: "🦆", s: "canard" }, { e: "🐴", s: "cheval" },
+  { e: "🐸", s: "grenouille" }, { e: "🦁", s: "lion" }, { e: "🐵", s: "singe" }, { e: "🐭", s: "souris" },
+  { e: "🦉", s: "hibou" }, { e: "🐘", s: "elephant" }, { e: "🐻", s: "ours" }, { e: "🐓", s: "coq" }, { e: "🐝", s: "abeille" }
+];
+const ROUNDS = [
+  { c: "🌳", bg: "linear-gradient(#bde0fe,#caffbf 60%)" },
+  { c: "🎁", bg: "linear-gradient(#ffe5ec,#ffc2d1)" },
+  { c: "🏠", bg: "linear-gradient(#a2d2ff,#d8f3dc 70%)" },
+  { c: "☁️", bg: "linear-gradient(#48cae4,#ade8f4)" },
+  { c: "📦", bg: "linear-gradient(#fefae0,#e9edc9)" },
+  { c: "🌻", bg: "linear-gradient(#caf0f8,#b7e4c7 65%)" }
+];
+const N = 6;
+K.preload(ANIMALS.map(a => a.s).concat(["pop", "ding", "bravo", "fanfare"]));
+const grid = document.getElementById("grid"), foundEl = document.getElementById("found"), scene = document.getElementById("scene");
+let round = -1, spots = [], nFound = 0, celebrating = false;
+
+function again(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
+
+function newRound() {
+  round = (round + 1) % ROUNDS.length;
+  const R = ROUNDS[round];
+  scene.style.background = R.bg;
+  grid.innerHTML = ""; foundEl.innerHTML = "";
+  nFound = 0; celebrating = false;
+  const animals = K.shuffle(ANIMALS).slice(0, N);
+  spots = animals.map((a, i) => {
+    const el = document.createElement("div"); el.className = "spot";
+    el.innerHTML = '<div class="animal emo">' + a.e + '</div><div class="cover emo">' + R.c + '</div>';
+    el.querySelector(".cover").style.animationDelay = (i * 0.08) + "s";
+    grid.appendChild(el);
+    const star = document.createElement("span"); star.className = "emo"; star.textContent = "⭐"; foundEl.appendChild(star);
+    const s = { el, a, found: false, timer: null };
+    el.addEventListener("pointerdown", () => tapSpot(s));
+    return s;
+  });
+}
+
+// Suspense : la cachette tremble et on entend le cri, l'animal sort ensuite
+function tapSpot(s) {
+  if (s.revealing) return;
+  if (s.el.classList.contains("show")) {
+    again(s.el, "shake"); K.snd(s.a.s, { dur: 2, rate: K.pick([1, 1, 1.15, 0.9]) });
+    if (!celebrating) { clearTimeout(s.timer); s.timer = setTimeout(() => s.el.classList.remove("show"), 2500); }
+    return;
+  }
+  s.revealing = true;
+  again(s.el, "wobble"); s.el.classList.add("peek");
+  K.snd(s.a.s, { dur: 1.6 });
+  setTimeout(() => { s.revealing = false; s.el.classList.remove("peek"); reveal(s); }, 900);
+}
+
+function reveal(s) {
+  s.el.classList.remove("wobble"); again(s.el, "shake"); s.el.classList.add("show");
+  K.snd("pop"); K.snd("ding", { delay: 0.15, vol: 0.5, dur: 1.2 });
+  if (!s.found) {
+    s.found = true; nFound++;
+    foundEl.children[nFound - 1].classList.add("on");
+  }
+  clearTimeout(s.timer);
+  if (nFound === N) { celebrating = true; setTimeout(celebrate, 1600); }
+  else s.timer = setTimeout(() => s.el.classList.remove("show"), 3000);
+}
+
+function celebrate() {
+  spots.forEach(s => { clearTimeout(s.timer); s.el.classList.add("show", "dance"); });
+  K.snd("bravo", { dur: 3 }); K.snd("fanfare", { vol: 0.6, dur: 2.5 });
+  setTimeout(() => {
+    spots.forEach(s => s.el.classList.remove("show", "dance"));
+    setTimeout(newRound, 700);
+  }, 5000);
+}
+
+newRound();
+K.onStart(() => { K.sfx.chime(); });
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

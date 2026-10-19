@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mes autocollants</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏠%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+/* ===== 1. CSS: palette (defined once), layout ===== */
+:root{
+  --mint:#a8e0cf;--mint2:#7cc9b3;--teal:#3fb6b2;--teal2:#2a8f8e;--sky:#8fd0ee;--sky2:#5fb2dc;
+  --saf:#f9b233;--saf2:#e8951a;--sal:#f6927a;--sal2:#e06f58;--peach:#f8c9a8;--pink:#f7a8c4;--pink2:#ee7fa8;
+  --slate:#54596b;--slate2:#3c4050;--cream:#fff6e6;--wood:#b9774f;--wood2:#8f5636;--leaf:#5cc07a;--leaf2:#3a9d5c;
+  --red:#e8505b;--glass:#cfeefa;--ice:#eef6fb;--cut:#f29bb8;--paper:#f2f2f5;--bg:#ffe9d6;
+  --bs:72px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;background:var(--bg);color:var(--slate2);
+  font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif}
+button{font:inherit;color:inherit}
+.screen{position:fixed;inset:0}
+.hidden{display:none!important}
+
+/* Home screen */
+#home{display:flex;flex-direction:column;align-items:center;gap:2vmin;overflow:auto;touch-action:pan-y;
+  padding:max(10px,env(safe-area-inset-top)) 14px 18px}
+#logo{flex:none;height:min(14vh,92px);max-width:calc(100vw - 190px);margin-top:4px}
+#chars{display:flex;gap:22px;flex:none;padding:6px}
+.chb{width:min(18vmin,108px);height:min(18vmin,108px);min-width:76px;min-height:76px;border-radius:50%;border:5px solid #fff;
+  background:var(--paper);box-shadow:0 4px 0 rgba(0,0,0,.12);overflow:hidden;cursor:pointer;transition:transform .12s}
+.chb svg{width:100%;height:100%;display:block}
+.chb.sel{background:#fff3c4;box-shadow:0 0 0 6px var(--saf),0 5px 0 6px rgba(0,0,0,.1);transform:scale(1.06)}
+#rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(215px,42vw),1fr));gap:16px;width:min(1040px,100%);flex:none}
+.rb{position:relative;display:block;border:6px solid #fff;border-radius:26px;overflow:hidden;background:#fff;
+  box-shadow:0 6px 0 rgba(0,0,0,.12);cursor:pointer;transition:transform .1s}
+.rb:active,.chb:active,.ib:active{transform:scale(.94)}
+.rb svg.pv{display:block;width:100%;height:auto;pointer-events:none}
+.rb .stars{position:absolute;left:0;right:0;bottom:3px;display:flex;justify-content:center;gap:2px;pointer-events:none}
+.rb .stars svg{width:min(9vmin,42px);height:min(9vmin,42px)}
+.rb .stars path{fill:#fff;stroke:#d9d9e2;stroke-width:1.6;stroke-linejoin:round}
+.rb .stars .on path{fill:var(--saf);stroke:#fff}
+
+/* Room screen */
+#stage{position:absolute;overflow:hidden;border-radius:18px;background:#fff;box-shadow:0 4px 0 rgba(0,0,0,.1)}
+#scene{display:block;width:100%;height:100%;touch-action:none}
+#lOver,#lFx,#lGlow,#dim{pointer-events:none}
+#sheet{position:absolute;background:var(--paper);border-radius:18px;padding:6px;overflow:hidden;
+  box-shadow:inset 0 0 0 3px #fff,0 4px 0 rgba(0,0,0,.1)}
+#sheet.sy{overflow-y:auto;touch-action:pan-y}#sheet.sx{overflow-x:auto;touch-action:pan-x}
+#sheet.sy .cell{touch-action:pan-y}#sheet.sx .cell{touch-action:pan-x}
+#grid{display:grid;width:100%;height:100%;gap:2px}
+.cell{display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;touch-action:none;cursor:pointer}
+.cell svg{display:block;overflow:visible;pointer-events:none;flex:none}
+
+/* Round icon buttons (no text) */
+.ib{position:fixed;width:var(--bs);height:var(--bs);border-radius:50%;border:0;background:rgba(255,255,255,.94);
+  box-shadow:0 3px 0 rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;z-index:20;cursor:pointer;
+  touch-action:none;transition:transform .1s}
+.ib svg{width:62%;height:62%;pointer-events:none}
+#bUndo{border-radius:18px;background:#ffe066}
+#bSponge{border-radius:18px;background:#ffc8dd}
+/* Room list button: blue square with 4 white squares, same as in the colouring game */
+.gb{position:fixed;width:var(--bs);height:var(--bs);border-radius:18px;border:0;background:#a0c4ff;display:grid;grid-template-columns:1fr 1fr;
+  gap:7px;padding:13px;box-shadow:0 5px 0 rgba(0,0,0,.15);cursor:pointer;z-index:20;touch-action:none;transition:transform .1s}
+.gb i{background:#fff;border-radius:18%}
+.gb:active{transform:scale(.94)}
+#bGear{top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));opacity:.85}
+#bGear .ring{stroke-dasharray:69.2;stroke-dashoffset:69.2}
+#bGear.hold .ring{transition:stroke-dashoffset 2s linear;stroke-dashoffset:0}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));
+  width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);
+  box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+/* Die-cut sticker look, generic: the art is drawn 3 times (pink cut line, white margin, art) */
+.cut *,.mar *{stroke-linejoin:round!important;stroke-linecap:round!important;opacity:1!important;stroke-dasharray:none!important}
+.cut *{fill:var(--cut)!important;stroke:var(--cut)!important;stroke-width:25px!important}
+.mar *{fill:#fff!important;stroke:#fff!important;stroke-width:20px!important}
+.cut .ln{fill:none!important;stroke-width:33px!important}
+.mar .ln{fill:none!important;stroke-width:28px!important}
+.cut .nos,.mar .nos{display:none!important}
+.cell .cut *,.cell .mar *{vector-effect:non-scaling-stroke}
+.cell .cut *{stroke-width:12px!important}.cell .mar *{stroke-width:9px!important}
+.cell .cut .ln{stroke-width:17px!important}.cell .mar .ln{stroke-width:14px!important}
+/* Ghost outline left on the backing paper once the sticker is peeled */
+.cell.gone .art{display:none}
+.cell.gone .cut *{fill:#d6d6e0!important;stroke:#d6d6e0!important}
+.cell.gone .mar *{fill:#e9e9ef!important;stroke:#e9e9ef!important}
+/* Sticker states: parts shown only while "on", and 2-frame flip animations (opacity only) */
+.stk:not(.on) .won{display:none}
+.stk.on .woff{display:none}
+.stk .f2{opacity:0}
+.stk.on .f1{animation:fa .5s steps(1) infinite}
+.stk.on .f2{animation:fb .5s steps(1) infinite}
+@keyframes fa{0%{opacity:1}50%{opacity:0}}
+@keyframes fb{0%{opacity:0}50%{opacity:1}}
+.stk{cursor:grab}
+.drg{position:fixed;left:0;top:0;pointer-events:none;z-index:100;overflow:visible;will-change:transform;
+  filter:drop-shadow(0 7px 4px rgba(0,0,0,.22))}
+
+/* Parent area (the only place with text) */
+#parent{position:fixed;inset:0;background:rgba(40,44,60,.55);z-index:300;display:flex;align-items:center;justify-content:center}
+#pbox{background:#fff;border-radius:24px;padding:22px;width:min(430px,92vw);display:flex;flex-direction:column;gap:12px;
+  max-height:94vh;overflow:auto;touch-action:pan-y}
+#pbox h2{font-size:21px}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:17px}
+.pbtn{border:0;border-radius:14px;padding:13px 16px;font-weight:700;font-size:16px;background:var(--mint);min-width:110px;cursor:pointer}
+.pbtn.off{background:#e4e4ea}
+.pbtn.warn{background:var(--sal);color:#fff}
+
+@media (prefers-reduced-motion:reduce){
+  .stk.on .f1{animation:none;opacity:0}.stk.on .f2{animation:none;opacity:1}
+  .chb,.rb,.ib{transition:none}
+}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="home" class="screen">
+  <svg id="logo" viewBox="0 0 640 110"></svg>
+  <div id="chars"></div>
+  <div id="rooms"></div>
+</div>
+
+<div id="room" class="screen hidden">
+  <div id="stage">
+    <svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet">
+      <defs><radialGradient id="glowG"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".85"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient></defs>
+      <g id="lBg"></g><g id="lWall"></g><g id="lGround"></g><g id="lFloor"></g><g id="lTop"></g>
+      <g id="lChr"></g><g id="lOver"></g>
+      <rect id="dim" x="0" y="0" width="1600" height="900" fill="#1b2140" opacity="0"/>
+      <g id="lGlow"></g><g id="lFx"></g>
+    </svg>
+  </div>
+  <div id="sheet"><div id="grid"></div></div>
+  <button id="bHome" class="gb" type="button" aria-label="Pieces"><i></i><i></i><i></i><i></i></button>
+  <button id="bSponge" class="ib" type="button" aria-label="Vider la pièce" style="font-size:calc(var(--bs)*.5);font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">🧽</button>
+  <button id="bUndo" class="ib" type="button" aria-label="Annuler"><svg viewBox="0 0 24 24"><path d="M9 4.5 L4 9.5 L9 14.5 M4 9.5 H14.5 a5.2 5.2 0 0 1 0 10.4 H10" fill="none" stroke="#3c4050" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</div>
+
+<a id="sortie" href="../index.html" aria-label="Retour au menu"><svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+<button id="bGear" class="ib" type="button" aria-label="Parents"><svg viewBox="0 0 24 24"><g id="gearG"></g><circle class="ring" cx="12" cy="12" r="11" fill="none" stroke="#3fb6b2" stroke-width="2" transform="rotate(-90 12 12)"/></svg></button>
+<div id="parent" class="hidden"><div id="pbox"></div></div>
+
+<script>
+"use strict";
+/* ===== 2. DATA: palette, strings, drawing helpers, poses, props ===== */
+const P = {};
+{
+  const cs = getComputedStyle(document.documentElement);
+  ["mint", "mint2", "teal", "teal2", "sky", "sky2", "saf", "saf2", "sal", "sal2", "peach", "pink", "pink2", "slate", "slate2",
+    "cream", "wood", "wood2", "leaf", "leaf2", "red", "glass", "ice", "cut", "paper"].forEach(k => P[k] = cs.getPropertyValue("--" + k).trim());
+}
+const B = 750;    // y of the bottom of floor furniture (scene is 1600x900, wall meets floor at y=640)
+const FY = 815;   // y of the character's feet when it stands on the floor
+
+const STRINGS = {
+  fr: {
+    title: "Mes autocollants", parents: "Espace parents", sound: "Son", lang: "Langue",
+    on: "Oui", off: "Non", langName: "Français", resetRoom: "Vider cette pièce", resetAll: "Tout effacer", close: "Fermer",
+    rooms: { kitchen: "La cuisine", bath: "La salle de bain", bed: "La chambre", living: "Le salon", hall: "L'entrée" }
+  },
+  en: {
+    title: "My stickers", parents: "Parent area", sound: "Sound", lang: "Language",
+    on: "On", off: "Off", langName: "English", resetRoom: "Empty this room", resetAll: "Erase everything", close: "Close",
+    rooms: { kitchen: "The kitchen", bath: "The bathroom", bed: "The bedroom", living: "The living room", hall: "The hall" }
+  }
+};
+
+/* --- SVG string helpers (all art is inline SVG made by code) --- */
+const r = (x, y, w, h, f, rx = 0, e = "") => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" ${e}/>`;
+const c = (x, y, rad, f, e = "") => `<circle cx="${x}" cy="${y}" r="${rad}" fill="${f}" ${e}/>`;
+const el = (x, y, rx, ry, f, e = "") => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${e}/>`;
+const p = (d, f, e = "") => `<path d="${d}" fill="${f}" ${e}/>`;
+// stroke-only line: class "ln" tells the die-cut copies not to fill it
+const ln = (d, s, w = 6, e = "") => `<path class="ln" d="${d}" fill="none" stroke="${s}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${e}/>`;
+const g = (cls, ...k) => `<g class="${cls}">${k.join("")}</g>`;
+
+/* --- Room background: flat wall, floor, baseboard, optional window / door / wall shelf --- */
+function roomBg(o) {
+  let s = r(0, 0, 1600, 640, o.wall) + r(0, 640, 1600, 260, o.floor);
+  if (o.sky) s += c(1330, 170, 74, P.saf) + el(330, 150, 120, 40, "#fff") + el(410, 120, 90, 44, "#fff") + el(880, 230, 100, 34, "#fff") + el(950, 205, 70, 36, "#fff")
+    + p("M0 640 V560 Q260 440 560 560 Q860 450 1160 560 Q1400 470 1600 560 V640 Z", "#bfe6a4");
+  if (o.fence) { s += r(0, 560, 1600, 14, "#fff") + r(0, 610, 1600, 14, "#fff"); for (let i = 0; i < 20; i++) s += p(`M${i * 80 + 14} 650 V540 l26 -22 l26 22 V650 Z`, "#fff"); }
+  if (o.wall2) s += r(0, 470, 1600, 170, o.wall2);
+  if (o.tiles) for (let i = 0; i < 16; i++) for (let j = 0; j < 3; j++) if ((i + j) % 2) s += r(i * 100, 640 + j * 87, 100, 87, o.floor2);
+  if (o.planks) {
+    for (let j = 1; j < 4; j++) s += r(0, 640 + j * 65 - 3, 1600, 6, o.floor2);
+    for (let i = 0; i < 9; i++) for (let j = 0; j < 4; j++) s += r(i * 200 + (j % 2) * 100 - 3, 640 + j * 65, 6, 65, o.floor2);
+  }
+  if (o.win) {
+    const [x, y, w, h] = o.win;
+    s += r(x - 12, y - 12, w + 24, h + 24, "#fff", 10) + r(x, y, w, h, P.glass, 4)
+      + el(x + w * .32, y + h * .4, w * .2, h * .1, "#fff") + el(x + w * .46, y + h * .33, w * .15, h * .1, "#fff")
+      + el(x + w * .72, y + h * .68, w * .16, h * .08, "#fff")
+      + r(x + w / 2 - 5, y, 10, h, "#fff") + r(x, y + h / 2 - 5, w, 10, "#fff") + r(x - 22, y + h + 8, w + 44, 14, "#fff", 7);
+  }
+  if (o.door) {
+    const x = o.door;
+    s += r(x - 12, 188, 214, 452, "#fff", 10) + r(x, 200, 190, 440, P.teal, 6) + r(x + 22, 226, 146, 170, P.teal2, 8)
+      + r(x + 22, 420, 146, 190, P.teal2, 8) + c(x + 164, 430, 11, P.saf);
+  }
+  if (o.shelf) {
+    const [x, y, w] = o.shelf;
+    s += r(x, y, w, 14, P.wood, 7) + p(`M${x + 24} ${y + 14} v26 l22 -26 Z`, P.wood2) + p(`M${x + w - 24} ${y + 14} v26 l-22 -26 Z`, P.wood2);
+  }
+  return o.base === false ? s : s + r(0, 628, 1600, 20, "#fff", 0, 'opacity=".9"');
+}
+
+/* --- Shared drawings --- */
+const tulip = (col, vase) => p("M22 150 Q10 150 14 132 L20 96 Q22 88 35 88 Q48 88 50 96 L56 132 Q60 150 48 150 Z", vase)
+  + r(18, 106, 34, 9, "#fff", 4, 'opacity=".45"') + ln("M35 88 V44", P.leaf2, 6)
+  + p("M35 82 Q12 74 10 52 Q30 56 35 82 Z", P.leaf) + p("M35 78 Q58 68 60 48 Q40 52 35 78 Z", P.leaf)
+  + p("M17 40 Q14 6 24 4 L35 16 L46 4 Q56 6 53 40 Q35 54 17 40 Z", col);
+const plant = () => p("M22 150 L14 100 H86 L78 150 Z", P.saf) + r(10, 92, 80, 14, P.saf2, 7)
+  + p("M50 96 Q20 80 22 30 Q52 50 50 96 Z", P.leaf) + p("M50 96 Q80 76 82 20 Q46 44 50 96 Z", P.leaf2)
+  + p("M50 96 Q34 50 50 6 Q66 50 50 96 Z", P.leaf);
+const duckArt = el(42, 54, 38, 24, P.saf) + c(62, 26, 21, P.saf) + p("M80 20 L98 28 L80 36 Z", P.sal) + c(67, 21, 4, P.slate2)
+  + p("M20 50 Q40 40 52 54 Q38 68 20 50 Z", P.saf2);
+const teddyArt = c(28, 20, 15, P.wood) + c(82, 20, 15, P.wood) + c(18, 84, 14, P.wood) + c(92, 84, 14, P.wood)
+  + c(32, 118, 15, P.wood) + c(78, 118, 15, P.wood) + el(55, 92, 38, 36, P.wood) + c(55, 44, 32, P.wood)
+  + el(55, 54, 15, 12, P.cream) + el(55, 96, 20, 20, P.cream) + c(44, 38, 4, P.slate2) + c(66, 38, 4, P.slate2) + el(55, 50, 5, 4, P.slate2);
+
+/* --- Things the character can hold. Origin = the hand. --- */
+const PROPS = {
+  spoon: ln("M0 -8 V40", P.wood, 8) + el(0, 48, 11, 14, P.wood),
+  apple: c(0, -8, 17, P.red) + ln("M0 -24 Q4 -32 10 -32", P.leaf2, 5),
+  cup: r(-16, -30, 32, 34, P.saf, 8) + ln("M16 -22 Q28 -20 26 -10 Q24 -4 16 -4", P.saf, 6),
+  brush: ln("M-30 -4 H12", P.pink2, 7) + r(-44, -12, 18, 14, "#fff", 4, `stroke="${P.pink2}" stroke-width="3"`),
+  duck: `<g transform="translate(-30 -60) scale(.7)">${duckArt}</g>`,
+  towel: r(-24, -10, 48, 62, P.pink, 8) + r(-24, 32, 48, 8, "#fff"),
+  book: p("M-36 -32 L0 -24 L36 -32 V12 L0 20 L-36 12 Z", P.sal) + p("M-30 -26 L0 -19 V14 L-30 7 Z", "#fff") + p("M30 -26 L0 -19 V14 L30 7 Z", "#fff"),
+  can: ln("M-20 -6 Q-38 6 -20 20", P.teal2, 7) + r(-20, -12, 40, 38, P.teal, 8) + p("M18 4 L54 -14 L58 -5 L18 18 Z", P.teal),
+  comb: r(-9, -38, 18, 32, P.pink2, 7) + ln("M0 -6 V18", P.pink2, 8),
+  teddy: `<g transform="translate(-38 -66) scale(.7)">${teddyArt}</g>`,
+  umbrella: ln("M0 12 V-150", P.slate, 7) + ln("M0 -200 V-214", P.slate, 7)
+    + p("M-116 -140 Q0 -262 116 -140 Q87 -160 58 -140 Q29 -160 0 -140 Q-29 -160 -58 -140 Q-87 -160 -116 -140 Z", P.pink),
+  pencil: ln("M0 -26 V14", P.saf, 9) + p("M-5 14 L0 28 L5 14 Z", P.slate)
+};
+
+/* --- Character rig sizes and a 2-bone solver used to write poses as joint angles --- */
+const ARM1 = 56, ARM2 = 50;
+const deg = a => a * 180 / Math.PI, rad = a => a * Math.PI / 180;
+// Hand target (x forward, y down) relative to the shoulder -> [shoulder angle, elbow angle] in degrees.
+// 0 = limb hanging down, negative = swings forward. bend picks which side the elbow goes.
+function ik(x, y, bend) {
+  if (bend === undefined) bend = x >= 0 ? 1 : -1;
+  const d0 = Math.hypot(x, y) || 1, d = Math.max(Math.abs(ARM1 - ARM2) + 1, Math.min(ARM1 + ARM2 - 1, d0));
+  const hx = x * d / d0, hy = y * d / d0, t = Math.atan2(-hx, hy);
+  const up = t + bend * Math.acos((ARM1 * ARM1 + d * d - ARM2 * ARM2) / (2 * ARM1 * d));
+  const ex = -ARM1 * Math.sin(up), ey = ARM1 * Math.cos(up);
+  let sh = deg(up), e = deg(Math.atan2(-(hx - ex), hy - ey) - up);
+  while (sh > 90) sh -= 360; while (sh <= -270) sh += 360;
+  while (e > 180) e -= 360; while (e <= -180) e += 360;
+  return [Math.round(sh), Math.round(e)];
+}
+
+/* --- Poses are data: keyframes of joint angles (degrees), eased and looped by the animation engine.
+   aR/aL = [shoulder, elbow], lR/lL = [hip, knee], tor = torso lean, head, y = root offset, rot = root rotation,
+   eyes: 0 open 1 asleep 2 happy, mouth: 0 smile 1 open 2 chewing, bob = hop height. --- */
+const BASE = { aR: [-8, -6], aL: [8, 6], lR: [0, 0], lL: [0, 0], tor: 0, head: 0, y: 0, rot: 0 };
+const SIT = { lR: [-86, 86], lL: [-78, 80], y: 72 };
+const POSES = {
+  idle: { dur: 2.8, keys: [{ t: 0, aR: [-8, -6], aL: [8, 6], y: 0 }, { t: .5, aR: [-13, -8], aL: [13, 8], y: 3 }] },
+  walk: { dur: .5, bob: 7, keys: [{ t: 0, lR: [-26, 6], lL: [20, 30], aR: [20, -14], aL: [-22, -14] }, { t: .5, lR: [20, 30], lL: [-26, 6], aR: [-22, -14], aL: [20, -14] }] },
+  wave: { dur: .45, mouth: 1, head: 5, keys: [{ t: 0, aR: ik(58, -86) }, { t: .5, aR: ik(24, -98) }] },
+  reach: { dur: .8, keys: [{ t: 0, aR: ik(90, -30) }, { t: .5, aR: ik(98, -44) }] },
+  touch: { dur: .7, keys: [{ t: 0, aR: ik(84, 36) }, { t: .5, aR: ik(92, 22) }] },
+  stir: { dur: .9, keys: [{ t: 0, aR: ik(60, -66) }, { t: .25, aR: ik(74, -58) }, { t: .5, aR: ik(88, -66) }, { t: .75, aR: ik(74, -74) }] },
+  wash: { dur: .55, keys: [{ t: 0, aR: ik(70, -50), aL: ik(96, -34) }, { t: .5, aR: ik(82, -40), aL: ik(86, -46) }] },
+  brush: { dur: .32, mouth: 1, keys: [{ t: 0, aR: ik(-6, -52, 1) }, { t: .5, aR: ik(-22, -52, 1) }] },
+  eat: { dur: .9, keys: [{ t: 0, aR: ik(46, -24), mouth: 1 }, { t: .45, aR: ik(-18, -50, 1), mouth: 2 }, { t: .8, aR: ik(-18, -50, 1), mouth: 2 }] },
+  bathe: { dur: .8, eyes: 2, mouth: 1, keys: [{ t: 0, aR: ik(70, -64), aL: ik(-72, -8) }, { t: .5, aR: ik(74, -8), aL: ik(-70, -64) }] },
+  scrub: { dur: .5, eyes: 2, keys: [{ t: 0, aR: ik(22, -92), aL: ik(-34, -72) }, { t: .5, aR: ik(34, -72), aL: ik(-22, -92) }] },
+  dress: { dur: .6, bob: 10, mouth: 1, keys: [{ t: 0, aR: ik(48, -90), aL: ik(-60, -78), tor: -4 }, { t: .5, aR: ik(60, -78), aL: ik(-48, -90), tor: 4 }] },
+  hug: { dur: 1.2, eyes: 2, keys: [{ t: 0, aR: ik(-34, 30, 1), aL: ik(34, 34), tor: -4, head: -5 }, { t: .5, aR: ik(-34, 30, 1), aL: ik(34, 34), tor: 4, head: 5 }] },
+  water: { dur: 1.2, keys: [{ t: 0, aR: ik(84, -24) }, { t: .5, aR: ik(88, -34) }] },
+  holdup: { dur: 1.4, mouth: 1, keys: [{ t: 0, aR: ik(14, -62, 1), tor: -2 }, { t: .5, aR: ik(14, -66, 1), tor: 2 }] },
+  bend: { dur: .7, lR: [-10, 20], lL: [-10, 20], y: 6, head: 8, keys: [{ t: 0, tor: 40, aR: ik(30, 90), aL: ik(60, 80) }, { t: .5, tor: 34, aR: ik(40, 86), aL: ik(50, 84) }] },
+  dance: { dur: .6, bob: 16, mouth: 1, eyes: 2, keys: [{ t: 0, aR: ik(52, -90), aL: ik(-74, -6), tor: -7, head: 7, lR: [-16, 24], lL: [4, 4] }, { t: .5, aR: ik(74, -6), aL: ik(-52, -90), tor: 7, head: -7, lR: [-4, 4], lL: [14, 24] }] },
+  sleep: { dur: 3.2, rot: -90, eyes: 1, keys: [{ t: 0, aR: [-6, -4], aL: [6, 4] }, { t: .5, aR: [-10, -6], aL: [10, 6] }] },
+  sit: { dur: 2, ...SIT, keys: [{ t: 0, aR: ik(40, 36), aL: ik(60, 40) }, { t: .5, aR: ik(40, 32), aL: ik(60, 36) }] },
+  read: { dur: 2.4, ...SIT, keys: [{ t: 0, aR: ik(44, -6), aL: ik(96, 0), head: 6 }, { t: .5, aR: ik(44, -12), aL: ik(96, -6), head: 10 }] },
+  watch: { dur: .5, lR: [-90, 2], lL: [-82, 2], y: 135, mouth: 1, keys: [{ t: 0, aR: ik(34, -30), aL: ik(62, -30) }, { t: .5, aR: ik(66, -20), aL: ik(-30, -20) }] },
+  comb: { dur: .6, ...SIT, eyes: 2, keys: [{ t: 0, aR: ik(26, -94) }, { t: .5, aR: ik(40, -70) }] },
+  draw: { dur: .5, ...SIT, tor: 8, keys: [{ t: 0, aR: ik(68, 26) }, { t: .5, aR: ik(88, 34) }] }
+};
+
+/* ===== 3. THEME PACKS (pure data: one object per room, no engine code) =====
+   Sticker: id, w, h (scene units), natural spot x (center) + b (bottom) or y (center), layer (wall / ground / floor / top),
+   art (SVG drawn in a 0..w x 0..h box; class "won" = only shown while used, "woff" = hidden while used, "f1"/"f2" = 2 frames).
+   act (optional): pose, dx (where the character stands, from the sticker center) or on:[dx,dy] (feet on the sticker),
+   face, hold (prop), pre + preT (first pose), fx + fxAt, snd + sndAt, dur, over (art drawn in front of the character),
+   hide, persist + dim + glow (toggle that stays), set ("outfit" / "shoes"), propRot. */
+const ROOMS = [];
+const clockArt = col => c(55, 55, 53, col) + c(55, 55, 41, "#fff") + c(55, 22, 4, col) + c(55, 88, 4, col) + c(22, 55, 4, col) + c(88, 55, 4, col)
+  + ln("M55 55 V32", P.slate, 6) + ln("M55 55 L72 64", P.slate, 6) + c(55, 55, 5, P.slate);
+
+ROOMS.push({
+  id: "kitchen",
+  bg: roomBg({ wall: "#fff3dc", floor: "#bfe9dc", floor2: "#d9f3ea", tiles: true, win: [870, 120, 220, 230], shelf: [860, 500, 310] }),
+  stickers: [
+    { id: "units", w: 460, h: 210, x: 310, b: B, layer: "floor",
+      art: r(8, 16, 444, 194, P.slate, 10) + r(22, 48, 92, 148, P.slate2, 8) + r(124, 48, 92, 148, P.slate2, 8) + c(102, 120, 7, P.mint) + c(136, 120, 7, P.mint)
+        + r(230, 48, 208, 42, P.slate2, 8) + r(230, 100, 208, 42, P.slate2, 8) + r(230, 152, 208, 44, P.slate2, 8)
+        + c(334, 69, 6, P.mint) + c(334, 121, 6, P.mint) + c(334, 174, 6, P.mint)
+        + r(0, 0, 460, 26, P.sky, 10) + r(84, 0, 150, 36, P.ice, 10)
+        + ln("M158 0 V-52 Q158 -74 136 -74 H118 V-60", P.teal, 10) + c(176, -8, 8, P.teal),
+      act: { pose: "wash", dx: 8, face: -1, fx: "drop", fxAt: [-112, -150], snd: "water" } },
+    { id: "oven", w: 200, h: 200, x: 680, b: B, layer: "floor",
+      art: r(0, 12, 200, 188, P.cream, 12) + r(0, 0, 200, 26, P.slate, 10) + el(32, 11, 20, 5, P.slate2) + el(78, 11, 20, 5, P.slate2)
+        + el(122, 11, 20, 5, P.slate2) + el(168, 11, 20, 5, P.slate2) + c(40, 46, 9, P.slate) + c(80, 46, 9, P.slate) + c(120, 46, 9, P.slate) + c(160, 46, 9, P.slate)
+        + r(24, 76, 152, 84, P.slate2, 14) + p("M40 150 L84 86 H112 L68 150 Z", "#6b7186") + r(40, 62, 120, 10, P.slate, 5) + r(24, 170, 152, 16, P.slate, 8)
+        + g("won", r(22, -46, 74, 48, P.sal, 10) + r(10, -46, 98, 13, P.sal2, 6) + el(59, -40, 30, 5, P.slate2)),
+      act: { pose: "stir", hold: "spoon", dx: -164, fx: "steam", fxAt: [-41, -150], snd: "sizzle" } },
+    { id: "fridge", w: 150, h: 330, x: 1440, b: B, layer: "floor",
+      art: r(0, 0, 150, 330, "#d5e6f0", 18) + r(0, 0, 150, 312, P.ice, 18) + ln("M4 118 H146", "#c3d7e3", 5)
+        + r(14, 60, 12, 44, P.teal, 6) + r(14, 136, 12, 70, P.teal, 6) + r(96, 36, 22, 22, P.saf, 5) + r(112, 66, 18, 18, P.mint2, 5)
+        + g("won", r(12, 128, 126, 172, "#bcd6e4", 10) + r(12, 186, 126, 8, P.ice) + r(12, 244, 126, 8, P.ice)
+          + c(50, 170, 15, P.red) + c(92, 172, 14, P.saf) + r(60, 214, 40, 28, P.mint2, 6) + c(52, 276, 13, P.leaf)),
+      act: { pre: "reach", preT: 1000, pose: "eat", hold: "apple", dx: -150, snd: "crunch", sndAt: 1000 } },
+    { id: "hood", w: 220, h: 140, x: 680, y: 300, layer: "wall",
+      art: r(82, 0, 56, 74, "#dfe7ee", 8) + p("M18 112 L62 60 H158 L202 112 Z", P.ice) + r(8, 104, 204, 32, P.teal, 10)
+        + c(90, 120, 6, P.slate2) + c(110, 120, 6, P.slate2) + c(130, 120, 6, P.slate2) },
+    { id: "kettle", w: 90, h: 90, x: 490, b: 542, layer: "top",
+      art: ln("M26 26 Q45 -6 64 26", P.slate, 8) + p("M18 86 Q8 86 12 72 L22 34 Q24 24 36 24 H56 Q68 24 70 34 L80 72 Q84 86 74 86 Z", P.red)
+        + p("M14 60 L-4 40 L4 34 L20 46 Z", P.red) + c(46, 22, 7, P.slate) + r(20, 70, 52, 8, "#fff", 4, 'opacity=".35"'),
+      act: { pre: "reach", preT: 900, pose: "eat", hold: "cup", dx: 130, face: -1, fx: "steam", fxAt: [0, -60], snd: "pour" } },
+    { id: "fruit", w: 120, h: 80, x: 362, b: 542, layer: "top",
+      art: c(42, 28, 20, P.red) + c(72, 22, 20, P.saf2) + c(94, 32, 15, P.leaf) + ln("M42 10 Q46 2 52 2", P.leaf2, 5)
+        + p("M4 36 H116 Q112 78 60 78 Q8 78 4 36 Z", P.sky) + p("M14 58 Q60 74 106 58 Q98 78 60 78 Q22 78 14 58 Z", P.sky2),
+      act: { pose: "eat", hold: "apple", dx: 130, face: -1, snd: "crunch" } },
+    { id: "cups", w: 110, h: 60, x: 930, b: 500, layer: "top",
+      art: ln("M48 24 Q64 26 60 38 Q58 46 48 46", P.saf, 7) + r(6, 12, 42, 46, P.saf, 10) + r(6, 12, 42, 10, P.saf2, 5)
+        + ln("M98 30 Q110 32 107 41 Q105 47 98 47", P.pink, 6) + r(62, 22, 36, 36, P.pink, 9) + r(62, 22, 36, 8, P.pink2, 4) },
+    { id: "plates", w: 100, h: 60, x: 1090, b: 500, layer: "top",
+      art: r(4, 46, 92, 12, P.sal, 6) + r(8, 34, 84, 12, P.mint2, 6) + r(12, 22, 76, 12, P.saf, 6) + r(16, 10, 68, 12, P.sky, 6) },
+    { id: "rail", w: 200, h: 130, x: 330, y: 380, layer: "wall",
+      art: r(0, 8, 200, 12, P.slate, 6) + ln("M40 20 V84", P.slate, 7) + c(40, 100, 18, P.slate) + ln("M100 20 V70", P.teal, 7)
+        + r(84, 70, 32, 48, P.teal, 8) + ln("M160 20 V78", P.sal, 7) + el(160, 98, 15, 22, P.sal) },
+    { id: "kclock", w: 110, h: 110, x: 520, y: 170, layer: "wall", art: clockArt(P.teal) },
+    { id: "shelf", w: 230, h: 120, x: 1250, y: 260, layer: "wall",
+      art: r(0, 102, 230, 16, P.wood, 8) + r(18, 40, 32, 62, P.mint2, 8) + r(27, 22, 14, 22, P.mint2, 5) + r(64, 26, 36, 76, P.saf, 9)
+        + r(74, 8, 16, 22, P.saf, 5) + r(64, 56, 36, 18, "#fff", 0, 'opacity=".6"') + r(116, 52, 40, 50, P.pink, 12) + r(124, 40, 24, 14, P.pink2, 5)
+        + r(172, 34, 32, 68, P.sky, 8) + r(181, 16, 14, 22, P.sky, 5) },
+    { id: "kpaint", w: 200, h: 130, x: 300, y: 200, layer: "wall",
+      art: r(0, 0, 200, 130, P.wood, 8) + r(10, 10, 180, 110, "#fde6ee") + c(100, 74, 30, P.pink)
+        + p("M10 120 V90 Q50 60 90 88 Q130 108 190 70 V120 Z", P.mint) + p("M10 120 V104 Q70 84 120 104 Q160 116 190 98 V120 Z", P.teal) },
+    { id: "ktulip", w: 70, h: 150, x: 980, b: 372, layer: "top", art: tulip(P.pink, P.sal) }
+  ]
+});
+
+const tubFront = p("M22 62 H378 Q374 172 326 178 H74 Q26 172 22 62 Z", "#e6f4fb") + p("M40 140 Q200 176 360 140 Q350 174 326 178 H74 Q50 174 40 140 Z", "#cfe6f2")
+  + r(0, 40, 400, 30, P.ice, 15);
+const foamBall = (x, y, k) => c(x, y, k, "#fff", 'stroke="#cfe6f2" stroke-width="3"');
+ROOMS.push({
+  id: "bath",
+  bg: roomBg({ wall: "#dff3f6", wall2: "#c9eaee", floor: "#9fd8d4", floor2: "#b9e5e1", tiles: true, win: [210, 130, 200, 190], shelf: [770, 480, 150] }),
+  stickers: [
+    { id: "tub", w: 400, h: 200, x: 310, b: B, layer: "floor",
+      art: ln("M40 46 V8 Q40 -14 62 -14 H74", P.teal, 10) + tubFront + r(70, 176, 22, 24, P.slate, 6) + r(308, 176, 22, 24, P.slate, 6),
+      act: { pose: "bathe", on: [0, 75], hold: "duck", fx: "bubble", fxAt: [0, -80], snd: "bubbles", dur: 4000,
+        over: tubFront + foamBall(96, 40, 22) + foamBall(132, 30, 26) + foamBall(170, 40, 20) + foamBall(262, 36, 24) + foamBall(300, 44, 18) } },
+    { id: "shower", w: 180, h: 520, x: 1040, b: B, layer: "floor",
+      art: r(0, 494, 180, 26, "#e6f4fb", 12) + r(16, 50, 150, 446, P.glass, 10, 'opacity=".55"') + ln("M28 494 V40 Q28 16 54 16 H92", P.teal, 10)
+        + p("M76 16 H140 L150 44 H66 Z", P.teal) + c(28, 300, 10, P.teal2)
+        + g("won f1", ln("M80 56 V200 M108 56 V230 M136 56 V200", P.sky2, 6, 'stroke-dasharray="14 18"'))
+        + g("won f2", ln("M80 72 V216 M108 72 V246 M136 72 V216", P.sky2, 6, 'stroke-dasharray="14 18"')),
+      act: { pose: "scrub", on: [18, 236], fx: "foam", fxAt: "head", snd: "water" } },
+    { id: "toilet", w: 150, h: 210, x: 1320, b: B, layer: "floor",
+      art: r(60, -8, 30, 14, P.sky, 6) + r(22, 0, 106, 96, P.ice, 14) + p("M8 100 H142 Q142 160 102 170 V206 H48 V170 Q8 160 8 100 Z", P.ice)
+        + p("M48 206 V186 H102 V206 Z", "#d5e6f0") + r(2, 88, 146, 22, P.sky, 11),
+      act: { pose: "sit", on: [-20, 61], snd: "flush", sndAt: 2000, dur: 3800 } },
+    { id: "basin", w: 150, h: 230, x: 660, b: B, layer: "floor",
+      art: ln("M75 44 V18 Q75 4 60 4 H50", P.teal, 9) + p("M52 100 H98 L92 230 H58 Z", "#dcebf3") + p("M0 44 H150 Q150 100 108 106 H42 Q0 100 0 44 Z", P.ice)
+        + r(0, 44, 150, 14, "#dcebf3", 7),
+      act: { pose: "brush", hold: "brush", dx: -130, fx: "foam", fxAt: "mouth", snd: "brush" } },
+    { id: "bmirror", w: 140, h: 190, x: 660, y: 330, layer: "wall",
+      art: el(70, 95, 68, 93, P.teal) + el(70, 95, 56, 81, P.glass) + ln("M46 74 L72 48", "#fff", 8) + ln("M62 104 L98 68", "#fff", 6) },
+    { id: "towel", w: 170, h: 150, x: 1320, y: 330, layer: "wall",
+      art: r(0, 6, 170, 12, P.slate, 6) + r(36, 10, 98, 130, P.pink, 10) + r(36, 104, 98, 10, "#fff") + r(36, 120, 98, 6, "#fff"),
+      act: { pose: "wash", hold: "towel", dx: -110, snd: "rub" } },
+    { id: "glass", w: 60, h: 100, x: 805, b: 480, layer: "top",
+      art: ln("M24 52 L18 14", P.pink2, 7) + r(10, 0, 15, 20, P.pink2, 5) + ln("M38 52 L46 12", P.mint2, 7) + r(40, 0, 15, 18, P.mint2, 5)
+        + p("M8 40 H52 L47 98 H13 Z", P.sky) + r(8, 40, 44, 10, P.sky2, 5) },
+    { id: "soap", w: 80, h: 50, x: 872, b: 480, layer: "top",
+      art: el(40, 40, 38, 10, P.sky2) + r(14, 8, 52, 28, P.pink, 12) + c(24, 10, 8, "#fdeef4") + c(37, 4, 6, "#fdeef4") },
+    { id: "duck", w: 90, h: 80, x: 420, b: 592, layer: "top", art: duckArt },
+    { id: "basket", w: 130, h: 150, x: 845, b: B, layer: "floor",
+      art: c(46, 30, 26, P.pink) + c(82, 26, 24, P.sky) + p("M14 40 H116 L104 150 H26 Z", P.saf) + r(6, 32, 118, 18, P.saf2, 9)
+        + ln("M40 62 L46 138 M65 62 V138 M90 62 L84 138", P.saf2, 5) },
+    { id: "mat", w: 220, h: 60, x: 660, y: 812, layer: "ground",
+      art: r(0, 6, 220, 48, P.mint2, 22) + r(16, 16, 188, 28, P.mint, 14) + ln("M60 30 H160", "#fff", 6) }
+  ]
+});
+
+const blanket = r(200, 128, 312, 90, P.teal, 16) + r(200, 128, 312, 26, P.ice, 13);
+ROOMS.push({
+  id: "bed",
+  bg: roomBg({ wall: "#f7e6f0", floor: "#f3cfa6", floor2: "#e9bd8c", planks: true, win: [830, 130, 220, 230], shelf: [200, 410, 240] }),
+  stickers: [
+    { id: "bed", w: 540, h: 270, x: 350, b: B, layer: "floor",
+      art: r(0, 10, 64, 240, P.mint2, 22) + r(484, 110, 56, 140, P.mint2, 18) + r(40, 150, 470, 70, P.cream, 12) + r(40, 205, 470, 28, P.mint2, 8)
+        + r(70, 112, 120, 54, "#fff", 24) + blanket + r(44, 232, 22, 36, P.slate, 6) + r(474, 232, 22, 36, P.slate, 6),
+      act: { pose: "sleep", on: [198, 0], over: r(196, 96, 318, 124, P.teal, 22) + r(196, 96, 318, 28, P.ice, 14), fx: "zzz", fxAt: [-100, -90], snd: "snore", dur: 4200, cls: false } },
+    { id: "bedside", w: 130, h: 280, x: 700, b: B, layer: "floor",
+      art: ln("M65 96 V140", P.slate, 8) + r(44, 138, 42, 12, P.slate, 6) + p("M36 96 L48 30 H82 L94 96 Z", P.saf) + g("won", p("M36 96 L48 30 H82 L94 96 Z", "#ffe27a"))
+        + r(16, 258, 16, 22, P.slate, 5) + r(98, 258, 16, 22, P.slate, 5) + r(6, 150, 118, 112, P.mint, 12) + r(18, 164, 94, 36, P.mint2, 8)
+        + c(65, 182, 6, P.pink2) + r(18, 208, 94, 36, P.mint2, 8) + c(65, 226, 6, P.pink2),
+      act: { pose: "reach", dx: -140, persist: true, dim: true, glow: [0, -77, 210], snd: "click", dur: 1400 } },
+    { id: "wardrobe", w: 230, h: 400, x: 1420, b: B, layer: "floor",
+      art: r(14, 380, 24, 20, P.wood2, 5) + r(192, 380, 24, 20, P.wood2, 5) + r(0, 0, 230, 386, P.sal, 14) + r(12, 12, 98, 362, "#f8a893", 8)
+        + r(120, 12, 98, 362, "#f8a893", 8) + c(100, 200, 7, P.wood2) + c(130, 200, 7, P.wood2)
+        + g("won", r(12, 12, 206, 362, P.sal2, 8) + ln("M20 40 H210", P.wood2, 6) + p("M50 44 L30 80 V170 H90 V80 L70 44 Z", P.pink)
+          + p("M112 44 L96 76 V150 H142 V76 L128 44 Z", P.sky) + p("M172 44 L154 80 V190 H200 V80 L186 44 Z", P.saf)
+          + r(-36, 6, 40, 374, "#f8a893", 8) + r(226, 6, 40, 374, "#f8a893", 8)),
+      act: { pose: "dress", dx: -175, set: "outfit", snd: "whoosh", fx: "spark", fxAt: "body" } },
+    { id: "dressing", w: 220, h: 300, x: 1160, b: B, layer: "floor",
+      art: el(86, 72, 56, 70, P.teal) + el(86, 72, 44, 58, P.glass) + ln("M68 56 L88 36", "#fff", 7) + ln("M22 210 V296 M150 210 V296", P.mint2, 10)
+        + r(0, 150, 172, 18, P.mint2, 9) + r(10, 166, 152, 44, P.mint, 8) + c(86, 188, 6, P.pink2)
+        + ln("M162 242 L156 296 M208 242 L214 296", P.teal2, 9) + r(150, 222, 70, 20, P.teal, 10),
+      act: { pose: "comb", on: [75, 150], face: -1, hold: "comb", snd: "brush", fx: "spark", fxAt: "head" } },
+    { id: "brug", w: 300, h: 80, x: 930, y: 840, layer: "ground",
+      art: el(150, 40, 150, 40, P.pink) + el(150, 40, 120, 28, "#fbd3e1") + el(150, 40, 70, 14, P.pink) },
+    { id: "bpic", w: 150, h: 130, x: 1170, y: 260, layer: "wall",
+      art: r(0, 0, 150, 130, P.wood, 8) + r(10, 10, 130, 110, P.glass) + r(10, 86, 130, 34, P.teal) + p("M74 28 V76 H44 Z", "#fff")
+        + p("M80 36 V76 H108 Z", P.ice) + p("M40 80 H112 L102 96 H50 Z", P.sal) },
+    { id: "teddy", w: 110, h: 130, x: 900, b: 792, layer: "floor", art: teddyArt,
+      act: { pose: "hug", dx: 0, hold: "teddy", hide: true, fx: "heart", fxAt: "head", snd: "hug" } },
+    { id: "alarm", w: 80, h: 90, x: 265, b: 410, layer: "top",
+      art: c(22, 14, 12, P.sal2) + c(58, 14, 12, P.sal2) + ln("M24 78 L18 88 M56 78 L62 88", P.slate, 6) + c(40, 48, 34, P.sal) + c(40, 48, 25, "#fff")
+        + ln("M40 48 V32 M40 48 L50 54", P.slate, 5) },
+    { id: "bplant", w: 100, h: 150, x: 375, b: 410, layer: "top", art: plant() },
+    { id: "curtains", w: 300, h: 300, x: 940, y: 250, layer: "wall",
+      art: ln("M4 12 H296", P.slate, 8) + c(4, 12, 8, P.slate) + c(296, 12, 8, P.slate) + p("M14 14 H100 Q84 150 104 292 H14 Z", P.pink)
+        + p("M286 14 H200 Q216 150 196 292 H286 Z", P.pink) + p("M40 14 Q34 150 44 292 H60 Q50 150 58 14 Z", P.pink2)
+        + p("M260 14 Q266 150 256 292 H240 Q250 150 242 14 Z", P.pink2) },
+    { id: "slippers", w: 110, h: 50, x: 620, b: 810, layer: "floor",
+      art: el(28, 30, 26, 17, P.pink) + el(82, 30, 26, 17, P.pink) + el(22, 34, 12, 8, P.pink2) + el(76, 34, 12, 8, P.pink2) + c(40, 22, 9, "#fff") + c(94, 22, 9, "#fff") }
+  ]
+});
+
+ROOMS.push({
+  id: "living",
+  bg: roomBg({ wall: "#e6f5ec", floor: "#eec79c", floor2: "#e2b481", planks: true, win: [230, 120, 200, 210], shelf: [990, 430, 215] }),
+  stickers: [
+    { id: "sofa", w: 460, h: 240, x: 720, b: B, layer: "floor",
+      art: r(60, 214, 24, 26, P.wood2, 5) + r(376, 214, 24, 26, P.wood2, 5) + r(24, 0, 412, 180, P.saf, 64) + r(0, 84, 84, 134, P.saf2, 36)
+        + r(376, 84, 84, 134, P.saf2, 36) + r(60, 118, 340, 100, P.saf, 18) + r(60, 186, 340, 32, P.saf2, 10)
+        + p("M250 78 L318 70 L326 128 L258 136 Z", P.cream) + p("M300 84 L360 92 L352 144 L292 136 Z", P.sal),
+      act: { pose: "read", on: [-80, 70], hold: "book", snd: "page" } },
+    { id: "armchair", w: 220, h: 220, x: 1100, b: B, layer: "floor",
+      art: r(30, 196, 22, 24, P.wood2, 5) + r(168, 196, 22, 24, P.wood2, 5) + r(22, 0, 176, 170, P.sky2, 56) + r(0, 80, 60, 120, P.teal, 28)
+        + r(160, 80, 60, 120, P.teal, 28) + r(44, 112, 132, 88, P.sky2, 14) + r(44, 172, 132, 28, P.teal, 10) + p("M70 70 L122 62 L130 112 L78 120 Z", "#f3d8ef") },
+    { id: "bookshelf", w: 220, h: 400, x: 1420, b: B, layer: "floor",
+      art: r(0, 0, 220, 400, P.slate, 10) + r(14, 14, 192, 104, "#e9edf3", 4) + r(14, 130, 192, 104, "#e9edf3", 4) + r(14, 252, 92, 134, P.ice, 6)
+        + r(114, 252, 92, 134, P.ice, 6) + c(96, 318, 6, P.teal) + c(124, 318, 6, P.teal) + r(24, 44, 20, 74, P.sal) + r(46, 34, 22, 84, P.teal)
+        + r(70, 50, 18, 68, P.saf) + p("M96 118 L112 46 L132 50 L118 118 Z", P.pink) + r(30, 214, 90, 20, P.mint2, 4) + r(38, 196, 78, 18, P.sal, 4)
+        + r(150, 160, 22, 74, P.sky2) + r(174, 170, 20, 64, P.saf) },
+    { id: "tv", w: 240, h: 200, x: 330, b: B, layer: "floor",
+      art: r(100, 140, 40, 26, P.slate, 4) + r(20, 160, 200, 40, P.wood, 10) + r(36, 172, 60, 16, P.wood2, 6) + r(0, 0, 240, 146, P.slate2, 14)
+        + r(12, 12, 216, 122, "#2f3340", 6) + p("M30 120 L90 24 H130 L70 120 Z", "#3d4252")
+        + g("won f1", r(12, 12, 36, 122, P.sal) + r(48, 12, 36, 122, P.saf) + r(84, 12, 36, 122, P.mint) + r(120, 12, 36, 122, P.sky) + r(156, 12, 36, 122, P.pink) + r(192, 12, 36, 122, P.teal))
+        + g("won f2", r(12, 12, 216, 122, P.sky) + c(120, 66, 34, P.saf) + r(12, 104, 216, 30, P.leaf)),
+      act: { pose: "watch", dx: 230, face: -1, snd: "tv", fx: "note", fxAt: [0, -110] } },
+    { id: "ctable", w: 240, h: 110, x: 720, b: 895, layer: "floor",
+      art: p("M104 22 H136 L144 96 H96 Z", P.wood) + r(60, 92, 120, 18, P.wood2, 9) + r(0, 0, 240, 22, P.peach, 11) },
+    { id: "lplant", w: 150, h: 330, x: 110, b: B, layer: "floor",
+      art: ln("M75 244 Q60 180 80 130 Q96 90 74 40", P.wood, 10) + p("M40 330 L28 250 H122 L110 330 Z", P.saf) + ln("M36 276 Q75 294 114 276", P.sal2, 8)
+        + r(22, 240, 106, 18, P.saf2, 9) + c(74, 36, 26, P.leaf) + c(40, 60, 22, P.leaf2) + c(108, 70, 24, P.leaf) + c(70, 86, 18, P.leaf2)
+        + c(36, 120, 24, P.leaf) + c(112, 128, 22, P.leaf2) + c(60, 172, 20, P.leaf2) + c(104, 188, 20, P.leaf),
+      act: { pose: "water", dx: 200, face: -1, hold: "can", propRot: 22, fx: "drop", fxAt: "hand", fxOff: [56, 6], snd: "water" } },
+    { id: "flamp", w: 90, h: 380, x: 1255, b: B, layer: "floor",
+      art: el(45, 368, 40, 12, P.slate) + ln("M45 364 V90", P.slate, 8) + p("M14 96 L28 10 H62 L76 96 Z", P.saf) + r(14, 84, 62, 12, P.saf2, 6) },
+    { id: "lrug", w: 420, h: 90, x: 720, y: 848, layer: "ground",
+      art: el(210, 45, 210, 45, P.sal) + el(210, 45, 170, 33, P.peach) + el(210, 45, 110, 18, P.sal) },
+    { id: "lpic", w: 140, h: 170, x: 640, y: 300, layer: "wall",
+      art: r(0, 0, 140, 170, P.wood, 8) + r(12, 12, 116, 146, P.sky2) + c(70, 92, 34, P.saf) + r(34, 98, 72, 6, P.sky2) + r(34, 110, 72, 6, P.sky2)
+        + c(34, 36, 4, "#fff") + c(100, 30, 5, "#fff") + c(84, 50, 3, "#fff") },
+    { id: "lclock", w: 100, h: 100, x: 830, y: 280, layer: "wall",
+      art: r(0, 0, 100, 100, P.saf, 18) + r(12, 12, 76, 76, "#fff", 10) + ln("M50 50 V28 M50 50 L66 60", P.slate, 6) + c(50, 50, 5, P.slate) },
+    { id: "lbooks", w: 100, h: 60, x: 720, b: 787, layer: "top",
+      art: r(4, 40, 92, 18, P.teal, 4) + r(10, 22, 80, 18, P.sal, 4) + r(18, 4, 66, 18, P.saf, 4) + r(70, 40, 8, 18, "#fff") + r(64, 22, 8, 18, "#fff") },
+    { id: "globe", w: 90, h: 110, x: 1050, b: 430, layer: "top",
+      art: ln("M20 26 Q4 60 30 88", P.slate, 7) + ln("M45 92 V102", P.slate, 8) + r(22, 100, 46, 10, P.slate, 5) + c(48, 52, 36, P.sky)
+        + g("f1", p("M30 34 Q46 26 52 40 Q48 56 34 52 Z", P.leaf) + p("M56 60 Q72 56 70 72 Q60 80 54 70 Z", P.leaf))
+        + g("f2", p("M44 30 Q64 26 68 44 Q58 54 46 46 Z", P.leaf) + p("M30 58 Q44 56 46 70 Q36 80 28 70 Z", P.leaf)),
+      act: { pose: "reach", dx: -140, snd: "spin", fx: "spark", fxAt: [0, -10] } },
+    { id: "ltulip", w: 70, h: 150, x: 1150, b: 430, layer: "top", art: tulip(P.saf, P.teal) }
+  ]
+});
+
+const shoe = (x, y, col) => p(`M${x} ${y} v-14 q0 -10 12 -10 h8 q4 10 18 12 q10 2 10 12 z`, col);
+ROOMS.push({
+  id: "hall",
+  bg: roomBg({ wall: "#fde9dc", floor: "#c9d6e6", floor2: "#dbe5f0", tiles: true, door: 720 }),
+  stickers: [
+    { id: "coats", w: 260, h: 250, x: 250, y: 275, layer: "wall",
+      art: r(0, 0, 260, 36, P.wood, 18) + c(40, 18, 9, P.wood2) + c(100, 18, 9, P.wood2) + c(160, 18, 9, P.wood2) + c(220, 18, 9, P.wood2)
+        + p("M40 60 L20 136 L44 142 L56 90 Z", P.sal2) + p("M160 60 L180 136 L156 142 L144 90 Z", P.sal2)
+        + p("M70 30 L40 60 V170 H160 V60 L130 30 Q100 50 70 30 Z", P.sal) + ln("M100 50 V170", P.sal2, 5)
+        + g("woff", ln("M220 26 V40", P.slate, 6) + p("M210 40 H230 L224 214 H216 Z", P.pink) + ln("M220 214 V232 Q220 246 208 244", P.slate, 6)),
+      act: { pose: "holdup", dx: 60, face: 1, hold: "umbrella", propRot: -14, fx: "drop", fxAt: "above", snd: "rain" } },
+    { id: "shoes", w: 240, h: 150, x: 250, b: B, layer: "floor",
+      art: r(0, 0, 240, 150, P.wood, 10) + r(12, 12, 216, 56, P.wood2, 6) + r(12, 80, 216, 58, P.wood2, 6) + shoe(22, 68, P.pink) + shoe(74, 68, P.pink)
+        + shoe(134, 68, P.sky) + shoe(180, 68, P.sky) + shoe(30, 138, P.saf) + shoe(84, 138, P.saf) + shoe(150, 138, P.mint),
+      act: { pose: "bend", dx: 175, face: -1, set: "shoes", snd: "pop", fx: "spark", fxAt: "feet", dur: 2600 } },
+    { id: "hmirror", w: 150, h: 220, x: 560, y: 300, layer: "wall",
+      art: r(0, 0, 150, 220, P.wood2, 26) + r(12, 12, 126, 196, P.glass, 18) + ln("M40 84 L84 40", "#fff", 9) + ln("M60 114 L104 70", "#fff", 6) },
+    { id: "console", w: 240, h: 180, x: 560, b: B, layer: "floor",
+      art: ln("M30 74 V174 M210 74 V174", P.wood2, 12) + r(0, 0, 240, 26, P.sal, 10) + r(14, 24, 212, 50, "#f8a893", 8) + c(120, 49, 7, P.wood2) },
+    { id: "desk", w: 430, h: 230, x: 1170, b: B, layer: "floor",
+      art: r(8, 20, 22, 124, P.teal2, 10) + ln("M22 150 V224 M96 150 V224", P.slate, 9) + r(8, 130, 100, 20, P.sky2, 10)
+        + ln("M130 80 V224", P.slate, 10) + r(300, 78, 120, 150, P.ice, 8) + r(312, 90, 96, 36, "#d5e6f0", 6) + r(312, 134, 96, 36, "#d5e6f0", 6)
+        + r(312, 178, 96, 38, "#d5e6f0", 6) + r(348, 104, 24, 7, P.slate, 3) + r(348, 148, 24, 7, P.slate, 3) + r(348, 193, 24, 7, P.slate, 3)
+        + r(110, 60, 320, 20, P.mint2, 10)
+        + g("won", p("M176 60 L198 28 H272 L250 60 Z", "#fff", `stroke="${P.slate}" stroke-width="2"`) + ln("M206 50 Q220 34 232 48 T256 40", P.pink2, 5)),
+      act: { pose: "draw", on: [-150, 87], face: 1, hold: "pencil", snd: "scribble", fx: "spark", fxAt: [10, -85] } },
+    { id: "computer", w: 150, h: 130, x: 1270, b: 582, layer: "top",
+      art: r(62, 96, 26, 20, "#cfd6de") + r(40, 114, 70, 12, "#dfe5ec", 6) + r(0, 0, 150, 96, P.slate2, 10) + r(10, 10, 130, 76, "#2f3340", 5)
+        + p("M22 80 L66 16 H92 L48 80 Z", "#3d4252") },
+    { id: "dlamp", w: 80, h: 120, x: 1480, b: 552, layer: "top",
+      art: r(10, 106, 50, 12, P.teal2, 6) + ln("M35 106 L24 58 L52 30", P.slate, 7) + p("M38 18 L70 14 L74 46 L50 40 Z", P.teal) },
+    { id: "hbooks", w: 100, h: 80, x: 615, b: 572, layer: "top",
+      art: r(4, 14, 20, 66, P.sal, 3) + r(26, 4, 22, 76, P.sky2, 3) + r(50, 22, 18, 58, P.saf, 3) + p("M70 80 L80 20 L98 24 L90 80 Z", P.leaf) },
+    { id: "drawers", w: 130, h: 200, x: 1480, b: B, layer: "floor",
+      art: r(10, 186, 16, 14, P.slate, 4) + r(104, 186, 16, 14, P.slate, 4) + r(0, 0, 130, 190, P.ice, 10) + r(12, 14, 106, 48, "#d5e6f0", 8)
+        + r(12, 72, 106, 48, "#d5e6f0", 8) + r(12, 130, 106, 48, "#d5e6f0", 8) + r(48, 32, 34, 10, P.slate, 5) + r(48, 90, 34, 10, P.slate, 5) + r(48, 148, 34, 10, P.slate, 5) },
+    { id: "hplant", w: 100, h: 150, x: 495, b: 572, layer: "top", art: plant() },
+    { id: "hpic", w: 160, h: 120, x: 1190, y: 300, layer: "wall",
+      art: r(0, 0, 160, 120, P.wood, 8) + r(10, 10, 140, 100, P.cream) + c(118, 38, 14, P.saf) + p("M10 110 L60 50 L96 90 L120 64 L150 110 Z", P.teal) },
+    { id: "doormat", w: 220, h: 60, x: 815, y: 800, layer: "ground",
+      art: r(0, 6, 220, 48, P.sal, 10) + r(14, 16, 192, 28, P.peach, 6) }
+  ]
+});
+
+/* ----- Extra theme packs: garden and school. A pack brings its own room name, poses and props; the engine is untouched. ----- */
+Object.assign(STRINGS.fr.rooms, { garden: "Le jardin", school: "L'école" });
+Object.assign(STRINGS.en.rooms, { garden: "The garden", school: "The school" });
+const FLOORSIT = { lR: [-90, 2], lL: [-82, 2], y: 135 };
+Object.assign(POSES, {
+  swing: { dur: 1.6, ...SIT, mouth: 1, keys: [{ t: 0, rot: -10, aR: ik(20, -70), aL: ik(-20, -70) }, { t: .5, rot: 10, aR: ik(20, -70), aL: ik(-20, -70) }] },
+  jump: { dur: .7, bob: 70, mouth: 1, eyes: 2, keys: [{ t: 0, aR: ik(60, -70), aL: ik(-60, -70), lR: [-10, 30], lL: [10, 30] }, { t: .5, aR: ik(80, -20), aL: ik(-80, -20), lR: [-4, 6], lL: [4, 6] }] },
+  kick: { dur: .7, keys: [{ t: 0, lR: [30, 40], aR: [20, -10], aL: [-20, -10], tor: -4 }, { t: .5, lR: [-55, 4], aR: [-25, -10], aL: [25, -10], tor: 4 }] },
+  write: { dur: .6, keys: [{ t: 0, aR: ik(60, -84) }, { t: .5, aR: ik(78, -74) }] },
+  readf: { dur: 2.4, ...FLOORSIT, keys: [{ t: 0, aR: ik(44, -6), aL: ik(96, 0), head: 6 }, { t: .5, aR: ik(44, -12), aL: ik(96, -6), head: 10 }] },
+  drum: { dur: .4, ...FLOORSIT, mouth: 1, keys: [{ t: 0, aR: ik(70, 0), aL: ik(96, 30) }, { t: .5, aR: ik(70, 30), aL: ik(96, 0) }] }
+});
+Object.assign(PROPS, {
+  shovel: ln("M0 -20 V30", P.wood, 8) + p("M-14 30 H14 L10 56 Q0 64 -10 56 Z", P.red),
+  chalk: ln("M0 -14 V10", "#fff", 10, `style="filter:none"`) + ln("M0 -14 V10", "#fff", 8),
+  pbrush: ln("M0 14 V-22", P.wood, 7) + r(-6, -38, 12, 18, P.pink2, 5),
+  mallet: ln("M0 -4 V30", P.wood, 6) + c(0, 36, 10, P.red)
+});
+
+const flower = (x, col) => ln(`M${x} 92 V44`, P.leaf2, 6) + p(`M${x} 80 q-22 -6 -24 -24 q20 4 24 24 Z`, P.leaf)
+  + c(x - 13, 34, 11, col) + c(x + 13, 34, 11, col) + c(x, 22, 11, col) + c(x, 46, 11, col) + c(x, 34, 9, P.saf);
+ROOMS.push({
+  id: "garden",
+  bg: roomBg({ wall: "#cfeefa", floor: "#a9dc8f", sky: true, fence: true, base: false }),
+  stickers: [
+    { id: "tree", w: 300, h: 460, x: 230, b: B, layer: "floor",
+      art: r(125, 250, 50, 210, P.wood, 10) + p("M125 330 Q100 300 80 300 L92 286 Q116 290 125 306 Z", P.wood) + c(150, 130, 120, P.leaf) + c(70, 190, 70, P.leaf)
+        + c(232, 190, 68, P.leaf) + c(120, 90, 70, P.leaf2) + c(200, 110, 60, P.leaf2) + c(90, 170, 15, P.red) + c(170, 80, 15, P.red) + c(226, 180, 15, P.red) + c(150, 200, 15, P.red),
+      act: { pre: "reach", preT: 1000, pose: "eat", hold: "apple", dx: 175, face: -1, snd: "crunch", sndAt: 1000 } },
+    { id: "swing", w: 260, h: 380, x: 600, b: B, layer: "floor",
+      art: ln("M20 376 L62 12 H198 L240 376", P.teal, 14) + ln("M96 16 V250 M164 16 V250", P.wood2, 6) + r(80, 250, 100, 18, P.sal, 9),
+      act: { pose: "swing", on: [-20, 138], face: 1, snd: "spin", fx: "note", fxAt: "head" } },
+    { id: "slide", w: 380, h: 300, x: 1110, b: B, layer: "floor",
+      art: ln("M40 296 V44 M100 296 V44 M40 110 H100 M40 170 H100 M40 230 H100", P.slate, 10) + p("M110 44 Q240 60 360 280 L380 300 H330 Q230 110 110 84 Z", P.sal)
+        + r(26, 40, 96, 16, P.saf, 8),
+      act: { pose: "dress", on: [-115, -110], face: 1, snd: "whoosh", fx: "spark", fxAt: "head", dur: 3000 } },
+    { id: "sandbox", w: 300, h: 110, x: 1400, b: 885, layer: "floor",
+      art: r(0, 40, 300, 70, P.wood, 12) + el(150, 46, 136, 26, "#f6dfa6") + p("M190 46 Q215 6 240 46 Z", "#efcf86") + p("M60 20 H110 L104 60 H66 Z", P.red) + ln("M62 22 Q85 -6 108 22", P.slate, 5),
+      act: { pose: "bend", dx: -175, hold: "shovel", snd: "rub", fx: "spark", fxAt: "hand", dur: 3000 } },
+    { id: "flowers", w: 200, h: 120, x: 840, b: B, layer: "floor",
+      art: flower(40, P.pink) + flower(100, P.sal) + flower(160, P.sky2) + r(0, 90, 200, 30, P.wood2, 12),
+      act: { pose: "water", dx: 185, face: -1, hold: "can", propRot: 22, fx: "drop", fxAt: "hand", fxOff: [56, 6], snd: "water" } },
+    { id: "ball", w: 90, h: 90, x: 560, b: 845, layer: "floor",
+      art: c(45, 45, 42, P.red) + p("M10 22 Q45 40 80 22 Q64 4 45 3 Q26 4 10 22 Z", "#fff") + p("M8 64 Q45 48 82 64 Q66 86 45 87 Q24 86 8 64 Z", P.saf),
+      act: { pose: "kick", dx: -70, snd: "kick", fx: "spark", fxAt: "feet", dur: 2400 } },
+    { id: "pool", w: 320, h: 100, x: 300, b: 860, layer: "floor",
+      art: el(160, 50, 160, 50, P.sky2) + el(160, 44, 140, 34, P.glass) + ln("M100 40 q14 -8 28 0 M180 52 q14 -8 28 0", "#fff", 5),
+      act: { pose: "bathe", on: [0, 16], snd: "bubbles", fx: "drop", fxAt: "body", dur: 3800,
+        over: p("M0 50 Q0 100 160 100 Q320 100 320 50 Q320 76 160 80 Q0 76 0 50 Z", P.sky2) } },
+    { id: "tramp", w: 260, h: 130, x: 880, b: 890, layer: "floor",
+      art: ln("M30 40 V124 M230 40 V124 M90 52 V128 M170 52 V128", P.slate, 9) + el(130, 32, 130, 28, P.sky2) + el(130, 30, 108, 19, P.slate2),
+      act: { pose: "jump", on: [0, -32], snd: "boing", fx: "spark", fxAt: "feet" } },
+    { id: "birdhouse", w: 110, h: 330, x: 1510, b: B, layer: "floor",
+      art: r(48, 120, 14, 210, P.wood, 6) + r(10, 40, 90, 90, P.sal, 8) + p("M-4 48 L55 0 L114 48 Z", P.teal) + c(55, 78, 16, P.slate2) + ln("M55 106 H78", P.wood2, 6)
+        + g("won", c(70, 92, 13, P.saf) + p("M82 90 L94 94 L82 98 Z", P.sal2) + c(74, 89, 3, P.slate2)),
+      act: { pose: "wave", dx: -130, snd: "tweet", fx: "note", fxAt: [0, -150], dur: 2600 } },
+    { id: "kite", w: 150, h: 220, x: 960, y: 230, layer: "wall",
+      art: ln("M75 120 Q50 160 80 190 Q96 206 76 218", P.slate, 5) + p("M75 0 L140 60 L75 120 Z", P.pink) + p("M75 0 L10 60 L75 120 Z", P.saf) + p("M10 60 H140 L75 120 Z", P.sky2, 'opacity=".55"')
+        + p("M60 170 l-14 -8 v16 Z", P.sal) + p("M84 196 l14 -8 v16 Z", P.teal) },
+    { id: "butterfly", w: 100, h: 80, x: 720, y: 300, layer: "wall",
+      art: p("M50 40 Q10 -6 6 30 Q4 52 50 44 Z", P.pink2) + p("M50 40 Q90 -6 94 30 Q96 52 50 44 Z", P.pink2) + p("M50 44 Q20 50 22 68 Q40 80 50 48 Z", P.saf)
+        + p("M50 44 Q80 50 78 68 Q60 80 50 48 Z", P.saf) + ln("M50 28 V60", P.slate2, 7) + ln("M50 28 Q44 14 38 12 M50 28 Q56 14 62 12", P.slate2, 4) },
+    { id: "snail", w: 110, h: 76, x: 1160, b: 850, layer: "floor",
+      art: p("M4 72 Q4 58 24 58 H84 Q84 30 96 26 Q110 28 106 46 Q104 72 84 72 Z", P.leaf) + ln("M94 28 L90 10 M102 30 L106 12", P.leaf2, 5) + c(50, 40, 32, P.saf)
+        + ln("M50 40 Q62 40 60 30 Q54 20 42 26 Q30 36 40 52 Q54 62 68 50", P.saf2, 6) }
+  ]
+});
+
+const boardFace = r(0, 0, 420, 250, P.wood, 10) + r(12, 12, 396, 212, P.teal2, 4) + r(40, 232, 340, 12, P.wood2, 6) + r(60, 226, 30, 8, "#fff", 3) + r(100, 226, 22, 8, P.pink, 3);
+ROOMS.push({
+  id: "school",
+  bg: roomBg({ wall: "#fff3c4", floor: "#cbbfea", floor2: "#dcd3f2", tiles: true, win: [1180, 130, 220, 220] }),
+  stickers: [
+    { id: "board", w: 420, h: 250, x: 520, y: 350, layer: "wall",
+      art: boardFace + g("won", c(120, 130, 30, "none", 'stroke="#fff" stroke-width="7" class="ln"') + ln("M120 86 V70 M120 174 V190 M76 130 H60 M164 130 H180", "#fff", 6)
+        + ln("M240 180 V120 L290 80 L340 120 V180 Z", "#fff", 7) + ln("M276 180 V146 H304 V180", "#fff", 6)),
+      act: { pose: "write", dx: -190, hold: "chalk", snd: "scribble", fx: "spark", fxAt: "hand" } },
+    { id: "sdesk", w: 300, h: 200, x: 800, b: B, layer: "floor",
+      art: r(8, 10, 22, 124, P.sal2, 10) + ln("M22 140 V196 M96 140 V196", P.slate, 9) + r(8, 120, 100, 20, P.sal, 10) + ln("M140 90 V196 M270 90 V196", P.slate, 10)
+        + r(110, 70, 190, 22, P.saf, 11) + g("won", p("M150 70 L168 44 H228 L210 70 Z", "#fff", `stroke="${P.slate}" stroke-width="2"`) + ln("M176 62 Q188 46 198 60 T216 52", P.sky2, 5)),
+      act: { pose: "draw", on: [-95, 98], face: 1, hold: "pencil", snd: "scribble", fx: "spark", fxAt: [30, -50] } },
+    { id: "easel", w: 180, h: 330, x: 1330, b: B, layer: "floor",
+      art: ln("M40 326 L80 10 M140 326 L100 10 M90 180 V326", P.wood, 10) + r(14, 176, 152, 14, P.wood2, 7) + r(20, 24, 140, 152, "#fff", 6, `stroke="${P.slate}" stroke-width="3"`)
+        + g("won", c(70, 80, 26, P.saf) + p("M30 166 Q70 110 110 150 Q130 130 150 166 Z", P.leaf) + c(118, 60, 14, P.pink2)),
+      act: { pose: "write", dx: -130, hold: "pbrush", snd: "rub", fx: "spark", fxAt: "hand" } },
+    { id: "bookbox", w: 200, h: 170, x: 180, b: B, layer: "floor",
+      art: r(22, 20, 26, 90, P.sal, 4) + r(52, 6, 28, 104, P.sky2, 4) + r(84, 26, 24, 84, P.saf, 4) + r(112, 12, 30, 98, P.leaf, 4) + r(146, 30, 26, 80, P.pink2, 4)
+        + r(0, 70, 200, 100, P.wood, 12) + c(70, 112, 7, P.slate2) + c(130, 112, 7, P.slate2) + ln("M76 134 Q100 152 124 134", P.slate2, 6),
+      act: { pose: "readf", dx: 160, face: -1, hold: "book", snd: "page" } },
+    { id: "napmat", w: 440, h: 80, x: 330, y: 850, layer: "ground",
+      art: r(0, 10, 440, 62, "#8f7fd6", 28) + r(18, 16, 110, 46, "#fff", 22) + ln("M170 26 l8 14 l8 -14 M250 42 l8 14 l8 -14 M330 26 l8 14 l8 -14", "#b3a6e8", 5),
+      act: { pose: "sleep", on: [205, -6], fx: "zzz", fxAt: [-130, -70], snd: "snore", dur: 4000, cls: false } },
+    { id: "toybox", w: 220, h: 160, x: 1080, b: B, layer: "floor",
+      art: c(60, 40, 30, P.wood) + c(38, 16, 12, P.wood) + c(82, 16, 12, P.wood) + c(50, 36, 4, P.slate2) + c(70, 36, 4, P.slate2) + el(60, 48, 12, 9, P.cream)
+        + c(150, 44, 30, P.sky2) + p("M124 34 Q150 50 176 34", "none", `stroke="#fff" stroke-width="6" class="ln"`) + r(96, 30, 30, 34, P.pink2, 5)
+        + r(0, 60, 220, 100, P.saf, 14) + r(0, 60, 220, 22, P.saf2, 11) + c(110, 116, 16, "#fff", 'opacity=".5"'),
+      act: { pose: "hug", dx: -150, hold: "teddy", fx: "heart", fxAt: "head", snd: "hug" } },
+    { id: "pegs", w: 300, h: 230, x: 930, y: 290, layer: "wall",
+      art: r(0, 0, 300, 30, P.wood, 15) + c(50, 15, 8, P.wood2) + c(150, 15, 8, P.wood2) + c(250, 15, 8, P.wood2)
+        + ln("M36 26 Q50 6 64 26", P.slate, 6) + r(14, 26, 72, 96, P.red, 18) + r(26, 66, 48, 40, P.sal2, 8) + r(40, 30, 20, 12, P.slate, 4)
+        + p("M120 26 L100 50 V150 H200 V50 L180 26 Q150 44 120 26 Z", P.sky2) + ln("M150 44 V150", P.sky, 5)
+        + p("M214 60 Q250 10 286 60 Q250 52 214 60 Z", P.saf) + r(210, 56, 80, 12, P.saf2, 6),
+      act: { pose: "dress", dx: -40, set: "outfit", snd: "whoosh", fx: "spark", fxAt: "body" } },
+    { id: "sclock", w: 110, h: 110, x: 190, y: 220, layer: "wall", art: clockArt(P.sal) },
+    { id: "xylo", w: 210, h: 90, x: 720, b: 860, layer: "floor",
+      art: r(0, 56, 210, 30, P.wood, 10) + r(10, 4, 26, 66, P.red, 6) + r(42, 8, 26, 60, P.saf2, 6) + r(74, 12, 26, 54, P.saf, 6) + r(106, 16, 26, 48, P.leaf, 6)
+        + r(138, 20, 26, 42, P.sky2, 6) + r(170, 24, 26, 36, "#8f7fd6", 6),
+      act: { pose: "drum", dx: -195, hold: "mallet", snd: "xylo", fx: "note", fxAt: [0, -90] } },
+    { id: "snack", w: 120, h: 70, x: 890, b: 622, layer: "top",
+      art: el(52, 60, 52, 9, P.ice) + c(34, 40, 18, P.red) + ln("M34 24 Q38 16 44 16", P.leaf2, 5) + p("M56 56 Q62 26 88 30 Q84 54 56 56 Z", P.saf) + r(92, 26, 24, 40, P.sky, 6),
+      act: { pose: "eat", hold: "apple", dx: 125, face: -1, snd: "crunch" } },
+    { id: "blocks", w: 150, h: 120, x: 1490, b: 835, layer: "floor",
+      art: r(0, 60, 60, 60, P.sky2, 8) + r(66, 60, 60, 60, P.sal, 8) + r(34, 0, 60, 60, P.saf, 8) + c(30, 90, 16, "#fff") + r(82, 76, 28, 28, "#fff", 3) + p("M64 14 L82 44 H46 Z", "#fff") },
+    { id: "splant", w: 100, h: 150, x: 1290, b: 368, layer: "top", art: plant() },
+    { id: "poster", w: 200, h: 150, x: 190, y: 410, layer: "wall",
+      art: r(0, 0, 200, 150, P.mint2, 10) + r(12, 12, 176, 126, "#fff", 4) + c(56, 54, 26, P.red) + p("M118 28 L150 80 H86 Z", P.saf) + r(40, 92, 40, 36, P.sky2, 5) + c(140, 110, 18, P.leaf) }
+  ]
+});
+
+/* ===== 4. ENGINE: small utilities, state, save / load ===== */
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const LAYERS = ["wall", "ground", "floor", "top"];
+const STARD = "M0 -11 L3.2 -3.6 L11 -3 L5 2.2 L6.8 10 L0 5.8 L-6.8 10 L-5 2.2 L-11 -3 L-3.2 -3.6 Z";
+const PAD = 16;
+const ST = {};   // every sticker by id
+ROOMS.forEach(room => room.stickers.forEach(s => { if (s.y === undefined) s.y = s.b - s.h / 2; s.room = room.id; ST[s.id] = s; }));
+
+const CHARS = { girl: { skin: "#c68a5f", hair: "#3b2a2a", girl: true }, boy: { skin: "#f8d0b0", hair: "#b5651d" } };
+const OUTFITS = [P.saf, P.pink2, P.teal, P.sky2, P.sal, P.leaf], SHOES = [P.sal2, P.teal2, P.saf2, P.pink2, P.slate];
+
+const KEY = "autocollants-v1";
+const state = { chr: "girl", outfit: 0, shoes: 0, rooms: {}, stars: {}, set: { mute: false, lang: "fr" } };
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (d && typeof d === "object") {
+      if (CHARS[d.chr]) state.chr = d.chr;
+      state.outfit = d.outfit | 0; state.shoes = d.shoes | 0;
+      if (d.rooms) state.rooms = d.rooms;
+      if (d.stars) state.stars = d.stars;
+      Object.assign(state.set, d.set || {});
+    }
+  } catch (e) { /* storage blocked or corrupted: start fresh */ }
+  ROOMS.forEach(room => {
+    const R = state.rooms[room.id] = Object.assign({ p: {}, o: [] }, state.rooms[room.id]);
+    for (const id in R.p) if (!ST[id] || ST[id].room !== room.id) delete R.p[id];
+    R.o = R.o.filter(id => R.p[id]);
+    for (const id in R.p) if (!R.o.includes(id)) R.o.push(id);
+  });
+  if (!STRINGS[state.set.lang]) state.set.lang = "fr";
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* the game works without storage */ } }
+const T = () => STRINGS[state.set.lang];
+
+/* ===== 5. AUDIO: everything is synthesized with WebAudio ===== */
+let ac = null, master = null, nbuf = null;
+function unlock() {
+  if (!ac) {
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = .9; master.connect(ac.destination);
+      const n = ac.sampleRate * 2; nbuf = ac.createBuffer(1, n, ac.sampleRate);
+      const d = nbuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { ac = null; }
+  }
+  if (ac && ac.state === "suspended") ac.resume();
+}
+function tone(out, f, dur, o = {}) {
+  const { type = "sine", vol = .2, at = 0, to = 0, a = .008 } = o, t = ac.currentTime + at;
+  const os = ac.createOscillator(), gn = ac.createGain();
+  os.type = type; os.frequency.setValueAtTime(f, t); if (to) os.frequency.exponentialRampToValueAtTime(to, t + dur);
+  gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(vol, t + a); gn.gain.exponentialRampToValueAtTime(.001, t + dur);
+  os.connect(gn); gn.connect(out); os.start(t); os.stop(t + dur + .05);
+}
+function noise(out, dur, o = {}) {
+  const { type = "bandpass", f = 1000, to = 0, q = 1, vol = .2, at = 0, trem = 0 } = o, t = ac.currentTime + at;
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain();
+  s.buffer = nbuf; s.loop = true; fl.type = type; fl.Q.value = q;
+  fl.frequency.setValueAtTime(f, t); if (to) fl.frequency.exponentialRampToValueAtTime(to, t + dur);
+  gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(vol, t + Math.min(.05, dur / 3));
+  gn.gain.setValueAtTime(vol, t + dur * .7); gn.gain.linearRampToValueAtTime(0, t + dur);
+  if (trem) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = trem; lg.gain.value = vol * .6; l.connect(lg); lg.connect(gn.gain); l.start(t); l.stop(t + dur + .05); }
+  s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t, Math.random()); s.stop(t + dur + .05);
+}
+const SFX = {
+  peel: o => noise(o, .14, { f: 900, to: 3200, q: 2, vol: .22 }),
+  pop: o => tone(o, 620, .13, { to: 200, vol: .3 }),
+  chime: o => { tone(o, 1047, .45, { vol: .16 }); tone(o, 1568, .6, { vol: .13, at: .09 }); },
+  whoosh: o => noise(o, .4, { f: 500, to: 2600, q: 1, vol: .16 }),
+  back: o => tone(o, 420, .2, { to: 180, vol: .2, type: "triangle" }),
+  tick: o => tone(o, 900, .06, { vol: .12, type: "triangle" }),
+  star: o => { tone(o, 1319, .3, { vol: .15 }); tone(o, 1760, .5, { vol: .13, at: .1 }); },
+  giggle: o => { for (let i = 0; i < 5; i++) tone(o, i % 2 ? 880 : 1100, .1, { at: i * .1, vol: .14, to: i % 2 ? 990 : 1250 }); },
+  sizzle: o => noise(o, 3.3, { type: "highpass", f: 5200, vol: .1, trem: 17 }),
+  water: o => noise(o, 3.2, { f: 1400, q: .7, vol: .16, trem: 7 }),
+  rain: o => noise(o, 3.2, { type: "highpass", f: 3200, vol: .09, trem: 23 }),
+  bubbles: o => { noise(o, 3.6, { f: 700, q: .8, vol: .07, trem: 5 }); for (let i = 0; i < 16; i++) { const f = rnd(380, 900); tone(o, f, .12, { at: i * .22 + rnd(0, .1), to: f * 1.7, vol: .13 }); } },
+  brush: o => { for (let i = 0; i < 18; i++) noise(o, .13, { f: i % 2 ? 2600 : 3600, q: 3, vol: .16, at: i * .17 }); },
+  rub: o => { for (let i = 0; i < 12; i++) noise(o, .2, { f: i % 2 ? 900 : 1300, q: 2, vol: .14, at: i * .25 }); },
+  scribble: o => { for (let i = 0; i < 14; i++) noise(o, .12, { f: rnd(1500, 2400), q: 4, vol: .13, at: i * .22 + rnd(0, .08) }); },
+  flush: o => { noise(o, 1.8, { f: 2200, to: 260, q: .9, vol: .3 }); tone(o, 220, 1.4, { to: 70, vol: .06, type: "triangle" }); },
+  snore: o => { for (let i = 0; i < 2; i++) { tone(o, 95, .9, { type: "sawtooth", vol: .07, at: i * 1.9, to: 70, a: .3 }); tone(o, 720, .6, { vol: .035, at: i * 1.9 + 1, to: 980, a: .2 }); } },
+  crunch: o => { for (let i = 0; i < 5; i++) noise(o, .09, { type: "lowpass", f: 1700, vol: .28, at: i * .42 + .4 }); },
+  pour: o => { noise(o, 1.1, { f: 900, q: 1.2, vol: .12 }); tone(o, 320, 1.1, { to: 760, vol: .08 }); },
+  click: o => tone(o, 1700, .04, { type: "square", vol: .12 }),
+  tv: o => [523, 659, 784, 659, 880, 784, 659, 523, 587, 784, 988, 784].forEach((f, i) => tone(o, f, .22, { type: "square", vol: .05, at: i * .26 })),
+  page: o => { noise(o, .22, { type: "highpass", f: 2200, vol: .12 }); noise(o, .22, { type: "highpass", f: 2600, vol: .12, at: 1.6 }); },
+  spin: o => { tone(o, 300, 1.2, { to: 900, vol: .1, type: "triangle" }); tone(o, 900, 1.2, { to: 300, vol: .1, type: "triangle", at: 1.2 }); },
+  hug: o => [523, 659, 784].forEach((f, i) => tone(o, f, 1.4, { vol: .09, at: i * .12, a: .1 })),
+  boing: o => { for (let i = 0; i < 9; i++) tone(o, 190, .28, { to: 520, vol: .16, type: "triangle", at: i * .35 }); },
+  kick: o => { for (let i = 0; i < 3; i++) { tone(o, 150, .16, { to: 60, vol: .3, at: .35 + i * .7 }); noise(o, .06, { type: "lowpass", f: 900, vol: .2, at: .35 + i * .7 }); } },
+  tweet: o => { for (let i = 0; i < 6; i++) tone(o, 2200 + (i % 3) * 300, .12, { to: 3200, vol: .09, at: i * .32 + (i % 2) * .08 }); },
+  xylo: o => [523, 587, 659, 784, 880, 1047, 880, 784, 659, 784, 1047, 1319, 1047, 784, 659, 523].forEach((f, i) => tone(o, f, .3, { type: "triangle", vol: .16, at: i * .2 })),
+  fanfare: o => { [523, 659, 784, 1047].forEach((f, i) => tone(o, f, .3, { type: "triangle", vol: .2, at: i * .14 })); [523, 659, 784, 1047].forEach(f => tone(o, f, 1, { type: "triangle", vol: .11, at: .62 })); }
+};
+// Plays a sound on its own bus, so a long sound can be faded out when its action is interrupted
+function sfx(name) {
+  if (!ac || state.set.mute || !SFX[name]) return null;
+  try {
+    const bus = ac.createGain(); bus.connect(master); SFX[name](bus);
+    setTimeout(() => { try { bus.disconnect(); } catch (e) { } }, 6000);
+    return bus;
+  } catch (e) { return null; }
+}
+const stopBus = bus => { if (bus && ac) bus.gain.setTargetAtTime(0, ac.currentTime, .05); };
+
+/* ===== 6. GAME CLOCK: timers and tweens run on it, so __game.step(ms) is deterministic ===== */
+let clock = 0, lastTs = 0;
+const timers = [], tweens = [];
+const after = (ms, fn) => timers.push({ t: clock + ms, fn });
+const tween = (ms, fn, done) => tweens.push({ t0: clock, d: Math.max(1, ms), fn, done });
+function tick(dt) {
+  clock += dt;
+  for (let i = timers.length - 1; i >= 0; i--) if (timers[i].t <= clock) timers.splice(i, 1)[0].fn();
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const w = tweens[i], k = Math.min(1, (clock - w.t0) / w.d);
+    w.fn(k);
+    if (k >= 1) { tweens.splice(tweens.indexOf(w), 1); if (w.done) w.done(); }
+  }
+  if (cur) updChr(dt);
+  updFx(dt);
+}
+function frame(ts) { const dt = lastTs ? Math.min(100, ts - lastTs) : 16; lastTs = ts; tick(dt); requestAnimationFrame(frame); }
+
+/* ===== 7. SVG: sticker wrapper (die-cut border + ghost come from CSS), particles ===== */
+const scene = $("scene"), stage = $("stage"), sheet = $("sheet"), grid = $("grid");
+const L = { wall: $("lWall"), ground: $("lGround"), floor: $("lFloor"), top: $("lTop") };
+const lFx = $("lFx"), lOver = $("lOver"), lGlow = $("lGlow"), dimEl = $("dim"), lChr = $("lChr");
+let cur = null, nodes = {}, cells = {}, hist = [], busy = {}, dimBy = null, sc = 1;
+
+const stickerInner = s => `<g class="cut">${s.art}</g><g class="mar">${s.art}</g><g class="art">${s.art}</g>`;
+function setPos(s, x, y, k = 1) {
+  nodes[s.id].setAttribute("transform", k === 1 ? `translate(${x - s.w / 2} ${y - s.h / 2})`
+    : `translate(${x} ${y}) scale(${k.toFixed(3)}) translate(${-s.w / 2} ${-s.h / 2})`);
+}
+
+const CONF = [P.sal, P.saf, P.mint2, P.sky2, P.pink2, P.teal];
+const FX = {
+  steam: { iv: 170, life: 1500, mk: () => c(0, 0, 14, "#fff", 'stroke="#dfe7ee" stroke-width="2"'), go: q => { q.x += rnd(-16, 16); q.vx = rnd(-14, 14); q.vy = -70; q.s0 = .5; q.s1 = 1.9; } },
+  bubble: { iv: 150, life: 1500, mk: () => c(0, 0, 12, "#fff", `fill-opacity=".55" stroke="${P.sky}" stroke-width="3"`), go: q => { q.x += rnd(-130, 130); q.vx = rnd(-20, 20); q.vy = rnd(-90, -50); q.s0 = rnd(.5, 1); q.s1 = q.s0 * 1.5; } },
+  drop: { iv: 90, life: 700, mk: () => p("M0 -10 Q8 2 0 8 Q-8 2 0 -10 Z", P.sky2), go: q => { q.x += rnd(-10, 10); q.vx = rnd(-10, 10); q.vy = 60; q.g = 700; } },
+  foam: { iv: 110, life: 700, mk: () => c(0, 0, 9, "#fff", 'stroke="#cfe6f2" stroke-width="2"'), go: q => { q.x += rnd(-34, 34); q.y += rnd(-20, 20); q.vy = -14; q.s0 = .4; q.s1 = 1.3; } },
+  zzz: { iv: 750, life: 1900, mk: () => ln("M-10 -10 H10 L-10 10 H10", P.slate, 5), go: q => { q.vx = 26; q.vy = -50; q.s0 = .7; q.s1 = 1.9; } },
+  note: { iv: 320, life: 1500, mk: () => { const k = pick(CONF); return c(-4, 8, 7, k) + ln("M3 8 V-14 L13 -9", k, 4); }, go: q => { q.x += rnd(-80, 80); q.vx = rnd(-20, 20); q.vy = -70; q.wob = 30; } },
+  spark: { iv: 260, life: 650, mk: () => p("M0 -14 Q2 -2 14 0 Q2 2 0 14 Q-2 2 -14 0 Q-2 -2 0 -14 Z", P.saf, 'stroke="#fff" stroke-width="2"'), go: q => { const a = rnd(0, 6.28), v = rnd(60, 150); q.x += rnd(-30, 30); q.y += rnd(-30, 30); q.vx = Math.cos(a) * v; q.vy = Math.sin(a) * v; q.s0 = .4; q.s1 = 1.5; q.vr = 200; } },
+  heart: { iv: 300, life: 1300, mk: () => p("M0 9 Q-18 -4 -9 -13 Q-2 -17 0 -8 Q2 -17 9 -13 Q18 -4 0 9 Z", P.pink2), go: q => { q.x += rnd(-50, 50); q.vx = rnd(-20, 20); q.vy = -80; q.s0 = .6; q.s1 = 1.6; } },
+  conf: { life: 2600, mk: () => r(-8, -5, 16, 10, pick(CONF), 2), go: q => { q.vx = rnd(-60, 60); q.vy = rnd(80, 220); q.g = 160; q.vr = rnd(-360, 360); q.rot = rnd(0, 360); q.life = rnd(2000, 3000); } },
+  star: { life: 1900, mk: () => p(STARD, P.saf, 'stroke="#fff" stroke-width="1.2" stroke-linejoin="round"'), go: q => { q.s1 = 9; q.pop = true; } }
+};
+const parts = [], pool = {};
+function emit(type, x, y) {
+  const F = FX[type]; if (!F) return;
+  let q = (pool[type] || (pool[type] = [])).pop();
+  if (!q) { const n = document.createElementNS(NS, "g"); n.innerHTML = F.mk(); lFx.appendChild(n); q = { n, type }; }   // nodes are pooled and reused
+  Object.assign(q, { x, y, vx: 0, vy: 0, g: 0, age: 0, life: F.life, s0: 1, s1: 1, rot: 0, vr: 0, wob: 0, pop: false });
+  F.go(q); q.n.setAttribute("opacity", 0); q.n.style.display = ""; parts.push(q);
+}
+const burst = (type, x, y, n) => { for (let i = 0; i < (RM ? Math.ceil(n / 3) : n); i++) emit(type, x, y); };
+function killPart(i) { const q = parts[i]; q.n.style.display = "none"; pool[q.type].push(q); parts.splice(i, 1); }
+function updFx(dt) {
+  const s = dt / 1000;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i]; q.age += dt;
+    if (q.age >= q.life) { killPart(i); continue; }
+    q.vy += q.g * s; q.x += q.vx * s; q.y += q.vy * s; q.rot += q.vr * s;
+    const k = q.age / q.life, wx = q.wob ? Math.sin(q.age / 180) * q.wob : 0;
+    const z = q.pop ? q.s1 * Math.min(1, q.age / 300) * (1 + .15 * Math.sin(q.age / 90) * Math.max(0, 1 - q.age / 900)) : lerp(q.s0, q.s1, k);
+    q.n.setAttribute("transform", `translate(${(q.x + wx).toFixed(1)} ${q.y.toFixed(1)}) rotate(${q.rot.toFixed(0)}) scale(${z.toFixed(2)})`);
+    q.n.setAttribute("opacity", Math.min(1, q.age / 80, (1 - k) * 3).toFixed(2));
+  }
+}
+
+/* ===== 8. CHARACTER: rig made of separate parts, poses played by rotating joints ===== */
+function chrMarkup(kind, ids) {
+  const k = CHARS[kind], sk = k.skin, I = n => ids ? ` id="c${n}"` : "";
+  const st = (d, col, w) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const leg = (n, x) => `<g${I(n)} transform="translate(${x} -150)">${st("M0 0 V72", k.girl ? sk : P.slate, k.girl ? 30 : 33)}<g${I(n + "k")} transform="translate(0 72)">`
+    + `${st("M0 0 V56", sk, 26)}<ellipse cx="8" cy="64" rx="25" ry="13" style="fill:var(--shoes)"/></g></g>`;
+  const arm = (n, x, a) => `<g${I(n)} transform="translate(${x} -108) rotate(${a})">${st("M0 0 V56", sk, 24)}`
+    + `<path d="M0 0 V24" fill="none" stroke-width="28" stroke-linecap="round" style="stroke:var(--outfit)"/>`
+    + `<g${I(n + "e")} transform="translate(0 56) rotate(${a * .7})">${st("M0 0 V44", sk, 22)}${c(0, 50, 14, sk)}</g></g>`;
+  const body = k.girl
+    ? `<path d="M-38 -124 Q0 -136 38 -124 L62 8 Q0 26 -62 8 Z" style="fill:var(--outfit)"/>` + st("M-16 -126 Q0 -112 16 -126", "#fff", 6)
+    : r(-48, -46, 96, 54, P.slate, 18) + `<rect x="-46" y="-126" width="92" height="100" rx="30" style="fill:var(--outfit)"/>`;
+  const hairB = k.girl ? c(-64, -112, 30, k.hair) + c(64, -112, 30, k.hair) : "";
+  const hairF = k.girl
+    ? p("M-70 -72 A70 70 0 0 1 70 -72 Q44 -112 0 -104 Q-44 -112 -70 -72 Z", k.hair) + c(-58, -100, 9, P.pink2) + c(58, -100, 9, P.pink2)
+    : p("M-70 -78 A70 70 0 0 1 70 -78 Q56 -106 20 -102 Q10 -120 -24 -110 Q-56 -106 -70 -78 Z", k.hair) + p("M-8 -132 Q10 -158 28 -136 Q14 -136 8 -124 Z", k.hair);
+  const eye = "#2d2a32";
+  const head = `<g${I("Head")} transform="translate(0 -122)">${hairB}${c(-68, -60, 12, sk)}${c(68, -60, 12, sk)}${c(0, -66, 70, sk)}${hairF}`
+    + el(-40, -42, 12, 8, P.pink2, 'opacity=".45"') + el(40, -42, 12, 8, P.pink2, 'opacity=".45"')
+    + `<g${I("E0")}>${c(-24, -62, 8, eye)}${c(24, -62, 8, eye)}${c(-21, -65, 2.6, "#fff")}${c(27, -65, 2.6, "#fff")}</g>`
+    + `<g${I("E1")} display="none">${st("M-33 -62 Q-24 -54 -15 -62 M15 -62 Q24 -54 33 -62", eye, 5)}</g>`
+    + `<g${I("E2")} display="none">${st("M-33 -58 Q-24 -70 -15 -58 M15 -58 Q24 -70 33 -58", eye, 5)}</g>`
+    + `<g${I("M0")}>${st("M-12 -40 Q0 -28 12 -40", "#8f3a3a", 5)}</g>`
+    + `<g${I("M1")} display="none">${el(0, -35, 11, 10, "#a23b4a")}</g>`
+    + `<g${I("M2")} display="none">${c(0, -37, 6, "#a23b4a")}</g></g>`;
+  return leg("LL", -20) + leg("LR", 20) + `<g${I("Tor")} transform="translate(0 -150)">${body}${head}${arm("AL", -46, 8)}${arm("AR", 46, -8)}</g><g${I("Prop")}></g>`;
+}
+const chrColors = () => `--outfit:${OUTFITS[state.outfit % OUTFITS.length]};--shoes:${SHOES[state.shoes % SHOES.length]}`;
+
+const JK = ["aR", "aL", "lR", "lL", "tor", "head", "y", "rot"];
+// Animation engine: value of a pose at time t (ms), keyframes eased with a cosine
+function evalPose(name, t) {
+  const po = POSES[name], ph = (t / 1000 / po.dur) % 1, K = po.keys;
+  let i = 0; while (i < K.length - 1 && K[i + 1].t <= ph) i++;
+  const a = K[i], b = K[(i + 1) % K.length], tb = i + 1 < K.length ? b.t : 1;
+  const k = .5 - .5 * Math.cos(Math.PI * clamp((ph - a.t) / (tb - a.t), 0, 1)), out = {};
+  for (const key of JK) {
+    const va = a[key] ?? po[key] ?? BASE[key], vb = b[key] ?? po[key] ?? BASE[key];
+    out[key] = Array.isArray(va) ? [lerp(va[0], vb[0], k), lerp(va[1], vb[1], k)] : lerp(va, vb, k);
+  }
+  if (po.bob) out.y -= Math.abs(Math.sin(ph * Math.PI * 2)) * po.bob * (RM ? .4 : 1);
+  out.eyes = a.eyes ?? po.eyes ?? 0; out.mouth = a.mouth ?? po.mouth ?? 0;
+  return out;
+}
+const chr = { x: 800, y: FY, face: 1, pose: "idle", pt: 0, J: null, act: null, queue: [], blink: 2500, el: {}, prop: null, propRot: 0, eyes: -1, mouth: -1 };
+function buildChr() {
+  lChr.innerHTML = `<g id="chrRoot" style="cursor:pointer;${chrColors()}">${chrMarkup(state.chr, true)}</g>`;
+  chr.el = { root: $("chrRoot") };
+  ["LL", "LLk", "LR", "LRk", "Tor", "Head", "AL", "ALe", "AR", "ARe", "Prop", "E0", "E1", "E2", "M0", "M1", "M2"].forEach(k => chr.el[k] = $("c" + k));
+  Object.assign(chr, { x: 800, y: FY, face: 1, pose: "idle", pt: 0, act: null, queue: [], prop: null, propRot: 0, eyes: -1, mouth: -1 });
+  chr.J = evalPose("idle", 0); applyPose(chr.J);
+}
+// Right hand position in the character's own space (forward kinematics), used for props and particles
+function hand() {
+  const J = chr.J, tr = rad(J.tor), a1 = rad(J.tor + J.aR[0]), a2 = a1 + rad(J.aR[1]);
+  const sx = 46 * Math.cos(tr) + 108 * Math.sin(tr), sy = 46 * Math.sin(tr) - 108 * Math.cos(tr) - 150;
+  return [sx - ARM1 * Math.sin(a1) - ARM2 * Math.sin(a2), sy + ARM1 * Math.cos(a1) + ARM2 * Math.cos(a2)];
+}
+function applyPose(T) {
+  const J = chr.J, e = chr.el, f = v => v.toFixed(1);
+  e.root.setAttribute("transform", `translate(${f(chr.x)} ${f(chr.y + J.y)}) rotate(${f(J.rot)}) scale(${chr.face} 1)`);
+  e.LL.setAttribute("transform", `translate(-20 -150) rotate(${f(J.lL[0])})`); e.LLk.setAttribute("transform", `translate(0 72) rotate(${f(J.lL[1])})`);
+  e.LR.setAttribute("transform", `translate(20 -150) rotate(${f(J.lR[0])})`); e.LRk.setAttribute("transform", `translate(0 72) rotate(${f(J.lR[1])})`);
+  e.Tor.setAttribute("transform", `translate(0 -150) rotate(${f(J.tor)})`); e.Head.setAttribute("transform", `translate(0 -122) rotate(${f(J.head)})`);
+  e.AL.setAttribute("transform", `translate(-46 -108) rotate(${f(J.aL[0])})`); e.ALe.setAttribute("transform", `translate(0 56) rotate(${f(J.aL[1])})`);
+  e.AR.setAttribute("transform", `translate(46 -108) rotate(${f(J.aR[0])})`); e.ARe.setAttribute("transform", `translate(0 56) rotate(${f(J.aR[1])})`);
+  if (chr.prop) { const h = hand(); e.Prop.setAttribute("transform", `translate(${f(h[0])} ${f(h[1])}) rotate(${chr.propRot})`); }
+  let eyes = T.eyes; if (!eyes && chr.blink < 130) eyes = 1;
+  if (eyes !== chr.eyes) { chr.eyes = eyes; [0, 1, 2].forEach(i => e["E" + i].setAttribute("display", i === eyes ? "inline" : "none")); }
+  if (T.mouth !== chr.mouth) { chr.mouth = T.mouth; [0, 1, 2].forEach(i => e["M" + i].setAttribute("display", i === T.mouth ? "inline" : "none")); }
+}
+function setProp(name, rot) { chr.prop = name || null; chr.propRot = rot || 0; chr.el.Prop.innerHTML = name ? PROPS[name] : ""; }
+
+// Actions are queued (3 at most) and never stacked: walk to the sticker, play the pose, go back to idle
+function queueAct(q) {
+  if (!cur) return false;
+  const last = chr.queue[chr.queue.length - 1];
+  if (q.id && ((last && last.id === q.id) || (!chr.queue.length && chr.act && chr.act.id === q.id))) return false;
+  if (chr.queue.length >= 3) return false;
+  chr.queue.push(q); return true;
+}
+function startAct(q) {
+  let a = q.a, s = null, pos = null;
+  if (q.id) { s = ST[q.id]; pos = state.rooms[cur.id].p[q.id]; if (!pos || !s.act) return; a = s.act; }
+  const A = { a, s, pos, id: q.id, t: 0, phase: 0, main: false, fxT: 0, bus: null, tx: chr.x, face: chr.face };
+  if (pos) {
+    A.tx = a.on ? clamp(pos[0] + a.on[0], 70, 1530) : clamp(pos[0] + (a.dx || 0), 110, 1490);
+    A.face = a.face || (pos[0] >= A.tx ? 1 : -1);
+  }
+  chr.act = A;
+}
+function setDim(on, s, pos) {
+  dimBy = on ? s.id : null;
+  const from = +dimEl.getAttribute("opacity"), to = on ? .5 : 0;
+  tween(RM ? 1 : 300, k => dimEl.setAttribute("opacity", lerp(from, to, k).toFixed(2)));
+  lGlow.innerHTML = on ? c(pos[0] + s.act.glow[0], pos[1] + s.act.glow[1], s.act.glow[2], "url(#glowG)") : "";
+}
+function beginDo(A) {
+  const a = A.a, s = A.s; A.phase = 1; chr.face = A.face; chr.pt = 0;
+  if (a.on) { chr.x = A.pos[0] + a.on[0]; chr.y = A.pos[1] + a.on[1]; }
+  if (s) {
+    const n = nodes[s.id];
+    if (a.persist) { s._on = !s._on; n.classList.toggle("on", s._on); if (a.dim) setDim(s._on, s, A.pos); }
+    else if (a.cls !== false) n.classList.add("on");
+    if (a.hide) n.style.visibility = "hidden";
+    if (a.over) lOver.innerHTML = `<g transform="translate(${A.pos[0] - s.w / 2} ${A.pos[1] - s.h / 2})">${a.over}</g>`;
+  }
+  if (a.snd) { if (a.sndAt) after(a.sndAt, () => { if (chr.act === A) A.bus = sfx(a.snd); }); else A.bus = sfx(a.snd); }
+}
+function endAct() {
+  const A = chr.act; if (!A) return;
+  if (A.phase === 1) {
+    if (A.s) { const n = nodes[A.s.id]; if (n) { if (!A.a.persist) n.classList.remove("on"); n.style.visibility = ""; } }
+    lOver.innerHTML = ""; stopBus(A.bus); setProp(null);
+    chr.y = FY; chr.x = clamp(chr.x, 110, 1490);
+  }
+  chr.act = null; chr.pose = "idle";
+}
+function fxPoint(A) {
+  const a = A.a, at = a.fxAt, f = chr.face, by = chr.y + chr.J.y;
+  if (Array.isArray(at)) return A.pos ? [A.pos[0] + at[0], A.pos[1] + at[1]] : [chr.x, by - 300];
+  if (at === "mouth") return [chr.x + f * 4, by - 312];
+  if (at === "head") return [chr.x, by - 400];
+  if (at === "body") return [chr.x, by - 210];
+  if (at === "feet") return [chr.x, by - 14];
+  if (at === "above") return [chr.x + rnd(-170, 170), by - 660];
+  const h = hand(), o = a.fxOff || [0, 0];
+  return [chr.x + f * (h[0] + o[0]), by + h[1] + o[1]];
+}
+function updChr(dt) {
+  const ch = chr;
+  if (!ch.act && ch.queue.length) startAct(ch.queue.shift());
+  const A = ch.act;
+  if (A && A.phase === 0) {
+    const dx = A.tx - ch.x, stp = .55 * dt;
+    if (Math.abs(dx) <= stp) { ch.x = A.tx; beginDo(A); }
+    else { ch.x += Math.sign(dx) * stp; ch.face = Math.sign(dx); ch.pose = "walk"; }
+  }
+  if (A && A.phase === 1) {
+    const a = A.a; A.t += dt;
+    if (a.pre && A.t < a.preT) ch.pose = a.pre;
+    else {
+      ch.pose = a.pose;
+      if (!A.main) { A.main = true; if (a.hold) setProp(a.hold, a.propRot); }
+      if (a.fx) { A.fxT -= dt; if (A.fxT <= 0) { A.fxT = FX[a.fx].iv * (RM ? 2.5 : 1); const q = fxPoint(A); emit(a.fx, q[0], q[1]); } }
+      if (a.set && !A.setDone && A.t > (a.dur || 3500) * .5) {
+        A.setDone = true; state[a.set]++; ch.el.root.setAttribute("style", "cursor:pointer;" + chrColors());
+        sfx("chime"); burst("spark", ch.x, ch.y - (a.set === "shoes" ? 20 : 200), 8); save();
+      }
+    }
+    if (A.t >= (a.dur || 3500)) endAct();
+  }
+  if (!ch.act) ch.pose = "idle";
+  ch.pt += dt; ch.blink -= dt; if (ch.blink < 0) ch.blink = rnd(2200, 4500);
+  const T = evalPose(ch.pose, ch.pt), k = 1 - Math.exp(-dt / 55);
+  for (const key of JK) {
+    const v = T[key];
+    if (Array.isArray(v)) { ch.J[key][0] += (v[0] - ch.J[key][0]) * k; ch.J[key][1] += (v[1] - ch.J[key][1]) * k; }
+    else ch.J[key] += (v - ch.J[key]) * k;
+  }
+  applyPose(T);
+}
+function tapChr() {
+  if (chr.act) { sfx("giggle"); return; }
+  const R = state.rooms[cur.id], ids = Object.keys(R.p).filter(id => ST[id].act && !busy[id]);
+  if (ids.length) { sfx("tick"); queueAct({ id: pick(ids) }); }
+  else { sfx("giggle"); queueAct({ a: { pose: "wave", dur: 1600 } }); }
+}
+
+/* ===== 9. SCENE LOGIC: place, snap, remove, undo, drag with Pointer Events ===== */
+function placeAt(id, x, y, o = {}) {
+  const s = ST[id], R = state.rooms[cur.id];
+  if (R.p[id]) clearSt(id);
+  if (o.hist !== false) hist.push({ id, prev: R.p[id] ? R.p[id].slice() : null });
+  const pos = R.p[id] = [Math.round(x), Math.round(y)];
+  R.o = R.o.filter(k => k !== id); R.o.push(id);
+  const n = nodes[id]; L[s.layer].appendChild(n); n.style.display = "";
+  cells[id].classList.add("gone");
+  // little bounce so the sticker "sticks"
+  tween(RM ? 1 : 300, k => { if (cur && cur.id === s.room && R.p[id] === pos && !busy[id]) setPos(s, pos[0], pos[1], 1 + .22 * (1 - k) * Math.cos(k * 9)); });
+  setPos(s, pos[0], pos[1], RM ? 1 : 1.22);
+  if (!o.quiet) {
+    if (o.snap) { sfx("pop"); sfx("chime"); burst("spark", pos[0], pos[1], 9); } else sfx("pop");
+  }
+  save();
+  if (s.act && !o.noAct) queueAct({ id });
+  checkDone();
+}
+// Called when a placed sticker is picked up or removed: stop whatever depends on it
+function clearSt(id) {
+  const s = ST[id];
+  if (chr.act && chr.act.s === s) endAct();
+  chr.queue = chr.queue.filter(q => q.id !== id);
+  if (s._on) { s._on = false; nodes[id].classList.remove("on"); }
+  if (dimBy === id) setDim(false);
+}
+function removeSt(id, o = {}) {
+  const R = state.rooms[cur.id]; if (!R.p[id]) return;
+  if (o.hist !== false) hist.push({ id, prev: R.p[id].slice() });
+  clearSt(id); delete R.p[id]; R.o = R.o.filter(k => k !== id);
+  nodes[id].remove(); nodes[id].style.display = ""; cells[id].classList.remove("gone");
+  cur._done = false; sfx("back"); save();
+}
+function undo() {
+  if (!cur) return;
+  const h = hist.pop();
+  if (!h || busy[h.id]) { sfx("tick"); return; }
+  sfx("back");
+  if (h.prev) placeAt(h.id, h.prev[0], h.prev[1], { hist: false, noAct: true, quiet: true });
+  else removeSt(h.id, { hist: false });
+}
+function checkDone() {
+  const n = Object.keys(state.rooms[cur.id].p).length, tot = cur.stickers.length;
+  const st = n >= tot ? 3 : n >= tot * 2 / 3 ? 2 : n >= tot / 3 ? 1 : 0;
+  if (st > (state.stars[cur.id] || 0)) { state.stars[cur.id] = st; save(); if (st < 3) sfx("star"); }
+  if (n >= tot && !cur._done) { cur._done = true; celebrate(); }
+  if (n < tot) cur._done = false;
+}
+function celebrate() {
+  sfx("fanfare");
+  const room = cur, n = RM ? 16 : 70;
+  for (let i = 0; i < n; i++) after(i * 22, () => { if (cur === room) emit("conf", rnd(40, 1560), rnd(-60, 0)); });
+  emit("star", 800, 400);
+  chr.queue.unshift({ a: { pose: "dance", dur: 4200 } });
+}
+function poke(id) {
+  const s = ST[id], pos = state.rooms[cur.id].p[id]; if (!pos) return;
+  tween(RM ? 1 : 260, k => { if (cur && cur.id === s.room && state.rooms[s.room].p[id] === pos && !busy[id]) setPos(s, pos[0], pos[1], 1 + .12 * (1 - k) * Math.cos(k * 9)); });
+  if (s.act) sfx(queueAct({ id }) ? "tick" : "pop");
+  else sfx("pop");
+}
+
+// Floating copy of a sticker that follows the finger (HTML level, moved with a CSS transform: no layout work)
+function mkDrag(s, k) {
+  const e = document.createElementNS(NS, "svg");
+  e.setAttribute("class", "drg stk"); e.setAttribute("viewBox", `${-PAD} ${-PAD} ${s.w + 2 * PAD} ${s.h + 2 * PAD}`);
+  e._w = (s.w + 2 * PAD) * k; e._h = (s.h + 2 * PAD) * k; e.setAttribute("width", e._w); e.setAttribute("height", e._h);
+  e.innerHTML = stickerInner(s); document.body.appendChild(e); return e;
+}
+const moveDrag = (e, cx, cy, z = 1) => { e.style.transform = `translate(${(cx - e._w / 2).toFixed(1)}px,${(cy - e._h / 2).toFixed(1)}px) scale(${z.toFixed(3)})`; };
+// TAP on the sheet: the sticker flies by itself to its natural spot
+function fly(id) {
+  const s = ST[id], room = cur; busy[id] = true; cells[id].classList.add("gone"); sfx("peel"); sfx("whoosh");
+  const a = cells[id].firstElementChild.getBoundingClientRect(), rc = stage.getBoundingClientRect();
+  const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = rc.left + s.x * sc, y1 = rc.top + s.y * sc;
+  const e = mkDrag(s, sc), k0 = a.width / e._w;
+  moveDrag(e, x0, y0, k0);
+  tween(RM ? 160 : 460, k => { const q = k * k * (3 - 2 * k); moveDrag(e, lerp(x0, x1, q), lerp(y0, y1, q) - Math.sin(k * Math.PI) * (RM ? 0 : 70), lerp(k0, 1, q)); },
+    () => { e.remove(); if (cur === room) { busy[id] = false; placeAt(id, s.x, s.y, { snap: true }); } });
+}
+const drags = new Map();   // one entry per finger
+function down(e, id, from) {
+  if (busy[id] || drags.has(e.pointerId)) return;
+  e.preventDefault(); busy[id] = true;
+  let cx, cy;
+  if (from === "sheet") { const a = cells[id].firstElementChild.getBoundingClientRect(); cx = a.left + a.width / 2; cy = a.top + a.height / 2; }
+  else { const rc = stage.getBoundingClientRect(), q = state.rooms[cur.id].p[id]; cx = rc.left + q[0] * sc; cy = rc.top + q[1] * sc; }
+  drags.set(e.pointerId, { id, from, x0: e.clientX, y0: e.clientY, cx, cy, moved: false, el: null });
+}
+function dragMove(e) {
+  const d = drags.get(e.pointerId); if (!d) return;
+  const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+  if (!d.moved) {
+    if (Math.hypot(dx, dy) < 12) return;
+    d.moved = true; sfx("peel");
+    if (d.from === "sheet") cells[d.id].classList.add("gone"); else { clearSt(d.id); nodes[d.id].style.display = "none"; }
+    d.el = mkDrag(ST[d.id], sc * 1.08);
+  }
+  moveDrag(d.el, d.cx + dx, d.cy + dy);
+}
+function dragEnd(e, cancel) {
+  const d = drags.get(e.pointerId); if (!d) return;
+  drags.delete(e.pointerId); busy[d.id] = false;
+  const s = ST[d.id];
+  if (!d.moved) { if (!cancel) { if (d.from === "sheet") fly(d.id); else poke(d.id); } return; }
+  d.el.remove();
+  const x = d.cx + e.clientX - d.x0, y = d.cy + e.clientY - d.y0, rc = stage.getBoundingClientRect();
+  if (!cancel && x >= rc.left && x <= rc.right && y >= rc.top && y <= rc.bottom) {
+    const sx = clamp((x - rc.left) / sc, s.w * .3, 1600 - s.w * .3), sy = clamp((y - rc.top) / sc, s.h * .3, 900 - s.h * .3);
+    const snap = Math.hypot(sx - s.x, sy - s.y) < Math.max(120, 64 / sc);   // close to the natural spot: snap + sparkles
+    placeAt(d.id, snap ? s.x : sx, snap ? s.y : sy, { snap });
+  }
+  else if (d.from === "scene" && !cancel) removeSt(d.id);                    // dragged back onto the sheet
+  else if (d.from === "scene") nodes[d.id].style.display = "";
+  else { cells[d.id].classList.remove("gone"); sfx("back"); }
+}
+addEventListener("pointermove", dragMove);
+addEventListener("pointerup", e => dragEnd(e, false));
+addEventListener("pointercancel", e => dragEnd(e, true));
+addEventListener("pointerdown", unlock, true);
+scene.addEventListener("pointerdown", e => {
+  if (!cur) return;
+  const n = e.target.closest(".stk");
+  if (n && nodes[n.dataset.id] === n) return down(e, n.dataset.id, "scene");
+  if (e.target.closest("#chrRoot")) return tapChr();
+  const rc = stage.getBoundingClientRect();   // tapping the empty room still answers
+  burst("spark", (e.clientX - rc.left) / sc, (e.clientY - rc.top) / sc, 3); sfx("tick");
+});
+grid.addEventListener("pointerdown", e => {
+  const cl = e.target.closest(".cell"); if (!cl || !cur) return;
+  const id = cl.dataset.id;
+  if (cl.classList.contains("gone")) { if (!busy[id]) poke(id); return; }
+  down(e, id, "sheet");
+});
+
+/* ===== 10. UI SCREENS: room, home, layout, parent area ===== */
+function leaveRoom() {
+  if (!cur) return;
+  endAct(); chr.queue = [];
+  for (let i = parts.length - 1; i >= 0; i--) killPart(i);
+  dimBy = null; dimEl.setAttribute("opacity", 0); lGlow.innerHTML = ""; lOver.innerHTML = "";
+  document.querySelectorAll(".drg").forEach(e => e.remove()); drags.clear();
+  cur = null;
+}
+function openRoom(id) {
+  const room = ROOMS.find(q => q.id === id); if (!room) return;
+  leaveRoom(); cur = room; hist = []; busy = {}; nodes = {}; cells = {};
+  $("home").classList.add("hidden"); $("room").classList.remove("hidden");
+  $("lBg").innerHTML = room.bg; LAYERS.forEach(k => L[k].innerHTML = ""); grid.innerHTML = "";
+  const R = state.rooms[id];
+  room.stickers.forEach(s => {
+    const n = document.createElementNS(NS, "g"); n.setAttribute("class", "stk"); n.dataset.id = s.id; n.innerHTML = stickerInner(s);
+    nodes[s.id] = n; s._on = false;
+    const cell = document.createElement("div"); cell.className = "cell"; cell.dataset.id = s.id;
+    cell.innerHTML = `<svg class="stk" viewBox="${-PAD} ${-PAD} ${s.w + 2 * PAD} ${s.h + 2 * PAD}">${stickerInner(s)}</svg>`;
+    grid.appendChild(cell); cells[s.id] = cell;
+  });
+  R.o.forEach(sid => { const s = ST[sid], q = R.p[sid]; L[s.layer].appendChild(nodes[sid]); setPos(s, q[0], q[1]); cells[sid].classList.add("gone"); });
+  room._done = Object.keys(R.p).length >= room.stickers.length;
+  buildChr(); layout();
+}
+function goHome() {
+  leaveRoom(); $("room").classList.add("hidden"); $("home").classList.remove("hidden");
+  const gs = $("bGear").style; gs.left = gs.top = gs.right = "";
+  buildHome();
+}
+// The sticker sheet goes where it leaves the biggest scene: side panel or bottom strip
+function layout() {
+  if (!cur) return;
+  const W = innerWidth, H = innerHeight, m = 8, bs = 72, n = cur.stickers.length;
+  const pW = Math.max(190, W * .22), pH = Math.max(150, H * .24);
+  const w1 = Math.min(W - pW - 3 * m, (H - 2 * m) * 16 / 9), w2 = Math.min((H - pH - 3 * m) * 16 / 9, W - 2 * m), side = w1 >= w2;
+  let sx, sy, sw, px, py, pw, ph, bar = 0;
+  if (side) { sw = w1; sx = m; sy = (H - sw * 9 / 16) / 2; px = sx + sw + m; py = m; pw = W - px - m; ph = H - 2 * m; }
+  else {
+    sw = w2; const sh = sw * 9 / 16;
+    if (H - 3 * m - sh - pH >= bs + 22) bar = bs + 22;   // enough room: icons get their own bar above the scene
+    sx = (W - sw) / 2; sy = m + bar; px = m; py = sy + sh + m; pw = W - 2 * m; ph = H - py - m;
+  }
+  sc = sw / 1600;
+  Object.assign(stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sw * 9 / 16 + "px" });
+  Object.assign(sheet.style, { left: px + "px", top: py + "px", width: pw + "px", height: ph + "px" });
+  // the house (main menu) stays top left on every screen; the room list button sits right next to it
+  const hb = $("sortie").getBoundingClientRect();
+  const top = (bar ? m + 4 : sy + 8) + "px", rgt = bar ? W - m - 4 : sx + sw - 8;
+  Object.assign($("bHome").style, { left: hb.right + 10 + "px", top: hb.top + (hb.height - bs) / 2 + "px" });
+  // same order and look as the other games: yellow undo arrow, then the pink sponge on the far right
+  Object.assign($("bUndo").style, { left: rgt - 2 * bs - 10 + "px", top });
+  Object.assign($("bSponge").style, { left: rgt - bs + "px", top });
+  // parents' gear: left of the undo arrow, or in the bottom right corner of the scene when the top row is too narrow (phone)
+  const gl = rgt - 3 * bs - 20;
+  if (gl >= hb.right + bs + 20) Object.assign($("bGear").style, { left: gl + "px", top, right: "auto" });
+  else Object.assign($("bGear").style, { left: sx + sw - bs - 8 + "px", top: sy + sw * 9 / 16 - bs - 8 + "px", right: "auto" });
+  // grid: the column count that gives the biggest cells; scroll only if cells would get under 70px
+  const iw = pw - 12, ih = ph - 12; let best = 0, cols = 1, cw, ch;
+  for (let k = 1; k <= n; k++) { const q = Math.min(iw / k, ih / Math.ceil(n / k)); if (q > best + .5) { best = q; cols = k; } }
+  sheet.classList.remove("sx", "sy");
+  if (best >= 70) { const rows = Math.ceil(n / cols); cw = iw / cols; ch = ih / rows; grid.style.cssText = `grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)`; }
+  else if (side) { cols = Math.max(1, Math.floor(iw / 84)); cw = iw / cols; ch = 84; grid.style.cssText = `grid-template-columns:repeat(${cols},1fr);grid-auto-rows:84px;height:auto`; sheet.classList.add("sy"); }
+  else { const rows = Math.max(1, Math.floor(ih / 84)); cw = 84; ch = ih / rows; grid.style.cssText = `grid-auto-flow:column;grid-template-rows:repeat(${rows},1fr);grid-auto-columns:84px;width:max-content`; sheet.classList.add("sx"); }
+  cur.stickers.forEach(s => {
+    const k = Math.min((cw - 8) / (s.w + 2 * PAD), (ch - 8) / (s.h + 2 * PAD), Math.max(.5, sc * 1.1)), v = cells[s.id].firstElementChild;
+    v.setAttribute("width", ((s.w + 2 * PAD) * k).toFixed(1)); v.setAttribute("height", ((s.h + 2 * PAD) * k).toFixed(1));
+  });
+}
+function buildHome() {
+  const s = T(); document.documentElement.lang = state.set.lang; document.title = s.title;
+  const tx = (extra) => `<text x="320" y="82" text-anchor="middle" font-size="68" font-weight="800" stroke-linejoin="round" ${extra}>${s.title}</text>`;
+  $("logo").innerHTML = tx(`fill="${P.cut}" stroke="${P.cut}" stroke-width="25"`) + tx('fill="#fff" stroke="#fff" stroke-width="19"') + tx(`fill="${P.pink2}"`);
+  $("chars").innerHTML = Object.keys(CHARS).map(k => `<button class="chb${state.chr === k ? " sel" : ""}" type="button" data-chr="${k}" aria-label="${k}">`
+    + `<svg viewBox="-105 -458 210 210"><g style="${chrColors()}">${chrMarkup(k, false)}</g></svg></button>`).join("");
+  $("rooms").innerHTML = ROOMS.map(room => {
+    const pv = LAYERS.map(l => room.stickers.filter(q => q.layer === l).map(q => `<g class="stk" transform="translate(${q.x - q.w / 2} ${q.y - q.h / 2})">${q.art}</g>`).join("")).join("");
+    const st = state.stars[room.id] || 0;
+    return `<button class="rb" type="button" data-room="${room.id}" aria-label="${s.rooms[room.id] || room.id}"><svg class="pv" viewBox="0 0 1600 900">${room.bg}${pv}</svg>`
+      + `<div class="stars">${[1, 2, 3].map(i => `<svg viewBox="-13 -13 26 26" class="${i <= st ? "on" : ""}"><path d="${STARD}"/></svg>`).join("")}</div></button>`;
+  }).join("");
+}
+$("chars").addEventListener("click", e => {
+  const b = e.target.closest(".chb"); if (!b) return;
+  state.chr = b.dataset.chr; save(); sfx("pop");
+  document.querySelectorAll(".chb").forEach(q => q.classList.toggle("sel", q === b));
+});
+$("rooms").addEventListener("click", e => { const b = e.target.closest(".rb"); if (b) { sfx("pop"); openRoom(b.dataset.room); } });
+$("bHome").addEventListener("click", () => { sfx("back"); goHome(); });
+$("bUndo").addEventListener("click", undo);
+// The sponge empties the room in one tap (same as "Vider cette pièce" in the parent area)
+$("bSponge").addEventListener("click", () => { if (!cur) return; sfx("whoosh"); state.rooms[cur.id] = { p: {}, o: [] }; state.stars[cur.id] = 0; save(); openRoom(cur.id); });
+
+// Parental gate: press and hold the gear for 2 seconds
+{
+  let teeth = "";
+  for (let i = 0; i < 8; i++) teeth += `<rect x="10.3" y="2.4" width="3.4" height="5" rx="1.2" fill="#3c4050" transform="rotate(${i * 45} 12 12)"/>`;
+  $("gearG").innerHTML = teeth + '<circle cx="12" cy="12" r="5.4" fill="none" stroke="#3c4050" stroke-width="3.2"/>';
+}
+const gear = $("bGear");
+let gearT = 0;
+const gearUp = () => { clearTimeout(gearT); gear.classList.remove("hold"); };
+gear.addEventListener("pointerdown", e => {
+  e.preventDefault(); sfx("tick"); gear.classList.add("hold"); clearTimeout(gearT);
+  gearT = setTimeout(() => { gearUp(); openParent(); }, 2000);
+});
+["pointerup", "pointerleave", "pointercancel"].forEach(k => gear.addEventListener(k, gearUp));
+function openParent() {
+  const s = T(), st = state.set;
+  $("pbox").innerHTML = `<h2>${s.parents}</h2>`
+    + `<div class="prow"><span>${s.sound}</span><button class="pbtn${st.mute ? " off" : ""}" type="button" data-a="mute">${st.mute ? s.off : s.on}</button></div>`
+    + `<div class="prow"><span>${s.lang}</span><button class="pbtn" type="button" data-a="lang">${s.langName}</button></div>`
+    + (cur ? `<button class="pbtn warn" type="button" data-a="resetRoom">${s.resetRoom}</button>` : "")
+    + `<button class="pbtn warn" type="button" data-a="resetAll">${s.resetAll}</button>`
+    + `<button class="pbtn" type="button" data-a="close">${s.close}</button>`;
+  $("parent").classList.remove("hidden");
+}
+function parentDo(a) {
+  const st = state.set;
+  if (a === "mute") st.mute = !st.mute;
+  else if (a === "lang") { st.lang = st.lang === "fr" ? "en" : "fr"; if (!cur) buildHome(); document.documentElement.lang = st.lang; document.title = T().title; }
+  else if (a === "resetRoom" && cur) { state.rooms[cur.id] = { p: {}, o: [] }; state.stars[cur.id] = 0; save(); openRoom(cur.id); }
+  else if (a === "resetAll") {
+    ROOMS.forEach(q => state.rooms[q.id] = { p: {}, o: [] }); state.stars = {}; state.outfit = state.shoes = 0; save();
+    if (cur) openRoom(cur.id); else buildHome();
+  }
+  save();
+  if (a === "close" || a === "resetRoom" || a === "resetAll") $("parent").classList.add("hidden"); else openParent();
+}
+$("parent").addEventListener("click", e => {
+  const b = e.target.closest("[data-a]");
+  if (b) parentDo(b.dataset.a); else if (e.target === $("parent")) $("parent").classList.add("hidden");
+});
+
+// No context menu, no pinch zoom, no scroll bounce, no double-tap zoom
+addEventListener("contextmenu", e => e.preventDefault());
+["gesturestart", "gesturechange", "dblclick"].forEach(k => document.addEventListener(k, e => e.preventDefault(), { passive: false }));
+document.addEventListener("touchmove", e => { if (!e.target.closest || !e.target.closest("#home,#pbox,#sheet.sx,#sheet.sy")) e.preventDefault(); }, { passive: false });
+addEventListener("resize", layout);
+
+/* ===== 11. BOOT + test hooks ===== */
+load(); buildHome(); requestAnimationFrame(frame);
+window.__game = {
+  state, ROOMS, POSES, chr,
+  openRoom, home: goHome, undo, parent: openParent, parentDo,
+  place(id) { const s = ST[id]; if (!s) return false; if (!cur || cur.id !== s.room) openRoom(s.room); placeAt(id, s.x, s.y, { snap: true }); return true; },
+  remove(id) { if (cur && ST[id] && ST[id].room === cur.id) removeSt(id); },
+  act(id) { return queueAct({ id }); },
+  step(ms) { for (let t = 0; t < ms; t += 16) tick(16); }   // advances every animation without requestAnimationFrame
+};
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

@@ -4,7 +4,9 @@ Small games for a 3-year-old: tap, paint, stickers, puzzles, animals. Game text 
 
 ## Play
 
-Open `index.html` (double-click) and tap a tile. Each game opens fullscreen on its big play button; the round house button at the top left comes back to the menu.
+Online: **https://underscorelog.github.io/emma-games/** (GitHub Pages, published from `main`).
+
+Offline: open `index.html` (double-click). Tap a tile. Each game opens fullscreen on its big play button; the round house button at the top left comes back to the menu.
 
 ## Layout
 
@@ -25,4 +27,4 @@ Follow `FOUNDATIONS.md`: next free number in `jeux/`, tile first in the "🧪 En
 
 ## Note
 
-The Peppa Pig images are for private family use only. Keep this repository private.
+The Peppa Pig images (`peppa/`, `jeux/00-peppa-pig.html`, `jeux/21-roues-autobus.html`) are copyrighted and meant for private family use only.

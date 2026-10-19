@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>La chambre magique</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧸%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:var(--start,#ffd166);cursor:pointer}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--start-fg,#ef476f)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+:root{--start:#cdb4db;--start-fg:#6a4c93}
+body{background:#2b2140}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{position:relative;width:1600px;height:1000px;flex:none;overflow:hidden;transform-origin:center center}
+#stage>div{position:absolute}
+.o{cursor:pointer}
+#wall{left:0;top:0;width:1600px;height:720px;background:radial-gradient(circle,#ffc8dd 6px,transparent 7px) 0 0/80px 80px,linear-gradient(#fff0f5,#ffe0ea)}
+#floor{left:0;top:700px;width:1600px;height:300px;background:repeating-linear-gradient(90deg,#d4a373 0 196px,#b98552 196px 200px);border-top:14px solid #a26a3b}
+#rug{left:180px;top:800px;width:720px;height:170px;border-radius:50%;background:radial-gradient(ellipse,#a2d2ff 0 40%,#bde0fe 41% 60%,#a2d2ff 61%)}
+
+#window{left:110px;top:110px;width:416px;height:356px;border:18px solid #fff;border-radius:12px;box-shadow:0 8px 0 rgba(0,0,0,.08);overflow:hidden}
+#sky{position:absolute;inset:0;background:linear-gradient(#8ecae6,#caf0f8)}
+#skyN{position:absolute;inset:0;background:linear-gradient(#0b1d51,#27408b);opacity:0;transition:opacity 1.5s}
+.night #skyN{opacity:1}
+#sun{position:absolute;left:40px;top:30px;font-size:110px;transition:transform 1.5s,opacity 1.5s}
+.night #sun{transform:translateY(300px);opacity:0}
+#moon{position:absolute;right:40px;top:30px;font-size:100px;transform:translateY(300px);opacity:0;transition:transform 1.5s,opacity 1.5s}
+.night #moon{transform:none;opacity:1}
+#stars span{position:absolute;font-size:26px;opacity:0;transition:opacity 2s}
+.night #stars span{opacity:1;animation:twinkle 1.2s ease-in-out infinite alternate}
+@keyframes twinkle{to{transform:scale(.5)}}
+.bar{position:absolute;background:#fff}
+.bar.v{left:50%;top:0;bottom:0;width:14px;margin-left:-7px}
+.bar.h{top:50%;left:0;right:0;height:14px;margin-top:-7px}
+.curtain{top:80px;width:90px;height:420px;background:repeating-linear-gradient(90deg,#ff8fab 0 20px,#fb6f92 20px 30px);border-radius:0 0 40px 40px;pointer-events:none}
+#curtL{left:60px}#curtR{left:490px}
+
+#clock{left:660px;top:60px;width:180px;height:260px}
+#cdoor{position:absolute;left:50px;top:0;width:80px;height:90px;background:#8d5a2b;border-radius:40px 40px 0 0}
+#bird{position:absolute;left:55px;top:5px;font-size:70px;transform:scale(0);z-index:2}
+#clock.go #bird{animation:bird 1.6s}
+@keyframes bird{0%{transform:scale(0) translateY(40px)}15%,85%{transform:scale(1.2) translateY(-30px)}100%{transform:scale(0)}}
+.face{position:absolute;left:0;top:80px;width:180px;height:180px;border-radius:50%;background:#fff;border:14px solid #8d5a2b}
+.hand{position:absolute;left:50%;top:50%;width:10px;margin-left:-5px;background:#333;border-radius:5px;transform-origin:50% 100%}
+.h1{height:45px;margin-top:-45px;transform:rotate(60deg)}
+.h2{height:62px;margin-top:-62px;transform:rotate(200deg)}
+#clock.go .h1{animation:sp1 1.4s ease-in-out}
+#clock.go .h2{animation:sp2 1.4s ease-in-out}
+@keyframes sp1{from{transform:rotate(60deg)}to{transform:rotate(780deg)}}
+@keyframes sp2{from{transform:rotate(200deg)}to{transform:rotate(1280deg)}}
+
+#shelf{left:900px;top:305px;width:260px;height:22px;background:#9c6644;border-radius:6px}
+#bowl{left:930px;top:125px;width:200px;height:180px;border-radius:45% 45% 48% 48%;background:linear-gradient(rgba(255,255,255,.3) 0 22%,rgba(144,224,239,.85) 22%);border:6px solid rgba(255,255,255,.9);overflow:hidden}
+#fishwrap{position:absolute;left:20px;top:70px;animation:swim 6s ease-in-out infinite}
+#fish{font-size:70px}
+#fish.jump{animation:fjump .7s ease-out}
+@keyframes swim{0%{transform:translateX(0)}45%{transform:translateX(80px)}50%{transform:translateX(80px) scaleX(-1)}95%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0)}}
+@keyframes fjump{40%{transform:translateY(-60px) rotate(-25deg)}}
+.bub{position:absolute;bottom:20px;width:18px;height:18px;border-radius:50%;border:3px solid #fff;animation:bub 1.2s ease-in forwards}
+@keyframes bub{to{transform:translateY(-150px);opacity:0}}
+
+#hole{left:445px;top:622px;width:84px;height:78px;background:#2a1a12;border-radius:42px 42px 0 0}
+#mouse{left:460px;top:640px;font-size:55px;opacity:0;pointer-events:none}
+#mouse.peek{opacity:1;animation:peek .35s ease-out}
+#mouse.run{opacity:1;animation:run 1.8s ease-in forwards}
+@keyframes peek{from{transform:translateY(30px) scale(.5)}}
+@keyframes run{30%{transform:translate(-120px,70px)}100%{transform:translate(-560px,140px)}}
+
+#headboard{left:540px;top:480px;width:70px;height:290px;background:#9c6644;border-radius:35px 35px 0 0}
+#footboard{left:1040px;top:590px;width:60px;height:180px;background:#9c6644;border-radius:30px 30px 0 0}
+#mattress{left:590px;top:630px;width:460px;height:80px;background:#fff;border-radius:20px}
+#pillow{left:610px;top:585px;width:140px;height:60px;background:#fff;border-radius:30px;box-shadow:inset 0 -8px 0 #eee}
+#blanket{left:740px;top:610px;width:310px;height:120px;background:repeating-linear-gradient(45deg,#ffb703 0 30px,#fb8500 30px 60px);border-radius:24px}
+#teddy{left:790px;top:455px;font-size:160px}
+.hop{animation:hop .9s ease-out}
+.spin{animation:tspin .9s ease-in-out}
+.squish{animation:squish .7s ease-in-out}
+@keyframes tspin{50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg)}}
+@keyframes squish{30%{transform:scale(1.3,.7)}60%{transform:scale(.85,1.2)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-200px) rotate(-15deg)}60%{transform:translateY(0) scale(1.1,.9)}75%{transform:translateY(-50px)}}
+
+#nstand{left:1120px;top:610px;width:140px;height:120px;background:#b5838d;border-radius:10px;box-shadow:inset 0 -50px 0 #a1717b}
+#lamp{left:1115px;top:430px;width:150px;height:185px}
+#glow{position:absolute;left:-70px;top:-60px;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle,rgba(255,230,120,.95),transparent 70%);opacity:0;transition:opacity .3s}
+.lamp #glow{opacity:1}
+#shade{position:absolute;left:0;top:0;width:150px;height:100px;background:#ffd6a5;clip-path:polygon(22% 0,78% 0,100% 100%,0 100%)}
+.lamp #shade{background:#ffe066}
+#stem{position:absolute;left:68px;top:100px;width:14px;height:60px;background:#6d6875}
+#lbase{position:absolute;left:40px;top:155px;width:70px;height:26px;border-radius:12px;background:#6d6875}
+
+#wardrobe{left:1300px;top:140px;width:280px;height:580px;background:#5c3d2e;border:10px solid #9e2a2b;border-radius:14px}
+#inside{position:absolute;left:0;right:0;top:170px;text-align:center;font-size:170px}
+.open #inside{animation:popin .5s .25s both}
+@keyframes popin{from{transform:scale(0)}}
+.door{position:absolute;top:0;width:50%;height:100%;background:linear-gradient(#f4a261,#e76f51);border:5px solid #9e2a2b;transition:transform .6s ease}
+.door.l{left:0;transform-origin:0 50%}.door.r{right:0;transform-origin:100% 50%}
+.door::after{content:"";position:absolute;top:48%;width:22px;height:22px;border-radius:50%;background:#ffd166}
+.door.l::after{right:14px}.door.r::after{left:14px}
+.open .door.l{transform:perspective(1400px) rotateY(-105deg)}
+.open .door.r{transform:perspective(1400px) rotateY(105deg)}
+
+#toybox{left:980px;top:800px;width:260px;height:150px;background:#06d6a0;border:8px solid #118ab2;border-radius:10px}
+#lid{position:absolute;left:-14px;top:-44px;width:276px;height:40px;background:#118ab2;border-radius:10px 10px 4px 4px;transform-origin:0 100%;transition:transform .25s}
+#toybox.open #lid{transform:rotate(-60deg)}
+#toybox .star{position:absolute;left:95px;top:35px;font-size:60px}
+
+#cat{left:350px;top:770px}
+#cat .body{font-size:130px}
+#cat .zzz{position:absolute;left:110px;top:-40px;font-size:60px;animation:zzz 2s ease-in-out infinite}
+#cat.awake .zzz{display:none}
+@keyframes zzz{50%{transform:translate(15px,-25px) scale(1.2)}}
+#ball{left:110px;top:875px;font-size:90px}
+
+#toys{left:0;top:0;width:1600px;height:1000px;pointer-events:none}
+.toy{position:absolute;font-size:90px;pointer-events:auto;cursor:pointer;transition:opacity .5s}
+#night{left:0;top:0;width:1600px;height:1000px;pointer-events:none;background:rgba(15,15,60,.55);opacity:0;transition:opacity 1.5s}
+.night #night{opacity:1}
+.night.lamp #night{background:radial-gradient(circle at 1190px 470px,rgba(255,220,120,.12) 0,rgba(15,15,60,0) 200px,rgba(15,15,60,.55) 460px)}
+.spark{position:absolute;font-size:60px;margin:-30px 0 0 -30px;pointer-events:none;animation:spark .9s ease-out forwards;z-index:50}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="wall"></div>
+  <div id="floor"></div>
+  <div id="rug"></div>
+  <div id="window" class="o"><div id="sky"></div><div id="skyN"></div><div id="stars"></div><div id="sun" class="emo">☀️</div><div id="moon" class="emo">🌙</div><div class="bar v"></div><div class="bar h"></div></div>
+  <div id="curtL" class="curtain"></div><div id="curtR" class="curtain"></div>
+  <div id="clock" class="o"><div id="cdoor"></div><div id="bird" class="emo">🐦</div><div class="face"><div class="hand h1"></div><div class="hand h2"></div></div></div>
+  <div id="shelf"></div>
+  <div id="bowl" class="o"><div id="fishwrap"><div id="fish" class="emo">🐠</div></div></div>
+  <div id="hole" class="o"></div>
+  <div id="mouse" class="emo">🐭</div>
+  <div id="headboard"></div><div id="footboard"></div><div id="mattress"></div><div id="pillow"></div><div id="blanket"></div>
+  <div id="teddy" class="o emo">🧸</div>
+  <div id="nstand"></div>
+  <div id="lamp" class="o"><div id="glow"></div><div id="stem"></div><div id="lbase"></div><div id="shade"></div></div>
+  <div id="wardrobe" class="o"><div id="inside" class="emo"></div><div class="door l"></div><div class="door r"></div></div>
+  <div id="toybox" class="o"><div id="lid"></div><div class="star emo">⭐</div></div>
+  <div id="cat" class="o"><span class="body emo">🐈</span><span class="zzz emo">💤</span></div>
+  <div id="ball" class="o emo">⚽</div>
+  <div id="toys"></div>
+  <div id="night"></div>
+</div></div>
+
+<div id="start"><div class="deco emo">🧸</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== La chambre magique ===== */
+const ANIMALS = [
+  { e: "🐮", s: "vache" }, { e: "🐷", s: "cochon" }, { e: "🐶", s: "chien" }, { e: "🐱", s: "chat" },
+  { e: "🐑", s: "mouton" }, { e: "🦆", s: "canard" }, { e: "🐸", s: "grenouille" }, { e: "🦁", s: "lion" },
+  { e: "🐵", s: "singe" }, { e: "🐴", s: "cheval" }, { e: "🐻", s: "ours" }, { e: "🦉", s: "hibou" }, { e: "🐔", s: "poule" }
+];
+const TOYS = [
+  { e: "🎈", s: "pop" }, { e: "🚗", s: "voiture" }, { e: "🦆", s: "canard" }, { e: "🪀", s: "boing" },
+  { e: "🎺", s: "fanfare" }, { e: "🥁", s: "bloc" }, { e: "🚂", s: "train" }, { e: "🦖", s: "lion", rate: 0.7 },
+  { e: "🐢", s: "plop" }, { e: "🧩", s: "clic" }, { e: "🪁", s: "whoosh" }, { e: "🚒", s: "pinpon" }
+];
+K.preload([...new Set([...ANIMALS.map(a => a.s), ...TOYS.map(t => t.s),
+  "boing", "rire", "coucou", "coq", "clic", "bulles", "whoosh", "bloc", "porte", "souris", "boite-a-musique"])]);
+
+const stage = document.getElementById("stage");
+let scale = 1;
+function fit() { scale = Math.min(innerWidth / 1600, innerHeight / 1000); stage.style.transform = "scale(" + scale + ")"; }
+addEventListener("resize", fit); fit();
+function again(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
+function anim(el, c) { el.classList.remove("hop", "spin", "squish", "jump"); void el.offsetWidth; el.classList.add(c); }
+function toStage(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
+function sparkle(x, y) {
+  const s = document.createElement("div");
+  s.className = "spark emo"; s.textContent = K.pick(["✨", "⭐", "💫"]);
+  s.style.left = x + "px"; s.style.top = y + "px";
+  stage.appendChild(s); setTimeout(() => s.remove(), 900);
+}
+function on(id, fn) {
+  const el = document.getElementById(id);
+  el.addEventListener("pointerdown", e => { e.stopPropagation(); fn(el, e); });
+  return el;
+}
+// Chaque objet a plusieurs réactions possibles, jamais deux fois la même d'affilée
+const lastPick = {};
+function vary(key, n) { let i; do { i = Math.floor(Math.random() * n); } while (n > 1 && i === lastPick[key]); lastPick[key] = i; return i; }
+function lullaby() { [392, 330, 294, 262, 294].forEach((f, i) => K.tone(f, 0.7, "sine", 0.15, null, i * 0.4)); }
+
+// Zone vide : le mur tinte, le plancher sonne comme du bois, le tapis fait « pouf »
+stage.addEventListener("pointerdown", e => {
+  const p = toStage(e); sparkle(p.x, p.y);
+  const onRug = Math.pow((p.x - 540) / 360, 2) + Math.pow((p.y - 885) / 85, 2) < 1;
+  if (onRug) K.noise(0.25, 0.25, 400);
+  else if (p.y > 700) K.snd("bloc", { rate: K.rand(0.8, 1.3), vol: 0.6 });
+  else K.tone(K.pick([1047, 1175, 1319, 1568]), 0.4, "triangle", 0.1);
+});
+
+// Étoiles de la fenêtre
+const starsEl = document.getElementById("stars");
+for (let i = 0; i < 8; i++) {
+  const s = document.createElement("span"); s.className = "emo"; s.textContent = "⭐";
+  s.style.left = K.rand(10, 330) + "px"; s.style.top = K.rand(10, 250) + "px";
+  s.style.animationDelay = K.rand(0, 1.2) + "s"; starsEl.appendChild(s);
+}
+
+// Fenêtre : jour / nuit (le coq chante au matin)
+let night = false;
+on("window", () => {
+  night = !night; stage.classList.toggle("night", night);
+  if (night) K.snd("boite-a-musique", { dur: 6, fb: lullaby });
+  else K.snd("coq", { dur: 2.5 });
+});
+
+// Lampe
+on("lamp", () => { stage.classList.toggle("lamp"); K.snd("clic"); });
+
+// Horloge coucou : l'oiseau change à chaque fois
+const bird = document.getElementById("bird");
+on("clock", el => {
+  if (el.classList.contains("go")) return;
+  const v = vary("clock", 4);
+  bird.textContent = ["🐦", "🐤", "🦜", "🐓"][v];
+  el.classList.add("go");
+  if (v === 3) K.snd("coq", { dur: 1.6 }); else K.snd("coucou", { dur: 2.2 });
+  setTimeout(() => el.classList.remove("go"), 1700);
+});
+
+// Aquarium : le poisson change, saute ou tourne
+const fish = document.getElementById("fish");
+function bubble(parent) {
+  const b = document.createElement("div"); b.className = "bub"; b.style.left = K.rand(30, 150) + "px";
+  parent.appendChild(b); setTimeout(() => b.remove(), 1200);
+}
+on("bowl", el => {
+  const v = vary("bowl", 3);
+  if (v === 0) anim(fish, "jump");
+  else if (v === 1) anim(fish, "spin");
+  else { fish.textContent = K.pick(["🐠", "🐟", "🐡"].filter(f => f !== fish.textContent)); anim(fish, "jump"); }
+  K.snd("bulles", { dur: 1.2 });
+  for (let i = 0; i < 6; i++) setTimeout(() => bubble(el), i * 130);
+});
+
+// Nounours : saute, tourne ou s'écrase
+on("teddy", el => {
+  anim(el, ["hop", "spin", "squish"][vary("teddy", 3)]);
+  K.snd("boing"); K.snd("rire", { delay: 0.3, dur: 1.5 });
+});
+
+// Armoire : la porte grince puis l'animal se présente avec son cri
+on("wardrobe", el => {
+  const open = el.classList.toggle("open");
+  if (open) {
+    const a = ANIMALS[vary("wardrobe", ANIMALS.length)];
+    document.getElementById("inside").textContent = a.e;
+    K.snd("porte", { dur: 0.8, vol: 0.6 });
+    K.snd(a.s, { delay: 0.5, dur: 2.5 });
+  } else K.snd("bloc");
+});
+
+// Coffre à jouets
+const toysEl = document.getElementById("toys");
+const floorToys = [];
+on("toybox", el => {
+  again(el, "open"); setTimeout(() => el.classList.remove("open"), 700);
+  const t = TOYS[vary("toy", TOYS.length)];
+  const s = document.createElement("div"); s.className = "toy emo"; s.textContent = t.e;
+  const x0 = 1065, y0 = 760;
+  let x1 = K.rand(140, 1480), y1 = K.rand(790, 890);
+  if (x1 > 930 && x1 < 1280) x1 = K.pick([K.rand(140, 900), K.rand(1290, 1480)]);
+  s.style.left = x0 + "px"; s.style.top = y0 + "px";
+  toysEl.appendChild(s);
+  const dx = x1 - x0, dy = y1 - y0;
+  s.animate([
+    { transform: "translate(0,0) scale(.3) rotate(0deg)" },
+    { transform: "translate(" + dx * 0.5 + "px,-380px) scale(1.2) rotate(200deg)" },
+    { transform: "translate(" + dx + "px," + dy + "px) scale(1) rotate(360deg)" }
+  ], { duration: 900, easing: "ease-in-out" }).onfinish = () => {
+    s.style.left = x1 + "px"; s.style.top = y1 + "px"; K.snd("bloc");
+    K.snd(t.s, { rate: t.rate, dur: 2 });
+  };
+  K.snd("whoosh");
+  s.addEventListener("pointerdown", e => { e.stopPropagation(); again(s, "hop"); K.snd(t.s, { rate: t.rate, dur: 2 }); });
+  floorToys.push(s);
+  if (floorToys.length > 7) { const old = floorToys.shift(); old.style.opacity = 0; setTimeout(() => old.remove(), 500); }
+});
+
+// Chat qui dort : miaule, ronronne ou s'étire
+let catTimer = null;
+on("cat", el => {
+  el.classList.add("awake");
+  const v = vary("cat", 3);
+  if (v === 0) { anim(el, "hop"); K.snd("chat", { dur: 2 }); }
+  else if (v === 1) { anim(el, "squish"); for (let i = 0; i < 6; i++) K.noise(0.18, 0.12, 180, i * 0.22); }
+  else { anim(el, "spin"); K.snd("chat", { rate: 1.25, dur: 2 }); }
+  clearTimeout(catTimer); catTimer = setTimeout(() => el.classList.remove("awake"), 4000);
+});
+
+// Ballon
+on("ball", el => {
+  if (el.dataset.b) return; el.dataset.b = "1"; K.snd("boing");
+  el.animate([
+    { transform: "translateX(0) rotate(0deg)" },
+    { transform: "translateX(650px) rotate(720deg)", offset: 0.5 },
+    { transform: "translateX(0) rotate(0deg)" }
+  ], { duration: 2200, easing: "ease-in-out" }).onfinish = () => { delete el.dataset.b; };
+  K.snd("boing", { delay: 1.1 });
+});
+
+// Souris dans son trou
+const mouse = document.getElementById("mouse");
+let peeking = false, running = false, peekTimer = null;
+function peek() {
+  if (peeking || running) return;
+  peeking = true; mouse.className = "emo peek"; K.tone(1800, 0.06, "sine", 0.1, 2400);
+  clearTimeout(peekTimer);
+  peekTimer = setTimeout(() => { if (!running) { mouse.className = "emo"; peeking = false; } }, 3000);
+}
+function runAway() {
+  running = true; clearTimeout(peekTimer); K.snd("souris", { dur: 1.5 }); mouse.className = "emo run";
+  setTimeout(() => { mouse.className = "emo"; running = false; peeking = false; }, 1900);
+}
+on("hole", () => { if (!peeking) peek(); else runAway(); });
+
+K.onStart(() => {
+  K.sfx.chime();
+  setInterval(() => { if (Math.random() < 0.5) peek(); }, 7000);
+});
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

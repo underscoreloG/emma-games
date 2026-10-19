@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Le chemin des couleurs</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐸%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:var(--start,#ffd166);cursor:pointer}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--start-fg,#ef476f)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:min(max(9vmin,72px),84px);height:min(max(9vmin,72px),84px);border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer;opacity:.9}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+
+:root{--start:#90e0ef;--start-fg:#0077b6}
+/* Outils communs : confettis, indices, fin calme */
+.conf{position:fixed;top:-3vh;width:1.6vmin;height:2.6vmin;border-radius:.4vmin;z-index:40;pointer-events:none;animation:fall 2s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.nudge.nudge{animation:nudge .6s ease-in-out}
+@keyframes nudge{20%{rotate:-8deg}40%{rotate:8deg}60%{rotate:-5deg}80%{rotate:4deg}}
+.glow.glow{animation:glow 1s ease-in-out 2}
+@keyframes glow{50%{scale:1.1;filter:drop-shadow(0 0 2vmin #ffb703) brightness(1.1)}}
+.happy.happy{animation:happy .5s ease-in-out 3}
+@keyframes happy{50%{translate:0 -3vmin;scale:1.05}}
+.wob.wob{animation:wob .4s ease-in-out}
+@keyframes wob{50%{scale:1.08 .92}}
+.gulp.gulp{animation:gulp .35s ease-out}
+@keyframes gulp{50%{scale:1.08}}
+.sel.sel{scale:1.12;filter:drop-shadow(0 0 1.6vmin #ffd166)}
+.drag{transition:none!important;z-index:30}
+.bignum{position:fixed;z-index:45;pointer-events:none;font:900 22vmin "Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;color:#fff;-webkit-text-stroke:.8vmin #2b2d42;animation:bignum 1s ease-out forwards;translate:-50% -50%}
+@keyframes bignum{0%{scale:.2;opacity:0}25%{scale:1.15;opacity:1}70%{opacity:1}100%{scale:1;opacity:0;translate:-50% -90%}}
+#end{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:5vmin;background:rgba(255,255,255,.93)}
+#end.on{display:flex;animation:fadein .5s ease-out}
+#end .big{font-size:24vmin}
+#again{width:26vmin;height:26vmin;border-radius:50%;background:#ffd166;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);cursor:pointer;animation:pulse 1.6s ease-in-out infinite}
+#again svg{width:50%;height:50%;margin-left:8%;fill:#ef476f}
+@keyframes fadein{from{opacity:0}}
+
+body{background:#48cae4}
+#pond{position:fixed;left:50%;top:54%;translate:-50% -50%;width:min(96vw,195vh);aspect-ratio:9/3.4;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(3,1fr);padding:1vmin}
+.cell{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.bank{background:#74c69d;cursor:default}
+.bank.l{border-radius:3vmin 0 0 3vmin}.bank.r{border-radius:0 3vmin 3vmin 0}
+.stone{width:82%;aspect-ratio:1;border-radius:50%;background:var(--c);border:.7vmin solid rgba(0,0,0,.25);box-shadow:inset -1vmin -1.2vmin 0 rgba(0,0,0,.18),0 .6vmin 0 rgba(0,0,0,.15);pointer-events:none}
+.cell.sink .stone{animation:sink .6s ease-in-out}
+@keyframes sink{40%{scale:.85;translate:0 .8vmin}}
+.ripple{position:absolute;inset:10%;border-radius:50%;border:.5vmin solid rgba(255,255,255,.7);animation:ripple 3s ease-out infinite;pointer-events:none}
+#frog,#home{position:absolute;width:calc((100% - 2vmin) / 9);height:calc((100% - 2vmin) / 3);display:flex;align-items:center;justify-content:center;pointer-events:none;transition:left .3s ease-in-out,top .3s ease-in-out}
+#frog .emo,#home .emo{font-size:min(9vmin,7.5vw)}
+#frog.hop .emo{animation:hop .3s ease-in-out}
+@keyframes hop{50%{translate:0 -3vmin;scale:1.1}}
+#flag{position:fixed;left:50%;top:4vh;translate:-50% 0;display:flex;align-items:center;gap:2vmin;background:#fff;border-radius:6vmin;padding:1.5vmin 3vmin;box-shadow:0 1vmin 0 rgba(0,0,0,.1)}
+#flag .emo{font-size:9vmin}
+#flag .dot{width:9vmin;height:9vmin;border-radius:50%;background:var(--c);border:.7vmin solid rgba(0,0,0,.25)}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="flag"><span class="emo">🐸</span><span class="emo">➡️</span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+<div id="pond"></div>
+
+<div id="start"><div class="deco emo">🐸🔴🔴</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+/* ===== Noyau commun : sons, démarrage, protections ===== */
+const K = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+    }
+    return ac;
+  }
+  function audio() { const c = ctx(); if (c && c.state === "suspended") c.resume(); return c; }
+  function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+    if (!ac) return;
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  }
+  function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+    if (!ac) return;
+    const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+    for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+  }
+  // Note tenue tant qu'on garde le doigt appuyé (renvoie la fonction qui l'arrête)
+  function sustain(f, v = 0.2) {
+    if (!ac) return () => {};
+    const t = ac.currentTime, o = ac.createOscillator(), o2 = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "triangle"; o.frequency.value = f; o2.type = "sine"; o2.frequency.value = f * 2; g2.gain.value = 0.3;
+    lfo.frequency.value = 5.5; lg.gain.value = f * 0.012; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.02); g.gain.setTargetAtTime(v * 0.55, t + 0.15, 0.4);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+    [o, o2, lfo].forEach(x => x.start(t));
+    let done = false;
+    const stop = () => {
+      if (done) return; done = true;
+      const n = ac.currentTime; g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(g.gain.value, 0.0002), n);
+      g.gain.exponentialRampToValueAtTime(0.0001, n + 0.35); [o, o2, lfo].forEach(x => x.stop(n + 0.4));
+    };
+    setTimeout(stop, 4000);
+    return stop;
+  }
+  const sfx = {
+    pop: () => tone(520, 0.12, "sine", 0.3, 1200),
+    boing: () => { tone(160, 0.5, "sine", 0.3, 480); tone(170, 0.5, "triangle", 0.08, 520); },
+    chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+    tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+    click: () => tone(1400, 0.05, "square", 0.06),
+    whoosh: () => noise(0.4, 0.25, 1800),
+    thud: () => { tone(140, 0.25, "sine", 0.45, 55); noise(0.12, 0.2, 500); },
+    crash: () => { noise(0.8, 0.28, 700); tone(110, 0.5, "sine", 0.3, 50); },
+    giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09))
+  };
+
+  // Sons enregistrés : fichiers sons/<nom>.mp3, avec un repli synthétique si le fichier manque
+  const FALLBACK = {
+    pop: sfx.pop, boing: sfx.boing, whoosh: sfx.whoosh, ding: sfx.chime, fanfare: sfx.tada, bravo: sfx.tada,
+    clic: sfx.click, bloc: () => tone(700, 0.08, "triangle", 0.3, 400), ecroulement: sfx.crash, rire: sfx.giggle,
+    plop: () => tone(320, 0.15, "sine", 0.35, 160), pluie: () => noise(1.1, 0.12, 3500), eclaboussure: () => noise(0.6, 0.25, 2500),
+    bulles: () => { for (let i = 0; i < 6; i++) tone(500 + Math.random() * 600, 0.07, "sine", 0.1, 1600, i * 0.09); },
+    glou: () => { for (let i = 0; i < 4; i++) tone(300 + i * 40, 0.15, "sine", 0.25, 180, i * 0.3); },
+    bisou: () => tone(1200, 0.12, "sine", 0.2, 500), photo: () => { noise(0.08, 0.3, 5000); tone(1800, 0.04, "square", 0.05); },
+    coucou: () => [0, 0.6].forEach(d => { tone(784, 0.25, "sine", 0.25, null, d); tone(622, 0.4, "sine", 0.25, null, d + 0.25); }),
+    porte: () => tone(300, 0.6, "sawtooth", 0.03, 420),
+    croque: () => noise(0.15, 0.3, 3000),
+    _: (n) => { let h = 0; for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) % 997; const f = 330 + (h % 12) * 45; tone(f, 0.18, "triangle", 0.2, f * 1.5); tone(f * 1.5, 0.22, "triangle", 0.16, f, 0.16); }
+  };
+  const CLIPS = {};   // réglages par son : { start, dur, vol }
+  const bank = {};
+  function preload(names) {
+    const c = ctx();
+    names.forEach(n => {
+      if (bank[n]) return;
+      const e = bank[n] = { buf: null, el: null };
+      const url = "sons/" + n + ".mp3";
+      fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+        .then(ab => new Promise((res, rej) => c.decodeAudioData(ab, res, rej)))
+        .then(b => { e.buf = b; })
+        .catch(() => {
+          // file:// ne permet pas fetch : on passe par un élément audio classique
+          const a = new Audio(); a.preload = "auto";
+          a.onerror = () => { e.el = null; };
+          a.oncanplaythrough = () => { e.el = a; };
+          a.src = url;
+        });
+    });
+  }
+  function snd(n, o = {}) {
+    const e = bank[n], c = CLIPS[n] || {}, rate = o.rate || 1, vol = (o.vol ?? 1) * (c.vol ?? 1), dur = o.dur || c.dur;
+    if (e && e.buf && ac) {
+      const src = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay || 0);
+      src.buffer = e.buf; src.playbackRate.value = rate; g.gain.value = vol;
+      src.connect(g); g.connect(master);
+      if (dur) {
+        const end = t + dur / rate;
+        g.gain.setValueAtTime(vol, Math.max(t, end - 0.12)); g.gain.linearRampToValueAtTime(0.0001, end);
+        src.start(t, c.start || 0, dur);
+      } else src.start(t, c.start || 0);
+      return src;
+    }
+    if (e && e.el) {
+      const a = e.el.cloneNode();
+      a.volume = Math.min(1, vol);
+      if (rate !== 1) { a.playbackRate = rate; a.preservesPitch = false; a.webkitPreservesPitch = false; }
+      const go = () => { if (c.start) a.currentTime = c.start; a.play().catch(() => {}); if (dur) setTimeout(() => a.pause(), dur * 1000 / rate); };
+      if (o.delay) setTimeout(go, o.delay * 1000); else go();
+      return a;
+    }
+    const f = o.fb || FALLBACK[n];
+    const run = () => f ? f(o) : FALLBACK._(n);
+    if (o.delay) setTimeout(run, o.delay * 1000); else run();
+    return null;
+  }
+
+  function fullscreen() {
+    const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (f) { try { const p = f.call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  ["contextmenu", "gesturestart", "dblclick"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+  // Petite flèche en haut à gauche : retour au menu
+  const corner = document.createElement("a"); corner.id = "sortie"; corner.href = "index.html"; corner.setAttribute("aria-label", "Retour au menu");
+  corner.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(corner);
+  corner.addEventListener("pointerdown", e => e.stopPropagation());
+  function onStart(fn) {
+    const s = document.getElementById("start"); let done = false;
+    const go = e => {
+      if (done) return; done = true;
+      if (e && e.preventDefault) e.preventDefault();
+      const c = audio();
+      if (c) { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }
+      fullscreen(); s.remove(); document.removeEventListener("keydown", go);
+      fn(e);
+    };
+    s.addEventListener("pointerdown", go); document.addEventListener("keydown", go);
+  }
+  return { tone, noise, sustain, sfx, snd, preload, CLIPS, rand, pick, shuffle, onStart };
+})();
+
+/* ===== Outils communs : choisir, glisser, indices, fin calme ===== */
+const PENTA = [523, 587, 659, 784, 880, 1047];
+let busy = false, started = false;
+function again(el, c) { if (!el) return; el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+function star(cx, cy, R, r) {
+  const p = [];
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, d = i % 2 ? r : R; p.push((cx + d * Math.cos(a)).toFixed(1) + "," + (cy + d * Math.sin(a)).toFixed(1)); }
+  return p.join(" ");
+}
+function confetti() {
+  const cols = ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#8338ec", "#ff70a6"];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement("div"); c.className = "conf";
+    c.style.left = Math.random() * 100 + "vw"; c.style.background = K.pick(cols);
+    c.style.animationDelay = Math.random() * 0.5 + "s"; c.style.animationDuration = K.rand(1.4, 2.4) + "s";
+    document.body.appendChild(c); setTimeout(() => c.remove(), 3000);
+  }
+}
+// Grand chiffre qui apparaît quand on compte
+function bigNum(n, x, y) {
+  const d = document.createElement("div"); d.className = "bignum"; d.textContent = n;
+  d.style.left = x + "px"; d.style.top = y + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 1000);
+}
+function center(el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }
+function under(x, y, css) {
+  for (const n of document.elementsFromPoint(x, y)) { const t = n.closest && n.closest(css); if (t) return t; }
+  return null;
+}
+function moveTo(el, x, y) { el._tx = x; el._ty = y; el.style.translate = x + "px " + y + "px"; }
+// Fait voler un élément jusqu'à un point de l'écran
+function flyTo(el, x, y, o = {}) {
+  const c = center(el), x0 = el._tx || 0, y0 = el._ty || 0, tx = x0 + x - c.x, ty = y0 + y - c.y;
+  const kf = o.arc
+    ? [{ translate: x0 + "px " + y0 + "px", scale: 1 }, { translate: (x0 + tx) / 2 + "px " + (Math.min(y0, ty) - o.arc) + "px", scale: o.scale ?? 1 }, { translate: tx + "px " + ty + "px", scale: o.scale ?? 1 }]
+    : [{ translate: x0 + "px " + y0 + "px", scale: 1 }, { translate: tx + "px " + ty + "px", scale: o.scale ?? 0.4 }];
+  const a = el.animate(kf, { duration: o.dur || 420, easing: o.ease || "ease-in-out", fill: "forwards" });
+  return new Promise(r => { a.onfinish = () => { if (o.keep) { a.cancel(); moveTo(el, tx, ty); if (o.scale) el.style.scale = o.scale; } r(); }; });
+}
+
+// Choisir un objet : un tap puis un tap sur la cible, ou glisser l'objet jusqu'à la cible
+let sel = null, drag = null;
+function choose(el) {
+  if (sel && sel !== el) sel.classList.remove("sel");
+  sel = el; el.classList.add("sel");
+  K.snd("pop", { vol: 0.5, rate: 1.3 });
+  armHint();
+}
+function unchoose() { if (sel) sel.classList.remove("sel"); sel = null; }
+function home(el) {
+  if (el._tx || el._ty) el.animate([{ translate: el._tx + "px " + el._ty + "px" }, { translate: "0px 0px" }], { duration: 250, easing: "ease-out" });
+  moveTo(el, 0, 0);
+}
+function pickable(el, drop) {
+  el._tx = el._ty = 0;
+  el.addEventListener("pointerdown", e => {
+    e.stopPropagation();
+    if (busy || el.classList.contains("gone")) return;
+    choose(el);
+    drag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false };
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  el.addEventListener("pointermove", e => {
+    if (!drag || drag.el !== el || drag.id !== e.pointerId) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) < 14) return;
+    drag.moved = true; el.classList.add("drag"); moveTo(el, dx, dy);
+  });
+  const end = e => {
+    if (!drag || drag.el !== el) return;
+    const d = drag; drag = null; el.classList.remove("drag");
+    if (d.moved && !drop(el, e.clientX, e.clientY)) home(el);
+  };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+}
+
+// Indice doux quand rien ne se passe : plus vite si un objet est déjà choisi
+let hintT = null, hintFn = null;
+function setHint(fn) { hintFn = fn; armHint(); }
+function armHint() {
+  clearTimeout(hintT);
+  if (!started || !hintFn) return;
+  hintT = setTimeout(() => { if (!busy) hintFn(); armHint(); }, sel ? 4000 : 7000);
+}
+
+// Fin naturelle : un écran calme, un bon moment pour s'arrêter ou recommencer ensemble
+const endEl = document.createElement("div"); endEl.id = "end";
+endEl.innerHTML = '<div class="big emo"></div><div id="again"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div>';
+document.body.appendChild(endEl);
+let againFn = null;
+endEl.querySelector("#again").addEventListener("pointerdown", e => { e.stopPropagation(); endEl.classList.remove("on"); K.sfx.chime(); busy = false; if (againFn) againFn(); });
+function showEnd(emo, fn) {
+  busy = true; clearTimeout(hintT);
+  endEl.querySelector(".big").textContent = emo; againFn = fn; endEl.classList.add("on");
+  K.snd("boite-a-musique", { dur: 5, vol: 0.7 });
+}
+function celebrate() { confetti(); K.snd("fanfare", { dur: 2.5 }); K.snd("bravo", { delay: 0.7, dur: 2.5 }); }
+function startGame(fn) { K.onStart(() => { started = true; K.sfx.chime(); if (fn) fn(); armHint(); }); }
+
+/* ===== Le chemin des couleurs ===== */
+// La grenouille ne saute que sur les pierres d'UNE couleur (montrée en haut) : un seul critère, comme à 3 ans
+const COLS = [["rouge", "#ef233c"], ["bleu", "#3a86ff"], ["jaune", "#ffd60a"], ["vert", "#2dc653"], ["violet", "#9d4edd"]];
+const HOMES = ["🪷", "🏠", "🍄", "🌻", "🪵", "⭐"];
+const LEVELS = 6;
+K.preload(["grenouille", "plop", "eclaboussure", "ding", "fanfare", "bravo", "boite-a-musique"]);
+const pond = document.getElementById("pond"), flag = document.getElementById("flag");
+let lv = 0, path = [], onPath = null, pos = null, frog = null, homeEl = null, target = null, jumping = false;
+const key = (c, r) => c + "," + r;
+
+function place(el, c, r) { el.style.left = `calc(1vmin + ${c} * (100% - 2vmin) / 9)`; el.style.top = `calc(1vmin + ${r} * (100% - 2vmin) / 3)`; }
+function cellAt(c, r) { return pond.children[r * 9 + c]; }
+
+// Chemin de la berge gauche à la berge droite : on avance vers la droite, parfois un pas en haut ou en bas
+function makePath() {
+  let r = Math.floor(Math.random() * 3), lastV = -9; const p = [[1, r]];
+  for (let c = 1; c < 8; c++) {
+    // Jamais deux marches de suite : le chemin ne se touche pas lui-même, il n'y a qu'une seule suite possible
+    if (c > 1 && c < 7 && c - lastV > 1 && Math.random() < (lv < 2 ? 0.25 : 0.5)) {
+      const nr = r === 0 ? 1 : r === 2 ? 1 : r + K.pick([-1, 1]);
+      p.push([c, nr]); r = nr; lastV = c;
+    }
+    if (c < 7) p.push([c + 1, r]);
+  }
+  return p;
+}
+
+function newLevel() {
+  target = COLS[lv % COLS.length]; path = makePath(); onPath = new Set(path.map(p => key(...p)));
+  const others = K.shuffle(COLS.filter(c => c !== target)).slice(0, lv < 2 ? 1 : 2);
+  flag.style.setProperty("--c", target[1]);
+  pond.innerHTML = "";
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 9; c++) {
+    const d = document.createElement("div"); d.dataset.c = c; d.dataset.r = r;
+    if (c === 0 || c === 8) d.className = "cell bank " + (c === 0 ? "l" : "r");
+    else {
+      d.className = "cell"; const col = onPath.has(key(c, r)) ? target[1] : K.pick(others)[1];
+      d.innerHTML = '<div class="stone"></div>'; d.style.setProperty("--c", col); d.dataset.col = col;
+    }
+    pond.appendChild(d);
+  }
+  const start = [0, path[0][1]], end = [8, path[path.length - 1][1]];
+  homeEl = document.createElement("div"); homeEl.id = "home"; homeEl.innerHTML = `<span class="emo">${HOMES[lv % HOMES.length]}</span>`; place(homeEl, ...end); pond.appendChild(homeEl);
+  frog = document.createElement("div"); frog.id = "frog"; frog.innerHTML = '<span class="emo">🐸</span>'; place(frog, ...start); pond.appendChild(frog);
+  pos = start; busy = false; jumping = false; armHint();
+}
+function nextStep() {
+  const i = pos[0] === 0 ? -1 : path.findIndex(p => p[0] === pos[0] && p[1] === pos[1]);
+  return path[i + 1];
+}
+
+pond.addEventListener("pointerdown", e => {
+  const d = e.target.closest(".cell");
+  if (!d || busy || jumping || d.classList.contains("bank")) return;
+  const c = +d.dataset.c, r = +d.dataset.r, n = nextStep();
+  if (n && c === n[0] && r === n[1]) { jump(n); return; }
+  const i = path.findIndex(p => p[0] === c && p[1] === r), cur = pos[0] === 0 ? -1 : path.findIndex(p => p[0] === pos[0] && p[1] === pos[1]);
+  if (i > cur && Math.abs(c - pos[0]) + Math.abs(r - pos[1]) === 1) { jump(path[i]); return; }
+  if (d.dataset.col !== target[1]) {
+    // Mauvaise couleur : la pierre s'enfonce un peu dans l'eau, rien de grave
+    again(d, "sink"); K.snd("plop", { vol: 0.4, rate: 1.3 });
+  } else again(frog, "wob");
+  if (n) again(cellAt(...n), "glow");
+  armHint();
+});
+
+async function jump(n) {
+  jumping = true; clearTimeout(hintT);
+  pos = n; place(frog, ...n); again(frog, "hop");
+  K.tone(PENTA[Math.min(5, n[0] - 1)], 0.2, "triangle", 0.12); K.snd("plop", { vol: 0.5 });
+  await wait(320);
+  if (n === path[path.length - 1]) {
+    // Dernière pierre : un dernier saut sur la berge
+    await wait(150); pos = [8, n[1]]; place(frog, ...pos); again(frog, "hop"); await wait(320);
+    arrive(); return;
+  }
+  jumping = false; armHint();
+}
+
+function arrive() {
+  busy = true;
+  K.snd("grenouille", { dur: 1.5 }); K.snd("ding", { delay: 0.6 });
+  again(homeEl, "happy");
+  lv++;
+  const last = lv % LEVELS === 0;
+  setTimeout(celebrate, 700);
+  setTimeout(() => { if (last) showEnd("🌙🐸", newLevel); else newLevel(); }, 3600);
+}
+
+setHint(() => { const n = nextStep(); if (n) again(cellAt(...n), "glow"); });
+
+newLevel();
+startGame();
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

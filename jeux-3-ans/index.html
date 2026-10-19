@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Jeux des petits</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎈%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#fff8f0;color:#2b2d42;padding:0 16px 16px}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+/* Barre du haut : titre + bouton parents */
+#top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -16px 8px;padding:8px 16px;background:rgba(255,248,240,.94);backdrop-filter:blur(6px);box-shadow:0 2px 0 rgba(0,0,0,.05)}
+h1{font-size:clamp(22px,5vw,38px)}
+#parentsBtn{display:flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:10px 16px;background:#2b2d42;color:#fff;font:600 15px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}
+#parentsBtn .emo{font-size:20px}
+#parentsBtn:hover{background:#3d405b}
+/* Fenêtre pour les parents */
+#modal{position:fixed;inset:0;z-index:50;display:none;padding:4vh 12px;background:rgba(43,45,66,.55);overflow-y:auto}
+#modal.open{display:block;animation:fade .2s ease-out}
+@keyframes fade{from{opacity:0}}
+#modal .box{position:relative;max-width:760px;margin:0 auto}
+#close{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:50%;background:#f1f1f4;font-size:22px;cursor:pointer;color:#2b2d42}
+#close:hover{background:#e3e3ea}
+/* Tile size --t is chosen by the script at the bottom: the biggest size that shows every game without scrolling */
+:root{--t:170px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,var(--t));justify-content:center;gap:calc(var(--t)*.08);margin:0 auto}
+/* Sections sit side by side when they fit (the small ones share a row); --c = columns of each section, set by the script */
+#games{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;column-gap:calc(var(--t)*.4)}
+#games .grid{grid-template-columns:repeat(var(--c,4),var(--t))}
+#games .blk.small{order:-1}
+a.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--t)*.05);padding:calc(var(--t)*.1) calc(var(--t)*.06);border-radius:calc(var(--t)*.14);text-decoration:none;color:#2b2d42;box-shadow:0 6px 0 rgba(0,0,0,.08);transition:transform .1s}
+a.tile:active{transform:scale(.96)}
+a.tile .emo{font-size:calc(var(--t)*.38)}
+a.tile b{font-size:max(12px,calc(var(--t)*.1));text-align:center;line-height:1.15}
+a.tile small{font-size:max(11px,calc(var(--t)*.076));opacity:.7;text-align:center}
+/* small tiles: the one-line descriptions (for parents) are dropped to save room */
+.tight a.tile small{display:none}
+.notes{background:#fff;border-radius:18px;padding:20px 22px;line-height:1.55;box-shadow:0 4px 0 rgba(0,0,0,.05)}
+.notes h2{font-size:18px;margin-bottom:8px;padding-right:48px}
+.notes li{margin:6px 0 6px 18px}
+.notes h2+ul+h2{margin-top:18px}
+.notes small{opacity:.7}
+h2.sec{text-align:center;font-size:clamp(17px,calc(var(--t)*.16),30px);margin:calc(var(--t)*.12) 0 calc(var(--t)*.07)}
+/* Peppa à la place de l'emoji cochon */
+a.tile img.pp{height:calc(var(--t)*.38)}
+h2.sec img.pp{height:1.5em;vertical-align:middle}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<header id="top">
+  <h1><span class="emo">🎈</span> Les jeux des petits</h1>
+  <button id="parentsBtn" type="button" aria-haspopup="dialog"><span class="emo">👪</span> Parents</button>
+</header>
+<!-- New games wait here until a parent has tested and validated them, then they move to their section (FOUNDATIONS.md section 8) -->
+<div id="games">
+<section class="blk small">
+<h2 class="sec" id="en-test"><span class="emo">🧪</span> En test</h2>
+<div class="grid">
+  <a class="tile" href="34-ballon-rebondissant.html" style="background:#d6ecff"><span class="emo">⚽</span><b>Le ballon qui rebondit</b><small>Le faire rouler, sauter, marquer</small></a>
+  <a class="tile" href="35-chat-rentre-maison.html" style="background:#ffe1c4"><span class="emo">🐱</span><b>Le chat rentre à la maison</b><small>Marcher avec lui jusqu'à sa porte</small></a>
+  <a class="tile" href="36-salon-des-copains.html" style="background:#ffd9e8"><span class="emo">💇</span><b>Le salon des copains</b><small>Coiffer, maquiller, inventer des monstres</small></a>
+</div>
+</section>
+<section class="blk">
+<h2 class="sec"><span class="emo">🎨</span> Tous les jeux</h2>
+<div class="grid">
+  <a class="tile" href="01-chambre-magique.html" style="background:#e9d8fd"><span class="emo">🧸</span><b>La chambre magique</b><small>Tout réagit, des surprises cachées</small></a>
+  <a class="tile" href="02-tape-tout.html" style="background:#caffbf"><span class="emo">👆</span><b>Tape-tout</b><small>Chaque tap fait apparaître quelque chose</small></a>
+  <a class="tile" href="03-coucou-cache.html" style="background:#d8f3dc"><span class="emo">🌳</span><b>Coucou caché</b><small>Trouver les animaux cachés</small></a>
+  <a class="tile" href="04-bebe-animal.html" style="background:#ffe5ec"><span class="emo">🍼</span><b>Le bébé animal</b><small>Nourrir, laver, coucher, jouer</small></a>
+  <a class="tile" href="05-coloriage-magique.html" style="background:#e0c3fc"><span class="emo">🎨</span><b>Coloriage magique</b><small>Une couleur, un tap, c'est rempli</small></a>
+  <a class="tile" href="06-habillage.html" style="background:#ffd6a5"><span class="emo">🎩</span><b>Habille Nounours</b><small>Les vêtements volent tout seuls</small></a>
+  <a class="tile" href="07-tour-qui-tombe.html" style="background:#a2d2ff"><span class="emo">🧱</span><b>La tour qui tombe</b><small>Empiler, compter, badaboum</small></a>
+  <a class="tile" href="08-bulles-du-bain.html" style="background:#90e0ef"><span class="emo">🦆</span><b>Les bulles du bain</b><small>Éclater des bulles, calme</small></a>
+  <a class="tile" href="09-piano-des-animaux.html" style="background:#fff3b0"><span class="emo">🎹</span><b>Le piano des animaux</b><small>Musique, chansons, "où est la vache ?"</small></a>
+  <a class="tile" href="10-jardin-qui-pousse.html" style="background:#b7e4c7"><span class="emo">🌻</span><b>Le jardin qui pousse</b><small>Planter, arroser, et la nuit tombe</small></a>
+  <a class="tile" href="22-autocollants.html" style="background:#ffd9e6"><span class="emo">🏠</span><b>Mes autocollants</b><small>Coller les autocollants dans la maison</small></a>
+  <a class="tile" href="23-patisserie.html" style="background:#ffe5d0"><span class="emo">🧁</span><b>La pâtisserie</b><small>Décorer un gâteau, puis le croquer</small></a>
+  <a class="tile" href="24-grattage-magique.html" style="background:#dbe7ff"><span class="emo">✨</span><b>Grattage magique</b><small>Frotter, et une image apparaît</small></a>
+  <a class="tile" href="25-puzzle-des-animaux.html" style="background:#d3f2e0"><span class="emo">🧩</span><b>Le puzzle des animaux</b><small>De grosses pièces qui se rangent</small></a>
+  <a class="tile" href="26-peinture-libre.html" style="background:#ffe3c2"><span class="emo">🖌️</span><b>Peinture libre</b><small>Pinceau, paillettes et tampons</small></a>
+  <a class="tile" href="30-decorations.html" style="background:#cfeedd"><span class="emo">🎄</span><b>Les décorations</b><small>Sapin, bonhomme de neige, château</small></a>
+  <a class="tile" href="31-orchestre-des-animaux.html" style="background:#ffe9b0"><span class="emo">🎺</span><b>L'orchestre des animaux</b><small>Chaque animal ajoute sa musique</small></a>
+  <a class="tile" href="32-circuit-de-billes.html" style="background:#d6e6ff"><span class="emo">🔵</span><b>Le circuit de billes</b><small>Lâcher des billes qui rebondissent</small></a>
+  <a class="tile" href="33-aquarium.html" style="background:#c9effa"><span class="emo">🐠</span><b>L'aquarium</b><small>Ajouter des poissons et les nourrir</small></a>
+</div>
+</section>
+
+<section class="blk small">
+<h2 class="sec"><img class="pp" src="peppa/peppa.png" alt=""> Peppa Pig</h2>
+<div class="grid">
+  <a class="tile" href="../emma-game/index.html" style="background:#ffc2d1"><img class="pp" src="peppa/peppa.png" alt=""><b>Peppa Pig</b><small>Taper partout, flaques de boue et copains</small></a>
+  <a class="tile" href="21-roues-autobus.html" style="background:#ffe066"><span class="emo">🚍</span><b>Les roues de l'autobus</b><small>Faire monter les amis, puis chanter avec le bus</small></a>
+</div>
+</section>
+
+<section class="blk">
+<h2 class="sec"><span class="emo">🧩</span> Petits jeux de logique</h2>
+<div class="grid">
+  <a class="tile" href="11-le-grand-tri.html" style="background:#ffe5a8"><span class="emo">🧺</span><b>Le grand tri</b><small>Ranger par couleur, par forme ou par taille</small></a>
+  <a class="tile" href="12-trouve-la-paire.html" style="background:#bde0fe"><span class="emo">🐶</span><b>Trouve la paire</b><small>Toucher les deux images pareilles</small></a>
+  <a class="tile" href="13-formes-et-ombres.html" style="background:#d8e2dc"><span class="emo">👤</span><b>Formes et ombres</b><small>Chaque objet retrouve son ombre</small></a>
+  <a class="tile" href="14-marche-des-fruits.html" style="background:#ffd6a5"><span class="emo">🍎</span><b>Le marché des fruits</b><small>Donner 1, 2, 3 fruits aux clients</small></a>
+  <a class="tile" href="15-emotions-de-pompon.html" style="background:#ffc8dd"><span class="emo">😊</span><b>Les émotions de Pompon</b><small>Content, triste, surpris, endormi</small></a>
+  <a class="tile" href="16-petit-chef.html" style="background:#caffbf"><span class="emo">🍲</span><b>Le petit chef</b><small>Faire la recette que le client demande</small></a>
+  <a class="tile" href="17-bus-des-animaux.html" style="background:#ffe066"><span class="emo">🚌</span><b>Le bus des animaux</b><small>Chacun son tour, on compte, on part</small></a>
+  <a class="tile" href="18-petit-labyrinthe.html" style="background:#b7e4c7"><span class="emo">🐰</span><b>Le petit labyrinthe</b><small>Guider le lapin jusqu'à sa carotte</small></a>
+  <a class="tile" href="19-chemin-des-couleurs.html" style="background:#90e0ef"><span class="emo">🐸</span><b>Le chemin des couleurs</b><small>Sauter sur les pierres de la bonne couleur</small></a>
+  <a class="tile" href="20-collier-des-motifs.html" style="background:#e0c3fc"><span class="emo">📿</span><b>Le collier des motifs</b><small>Rouge, bleu, rouge, bleu... et après ?</small></a>
+</div>
+</section>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+<div class="box">
+<button id="close" type="button" aria-label="Fermer">✕</button>
+<div class="notes">
+  <h2 id="notesTitle">Pour les parents</h2>
+  <ul>
+    <li><b>Revenir ici :</b> la petite maison en haut à gauche de chaque jeu ramène au menu.</li>
+    <li><b>Le son :</b> il démarre au premier tap sur le gros bouton ▶. Les jeux utilisent de vrais sons (animaux, effets) rangés dans le dossier <code>sons/</code> ; s'il manque un fichier, un petit son synthétique le remplace. La liste des fichiers attendus est dans <code>sons/LISEZMOI.txt</code>.</li>
+    <li><b>Tablette :</b> tenir l'écran en paysage, surtout pour la chambre et le jardin.</li>
+    <li><b>Plein écran :</b> chaque jeu passe en plein écran dès le tap sur le gros bouton ▶. Si on en sort (touche Échap), le tap suivant y retourne. Le retour au menu quitte le plein écran, c'est le navigateur qui l'impose ; le jeu suivant le reprend tout seul.</li>
+    <li><b>Pour qu'elle ne sorte pas du jeu :</b> Accès guidé sur iPad (Réglages, Accessibilité, Accès guidé), épinglage d'écran sur Android, mode kiosque ou plein écran (F11) sur ordinateur.</li>
+    <li><b>Fins naturelles :</b> le bébé animal s'endort et le jardin passe à la nuit. C'est le bon moment pour arrêter.</li>
+    <li><b>Sur iPhone ou iPad :</b> "Partager, Sur l'écran d'accueil" ouvre le jeu comme une appli, sans barre d'adresse.</li>
+    <li><b>Les roues de l'autobus :</b> elle fait monter les 6 amis (on compte ensemble), puis le bus part en chanson. Chaque couplet fait bouger une partie du bus, et elle peut taper dessus pour chanter avec. La chanson (7 couplets, comme la vidéo) dure environ 2 minutes, puis le bus s'arrête. Les images de Peppa viennent de sites de fans : à garder pour un usage perso.</li>
+    <li><b>Mes autocollants :</b> un tap sur un autocollant et il se colle tout seul à sa place, ou on le fait glisser où on veut. Le personnage utilise ce qu'elle pose (cuisiner, se laver, dormir...). Tout est enregistré sur l'appareil. L'éponge 🧽 vide la pièce en un tap. Les réglages (son, langue, tout effacer) s'ouvrent par un appui long de 2 secondes sur la roue crantée.</li>
+    <li><b>La pâtisserie :</b> elle choisit un gâteau, le colorie (une couleur puis un tap) et pose des décorations (un tap, ou en glissant pour en semer plusieurs). La baguette magique décore au hasard, la flèche annule. Avec la bouche 😋, 8 bouchées et le gâteau est mangé : une étoile, puis un gâteau tout neuf. Les créations sont gardées sur l'appareil.</li>
+    <li><b>Jeux de création (grattage, peinture, salon des copains, décorations) :</b> pas de but, elle fabrique. Le carré bleu aux 4 carrés blancs ramène à la liste de ses créations, qui sont gardées sur l'appareil. La flèche jaune annule, la baguette magique fait une surprise. L'éponge 🧽 efface la création en cours en un seul tap (la flèche jaune la fait revenir quand il y en a une).</li>
+    <li><b>Grattage et puzzle :</b> à la souris, il suffit de bouger pour gratter. Au puzzle, un tap envoie la pièce à sa place toute seule ; on peut aussi la faire glisser.</li>
+    <li><b>Orchestre, billes, aquarium :</b> des jeux calmes sans fin. La lune 🌙 fait taire l'orchestre ou endort les poissons : c'est le bon moment pour arrêter.</li>
+    <li><b>Jeux de logique :</b> une seule règle à la fois, jamais de bruit d'erreur. Si elle hésite, la bonne réponse s'allume doucement. Après quelques manches, un écran calme (🌙) propose de s'arrêter ou de recommencer.</li>
+  </ul>
+  <h2>Ce que recommandent les experts à 3 ans</h2>
+  <ul>
+    <li><b>Jouer avec elle :</b> c'est le conseil le plus constant. S'asseoir à côté, nommer ce qu'on voit ("le rouge dans le panier rouge", "il est triste, on lui fait un câlin ?"), relier au quotidien. <small>(HCSP, Zero to Three, AAP, Hirsh-Pasek 2015)</small></li>
+    <li><b>Des séances courtes :</b> quelques minutes à la fois. Pas plus d'1 h d'écran par jour au total, et moins c'est mieux. À cet âge, un écran seulement accompagné et interactif, jamais de vidéo passive. <small>(OMS, règle 3-6-9-12 de Serge Tisseron)</small></li>
+    <li><b>Pas d'écran avant de dormir :</b> ni dans l'heure qui précède le coucher, ni dans la chambre, ni pendant les repas. <small>(HCSP, Société française de pédiatrie)</small></li>
+    <li><b>Des moments sans écran pour tout le monde :</b> ranger aussi son propre téléphone quand on joue avec elle. <small>(Zero to Three)</small></li>
+    <li><b>Prolonger en vrai :</b> trier les chaussettes par couleur, compter les fruits au marché, faire la cuisine ensemble. Le jeu sert de point de départ. <small>(Common Sense Media, Hirsh-Pasek 2015)</small></li>
+    <li><b>Ces jeux évitent volontairement</b> la publicité, les scores, les chronos, les récompenses surprises et les personnages qui poussent à continuer. <small>(Radesky et al., JAMA 2022)</small></li>
+  </ul>
+</div>
+</div>
+</div>
+<script>
+// Fenêtre parents : s'ouvre avec le bouton du haut, se ferme avec la croix, un clic à côté ou Échap
+const modal = document.getElementById("modal"), btn = document.getElementById("parentsBtn");
+function openNotes() { modal.classList.add("open"); document.body.style.overflow = "hidden"; document.getElementById("close").focus(); }
+function closeNotes() { modal.classList.remove("open"); document.body.style.overflow = ""; btn.focus(); }
+btn.addEventListener("click", openNotes);
+document.getElementById("close").addEventListener("click", closeNotes);
+modal.addEventListener("click", e => { if (e.target === modal || e.target.classList.contains("box")) closeNotes(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("open")) closeNotes(); });
+</script>
+<script id="fit">
+/* No scrolling for her: pick the biggest tile size at which the whole menu fits in the window.
+   On a phone the games can never all fit; tiles then keep a comfortable touch size and the page scrolls. */
+(function () {
+  var MAX = 240, root = document.documentElement;
+  function set(t) {
+    root.style.setProperty("--t", t + "px"); root.classList.toggle("tight", t < 150);
+    var gap = t * 0.08, maxc = Math.max(1, Math.floor((document.body.clientWidth - 32 + gap) / (t + gap)));
+    document.querySelectorAll("#games .grid").forEach(function (g) { g.style.setProperty("--c", Math.min(g.children.length, maxc)); });
+  }
+  function fits() { return root.scrollHeight <= innerHeight + 1; }
+  function fit() {
+    var MIN = innerWidth >= 700 ? 96 : 110;   // tablet and computer: a bit smaller rather than scrolling
+    var lo = MIN, hi = MAX, best = MIN;
+    for (var i = 0; i < 10; i++) { var mid = (lo + hi) / 2; set(mid); if (fits()) { best = mid; lo = mid; } else hi = mid; }
+    set(Math.floor(best));
+  }
+  var timer = null;
+  addEventListener("resize", function () { clearTimeout(timer); timer = setTimeout(fit, 80); });
+  addEventListener("load", fit);
+  fit();
+})();
+</script>
+</body>
+</html>

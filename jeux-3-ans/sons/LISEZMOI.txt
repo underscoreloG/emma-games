@@ -1,0 +1,28 @@
+Sons des jeux
+============
+
+Mettez ici des fichiers MP3 portant exactement ces noms. Les jeux les chargent tout seuls.
+Si un fichier manque, un petit son synthétique le remplace.
+
+Animaux
+  vache.mp3  cochon.mp3  chien.mp3  chat.mp3  mouton.mp3  poule.mp3  coq.mp3  canard.mp3
+  cheval.mp3  grenouille.mp3  lion.mp3  singe.mp3  souris.mp3  hibou.mp3  elephant.mp3
+  ours.mp3  abeille.mp3  oiseau.mp3  grillons.mp3
+
+Bébé et personnes
+  rire.mp3 (rire de bébé)  bisou.mp3  glou.mp3 (boire)  bravo.mp3 (enfants qui applaudissent)
+
+Effets
+  pop.mp3  boing.mp3  whoosh.mp3  eclaboussure.mp3  bulles.mp3  ding.mp3  fanfare.mp3
+  coucou.mp3 (horloge)  clic.mp3  photo.mp3  bloc.mp3 (cube en bois)  ecroulement.mp3
+  pluie.mp3  plop.mp3  croque.mp3 (croquer une pomme)  porte.mp3 (grincement doux)
+  boite-a-musique.mp3
+
+Véhicules
+  voiture.mp3  pinpon.mp3  train.mp3  avion.mp3  sonnette.mp3 (vélo)  bateau.mp3
+  helico.mp3  tracteur.mp3
+
+Conseils
+  - Des sons courts (1 à 3 secondes). Les jeux coupent de toute façon les sons trop longs.
+  - Sources gratuites sans compte : Kenney.nl (packs audio CC0), BigSoundBank, Wikimedia Commons.
+    Vérifier la licence de chaque fichier.

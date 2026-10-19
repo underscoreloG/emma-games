@@ -1,6 +1,6 @@
 # Foundations for every game in this library
 
-Rules that every game in `jeux-3-ans` (and the Peppa game in `emma-game`) must follow. Read this before adding or changing a game.
+Rules that every game in this repo (including the Peppa game, `00-peppa-pig.html`) must follow. Read this before adding or changing a game.
 
 ## 1. Who plays
 

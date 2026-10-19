@@ -1,9 +1,9 @@
 param(
-    [Parameter(Mandatory = $true)][string]$Key,     # cle dans l'objet IMGS de index.html (ex : suzy)
+    [Parameter(Mandatory = $true)][string]$Key,     # cle dans l'objet IMGS de 00-peppa-pig.html (ex : suzy)
     [Parameter(Mandatory = $true)][string]$Image,   # PNG detoure (sortie de detourer.ps1)
-    [string]$Html = (Join-Path $PSScriptRoot "..\index.html")
+    [string]$Html = (Join-Path $PSScriptRoot "..\00-peppa-pig.html")
 )
-# Remplace la valeur de IMGS.<Key> dans index.html par l'image en base64.
+# Remplace la valeur de IMGS.<Key> dans 00-peppa-pig.html par l'image en base64.
 # La cle doit deja exister dans IMGS (ex : suzy: "__IMG_SUZY__",).
 $ErrorActionPreference = "Stop"
 
@@ -27,4 +27,4 @@ Add-Type -AssemblyName System.Drawing
 $bmp = New-Object System.Drawing.Bitmap($Image)
 "OK : IMGS.$Key mis a jour ({0}x{1} px -> ratio a utiliser dans CHARACTERS : ar: {1}/{0})" -f $bmp.Width, $bmp.Height
 $bmp.Dispose()
-"Taille de index.html : {0} KB" -f [math]::Round((Get-Item $Html).Length / 1KB)
+"Taille de 00-peppa-pig.html : {0} KB" -f [math]::Round((Get-Item $Html).Length / 1KB)

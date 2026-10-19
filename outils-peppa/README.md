@@ -1,13 +1,13 @@
 # Outils images
 
-Le jeu (`index.html`) est un fichier unique : les images y sont incrustées en base64 dans l'objet `IMGS`. Les fichiers `.png`/`.jpg`/`.webp` du dossier ne servent qu'à la préparation, le jeu n'en a pas besoin pour tourner.
+Le jeu (`00-peppa-pig.html`, à la racine) est un fichier unique : les images y sont incrustées en base64 dans l'objet `IMGS`. Les fichiers `.png`/`.jpg`/`.webp` de `peppa/sources/` ne servent qu'à la préparation, le jeu n'en a pas besoin pour tourner.
 
 ## Remplacer ou ajouter une image
 
 1. **Détourer** (supprime le fond blanc ou damier connecté aux bords, recadre, réduit à 600 px max) :
 
    ```powershell
-   .\tools\detourer.ps1 -InFile .\suzy.jpg -OutFile .\suzy_clean.png
+   .\outils-peppa\detourer.ps1 -InFile .\peppa\sources\suzy.jpg -OutFile .\peppa\sources\suzy_clean.png
    ```
 
    - Accepte `.png`, `.jpg` et `.webp`. Les `.webp` passent automatiquement par `webp-en-png.ps1` (le décodeur WebP de Windows perd la transparence, on utilise Edge/Chrome en mode headless).
@@ -15,10 +15,10 @@ Le jeu (`index.html`) est un fichier unique : les images y sont incrustées en b
    - Réglages : `-BrightMin` (200) et `-SatMax` (30). Pour un personnage blanc avec contour gris (Suzy) : `-BrightMin 235 -SatMax 20`.
    - `-MaxSize` (600) : plus grand côté en pixels, `0` pour ne pas réduire.
 
-2. **Incruster** dans `index.html` (la clé doit exister dans `IMGS`, ex. `suzy: "__IMG__",`) :
+2. **Incruster** dans `00-peppa-pig.html` (la clé doit exister dans `IMGS`, ex. `suzy: "__IMG__",`) :
 
    ```powershell
-   .\tools\set-image.ps1 -Key suzy -Image .\suzy_clean.png
+   .\outils-peppa\set-image.ps1 -Key suzy -Image .\peppa\sources\suzy_clean.png
    ```
 
    Le script affiche le ratio `ar: hauteur/largeur` à reporter dans la liste `CHARACTERS`.

@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Le grand match</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚽%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+:root{--bs:min(max(9vmin,72px),84px);--ss:min(11vmin,54px,calc((100vw - 2 * var(--bs) - 60px) / 5.6));--ink:#2b2d42;--grass:#6fbf73;--accent:#2f6fde}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--grass)}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:4vmin;align-items:center;justify-content:center;background:repeating-linear-gradient(90deg,#6fbf73 0 12vmin,#62b268 12vmin 24vmin)}
+#start .ttl{font-size:min(11vmin,13vw);font-weight:900;color:#fff;letter-spacing:.01em;text-shadow:0 .7vmin 0 rgba(43,45,66,.35);text-align:center}
+#start .deco{width:20vmin;height:20vmin}
+#start .play{width:32vmin;height:32vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--accent)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:var(--bs);height:var(--bs);border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+#stage{position:fixed;inset:0;overflow:hidden;touch-action:none}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}
+#slots{position:fixed;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:none;gap:calc(var(--ss)*.16);padding:calc(var(--ss)*.12);border-radius:calc(var(--ss)*.7);background:rgba(43,45,66,.6);z-index:30;pointer-events:none}
+#slots i{display:block;width:var(--ss);height:var(--ss);border-radius:50%;background:rgba(255,255,255,.28)}
+#slots i svg{width:100%;height:100%;display:block;opacity:0}
+#again{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));width:var(--bs);height:var(--bs);border:0;border-radius:18px;display:none;align-items:center;justify-content:center;font-size:calc(var(--bs)*.52);background:#caffbf;box-shadow:0 5px 0 rgba(0,0,0,.15);z-index:40}
+#again:active{transform:scale(.9)}
+.spark{position:fixed;font-size:7vmin;margin:-3.5vmin 0 0 -3.5vmin;pointer-events:none;animation:spark .9s ease-out forwards;z-index:60}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){#start .play{animation:none!important}.spark{animation-duration:.3s}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="stage">
+  <svg id="svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><defs id="defs"></defs>
+    <g id="cam"><g id="bg"></g><g id="glows"></g><g id="wrld"><g id="ballBack"></g><g id="act"></g><g id="ballFront"></g></g><g id="top"></g></g>
+  </svg>
+  <canvas id="fx"></canvas>
+</div>
+<div id="flash"></div>
+<div id="slots"></div>
+<button id="again" class="emo" type="button" aria-label="Recommencer">🔁</button>
+<a id="sortie" href="../index.html" aria-label="Retour au menu"><svg viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5"/></svg></a>
+<div id="start"><svg class="deco" viewBox="-48 -48 96 96"><use href="#ballArt"/></svg><div class="ttl">Le grand match</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+"use strict";
+/* ===== Shared core: sound (no voice), game clock, saving ===== */
+const $ = id => document.getElementById(id);
+let ac = null, master = null;
+function audio() {
+  if (!ac) {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+  }
+  if (ac.state === "suspended") ac.resume();
+}
+function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0) {
+  if (!ac) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+}
+function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+  if (!ac) return;
+  const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+  s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+}
+// Game clock: timers and tweens run on it, so the game can be stepped when requestAnimationFrame is throttled
+let now = 0, timers = [], tweens = [];
+const ticks = [];
+const calm = !!(window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches);
+function after(ms, fn) { timers.push({ at: now + ms, fn }); }
+// Game movements always play, even when the device asks for reduced motion: skipping them made jumps and falls look broken.
+// Reduced motion only calms the decorative looping animations.
+function tween(ms, fn, done) { tweens.push({ t0: now, ms, fn, done }); fn(0); }
+function clearClock() { timers = []; tweens = []; }
+function tick(dt) {
+  now += dt;
+  const due = timers.filter(t => t.at <= now); timers = timers.filter(t => t.at > now); due.forEach(t => t.fn());
+  // tweens started by a finishing tween (chained moves) are kept: they land in the fresh list
+  const running = tweens; tweens = [];
+  const left = running.filter(w => { const k = Math.min(1, (now - w.t0) / w.ms); w.fn(k); if (k >= 1 && w.done) w.done(); return k < 1; });
+  tweens = left.concat(tweens);
+  ticks.forEach(f => f(dt));
+}
+let lastT = 0;
+function frame(t) { tick(Math.min(50, lastT ? t - lastT : 16)); lastT = t; requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+function spark(x, y, e) {
+  const s = document.createElement("div"); s.className = "spark emo"; s.textContent = e || "✨";
+  s.style.left = x + "px"; s.style.top = y + "px"; document.body.appendChild(s); setTimeout(() => s.remove(), 950);
+}
+function load(key, def) { try { const m = JSON.parse(localStorage.getItem(key)); if (m && typeof m === "object") return m; } catch (_) {} return def; }
+function store(key, o) { try { localStorage.setItem(key, JSON.stringify(o)); } catch (_) {} }
+const rand = n => Math.floor(Math.random() * n);
+function scenePt(svg, cx, cy) { const m = svg.getScreenCTM(); return m ? [(cx - m.e) / m.a, (cy - m.f) / m.d] : [0, 0]; }
+function screenPt(svg, x, y) { const m = svg.getScreenCTM(); return m ? [m.a * x + m.e, m.d * y + m.f] : [innerWidth / 2, innerHeight / 2]; }
+$("start").addEventListener("pointerdown", () => { audio(); $("start").style.display = "none"; SFX.chime(); if (window.onStart) window.onStart(); });
+addEventListener("pointerdown", audio);
+["contextmenu", "gesturestart", "dblclick", "selectstart", "dragstart"].forEach(t => addEventListener(t, e => e.preventDefault()));
+addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+window.__game = { step(ms) { for (let t = 0; t < ms; t += 16) tick(16); } };
+
+/* ===== The match: content tables ===== */
+const MATCH = [
+  { k: "pass", passes: 2 },
+  { k: "penalty" },
+  { k: "save", saves: 3, then: { k: "pass", passes: 1 } },
+  { k: "pass", passes: 3, fork: true },
+  { k: "penalty" }
+];
+const SHIRTS = [
+  { id: "bleu", kit: "#2f6fde", opp: "#fb8500" },
+  { id: "rouge", kit: "#e63946", opp: "#48cae4" },
+  { id: "rose", kit: "#ff70a6", opp: "#7b2cbf" },
+  { id: "jaune", kit: "#ffd60a", opp: "#1d3557" }
+];
+const INK = "#2b2d42", KEEPER = "#b5e48c", PITCH = ["#6fbf73", "#62b268"], GOLD = ["#ffd60a", "#f4a800", "#fff3b0"];
+const SKIN = ["#ffdcc2", "#eebb92", "#bb7d52", "#7d4e32"];
+const TEAM = [   // the hero first, then her team: two boys and two girls
+  { skin: SKIN[0], hair: "#7a4a24", style: "pony", num: 10, name: "EMMA" },
+  { skin: SKIN[3], hair: "#1f1a1c", style: "curl", num: 7 },
+  { skin: SKIN[2], hair: "#2a1c12", style: "buns", num: 5 },
+  { skin: SKIN[0], hair: "#d9a441", style: "bob", num: 9 },
+  { skin: SKIN[1], hair: "#a5502a", style: "short", num: 3 }
+];
+const OPPS = [{ skin: SKIN[1], hair: "#3a2a1c", style: "short", num: 4 }, { skin: SKIN[3], hair: "#1f1a1c", style: "curl", num: 8 }, { skin: SKIN[0], hair: "#c98a2e", style: "tuft", num: 6 }];
+const REST = { j: 0, r: 0, sq: 1, fx: 1, hr: 0, hy: 0, aL: 10, aR: 10, asL: 1, asR: 1, lL: 0, lR: 0, lsL: 1, lsR: 1, eye: 1, lx: 0, ly: 0 };
+const MOOD = {   // mouth, filled or not, brows, other eyes (arc = closed happy, shut = asleep, x = knocked out)
+  smile: { m: "M-22 -198Q0 -172 22 -198", b: "M-44 -274Q-30 -282 -16 -274M16 -274Q30 -282 44 -274" },
+  open: { m: "M-30 -204Q0 -198 30 -204Q26 -156 0 -156Q-26 -156 -30 -204Z", f: 1, b: "M-44 -282Q-30 -292 -16 -282M16 -282Q30 -292 44 -282" },
+  joy: { m: "M-32 -206Q0 -200 32 -206Q28 -152 0 -152Q-28 -152 -32 -206Z", f: 1, b: "M-44 -286Q-30 -296 -16 -286M16 -286Q30 -296 44 -286", e: "arc" },
+  oh: { m: "M-12 -188a12 16 0 1 0 24 0a12 16 0 1 0 -24 0Z", f: 1, b: "M-46 -288Q-30 -298 -14 -288M14 -288Q30 -298 46 -288" },
+  sad: { m: "M-20 -176Q0 -200 20 -176", b: "M-46 -268L-16 -280M16 -280L46 -268" },
+  worry: { m: "M-24 -184q8 -8 16 0t16 0t16 0", b: "M-46 -272L-16 -284M16 -284L46 -272" },
+  dizzy: { m: "M-28 -186q9 -12 18 0t18 0t18 0", b: "M-46 -282Q-30 -272 -16 -282M16 -272Q30 -284 46 -276", e: "x" },
+  sleep: { m: "M-9 -190Q0 -182 9 -190", b: "M-44 -264Q-30 -268 -16 -264M16 -264Q30 -268 44 -264", e: "shut" }
+};
+const POSE = {
+  stand: { ...REST },
+  ready: { ...REST, sq: 0.95, lL: 14, lR: 14, aL: 52, aR: 52 },
+  windup: { r: -12, sq: 0.9, aL: 60, aR: -50, lL: 8, lR: -62 },
+  strike: { r: 12, sq: 1.05, j: -16, aL: -40, aR: 60, lL: -6, lR: 88 },
+  sit: { j: 44, sq: 0.84, lL: 74, lR: 74, lsL: 0.92, lsR: 0.92, aL: 26, aR: 26, r: 0 }
+};
+const EXPR = ["plonge", "glisse", "tourne", "tunnel"];   // besides these, "poteau" comes up about 1 shot in 4 (1 in 3, never twice in a row)
+const EASE = {
+  line: k => k, io: k => k < 0.5 ? 2 * k * k : 1 - 2 * (1 - k) * (1 - k), out: k => 1 - (1 - k) * (1 - k), in: k => k * k,
+  back: k => { const u = k - 1; return 1 + 2.7 * u * u * u + 1.7 * u * u; },
+  elastic: k => k >= 1 ? 1 : 1 - Math.pow(2, -9 * k) * Math.cos(k * 15)
+};
+
+/* ===== Layout ===== */
+const svg = $("svg"), NS = "http://www.w3.org/2000/svg", KEY = "match-v1";
+const mem = load(KEY, { trophies: 0, shirt: null });
+if (typeof mem.trophies !== "number") mem.trophies = 0;
+let VW = 1600, VH = 900, PX = 1, PORT = false, Z = 1, HZ = 400, K = null, scene = null, rigs = [];
+const G = {
+  screen: "start", stepIndex: 0, goals: 0, waiting: false, busy: false, hint: false, shirt: mem.shirt, lastGag: null, lastCeleb: null,
+  party: false, act: null, target: null, waitMs: 0, step: null, celebs: [], force: { gag: null, celeb: null }, nk: 0, lampsOff: 0, wave: -1, cheer: 0
+};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const n1 = v => Math.round(v * 10) / 10, n3 = v => Math.round(v * 1000) / 1000;
+const T = (e, s) => { if (e && e._t !== s) { e.setAttribute("transform", s); e._t = s; } };
+function el(parent, html) { const g = document.createElementNS(NS, "g"); g.innerHTML = html; parent.appendChild(g); return g; }
+function tint(hex, f) {   // f > 0 lightens, f < 0 darkens
+  const n = parseInt(hex.slice(1), 16), t = f < 0 ? 0 : 255, a = Math.abs(f), c = v => Math.round(v + (t - v) * a);
+  return `rgb(${c(n >> 16)},${c(n >> 8 & 255)},${c(n & 255)})`;
+}
+const textOn = hex => { const n = parseInt(hex.slice(1), 16); return (n >> 16) * 0.3 + (n >> 8 & 255) * 0.59 + (n & 255) * 0.11 > 165 ? INK : "#fff"; };
+function fit() {
+  const w = innerWidth, h = innerHeight, ra = w / h;
+  PORT = ra < 1;
+  if (PORT) { VW = 1000; VH = Math.round(1000 / ra); } else if (ra > 16 / 9) { VH = 900; VW = Math.round(900 * ra); } else { VW = 1600; VH = Math.round(1600 / ra); }
+  svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`); PX = w / VW;
+  HZ = Math.round(VH * (PORT ? 0.4 : 0.44));
+  Z = PORT ? 1.25 : clamp(VH / 900, 1, 1.3) * (PX < 0.6 ? 1.15 : 1);
+  sizeFx();
+  if (scene) { scene.bg(); if (scene.place) scene.place(); }
+}
+addEventListener("resize", fit);
+const standTop = () => Math.round(VH * (PORT ? 0.17 : 0.13));
+const footR = () => Math.max(44, 37 / (PX * Z));   // the ball stays at least 74 px on screen
+const shotR = () => Math.max(58, 37 / PX);
+
+/* ===== Art: defs, sky, stands, grass, goal ===== */
+function pent(cx, cy, r, rot) {
+  let p = "";
+  for (let i = 0; i < 5; i++) { const a = rot + i * 1.2566; p += `${(cx + r * Math.sin(a)).toFixed(1)},${(cy - r * Math.cos(a)).toFixed(1)} `; }
+  return `<polygon points="${p}"/>`;
+}
+function ballDef() {
+  let rim = "", spokes = "";
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.2566, s = Math.sin(a), c = Math.cos(a);
+    rim += pent(40 * s, -40 * c, 14, a + 0.63);
+    spokes += `M${(14 * s).toFixed(1)} ${(-14 * c).toFixed(1)}L${(27 * s).toFixed(1)} ${(-27 * c).toFixed(1)}`;
+  }
+  return `<clipPath id="ballClip"><circle r="44"/></clipPath><g id="ballArt"><circle r="44" fill="#fff"/><g clip-path="url(#ballClip)" fill="${INK}">${pent(0, 0, 15, 0)}${rim}<path d="${spokes}" stroke="${INK}" stroke-width="3" fill="none"/></g><circle r="44" fill="none" stroke="${INK}" stroke-width="5"/></g>`;
+}
+function cupDef() {
+  return `<g id="cupArt"><rect x="-74" y="-44" width="148" height="44" rx="10" fill="#8a5a2b" stroke="${INK}" stroke-width="6"/><rect x="-46" y="-72" width="92" height="30" rx="8" fill="${GOLD[1]}" stroke="${INK}" stroke-width="6"/>` +
+    `<path d="M-90 -290C-178 -300 -172 -176 -60 -170M90 -290C178 -300 172 -176 60 -170" fill="none" stroke="${INK}" stroke-width="28" stroke-linecap="round"/><path d="M-90 -290C-178 -300 -172 -176 -60 -170M90 -290C178 -300 172 -176 60 -170" fill="none" stroke="${GOLD[0]}" stroke-width="16" stroke-linecap="round"/>` +
+    `<path d="M-100 -320H100Q104 -176 24 -132L16 -72H-16L-24 -132Q-104 -176 -100 -320Z" fill="${GOLD[0]}" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/><path d="M-72 -300Q-70 -210 -30 -160" fill="none" stroke="${GOLD[2]}" stroke-width="16" stroke-linecap="round"/><path d="M58 -310Q60 -230 30 -166Q84 -210 84 -310Z" fill="${GOLD[1]}"/>` +
+    `<path d="M0 -270l13 28l30 3l-23 20l7 30l-27 -15l-27 15l7 -30l-23 -20l30 -3Z" fill="#fff" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/></g>`;
+}
+const SEC = 368, TILE_H = 264;   // one stand section is one tile wide
+function crowdDefs() {
+  const c = K ? [K.kit, K.kit, K.kit, K.kit, K.kit, tint(K.kit, 0.25), K.kit, "#fff", K.opp] : SHIRTS.map(s => s.kit).concat("#fff");
+  let out = "";
+  for (let t = 0; t < 3; t++) {
+    const rows = [0, 1, 2, 3, 4, 5].map(() => [0, 1, 2, 3, 4, 5, 6, 7].map(() => ({ dx: rand(5) - 2, dy: rand(5) - 2, col: c[rand(c.length)], sk: SKIN[rand(4)], hat: rand(5) < 2 })));
+    let f = "";
+    for (let row = -1; row < 7; row++) for (let i = -1; i < 9; i++) {   // one extra ring of fans so the tile joins without a seam
+      const q = rows[(row + 6) % 6][(i + 8) % 8], x = i * 46 + (row & 1 ? 23 : 0) + q.dx, y = row * 44 + 16 + q.dy;
+      f += `<ellipse cx="${x}" cy="${y + 28}" rx="21" ry="19" fill="${q.col}"/><circle cx="${x}" cy="${y}" r="15" fill="${q.sk}"/>`;
+      if (q.hat) f += `<path d="M${x - 16} ${y - 2}a16 16 0 0 1 32 0Z" fill="${q.col}"/>`;
+    }
+    out += `<pattern id="cr${t}" patternUnits="userSpaceOnUse" width="${SEC}" height="${TILE_H}"><rect width="${SEC}" height="${TILE_H}" fill="#39466b"/>${f}</pattern>`;
+  }
+  return out;
+}
+function buildDefs() {
+  $("defs").innerHTML = ballDef() + cupDef() + crowdDefs() +
+    `<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc4f5"/><stop offset="1" stop-color="#d8f1ff"/></linearGradient>` +
+    `<radialGradient id="glowG"><stop offset="0" stop-color="#fff7b0" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe066" stop-opacity=".6"/><stop offset="1" stop-color="#ffe066" stop-opacity="0"/></radialGradient>` +
+    `<pattern id="seats" patternUnits="userSpaceOnUse" width="46" height="44"><rect width="46" height="44" fill="#2b3556"/><rect x="5" y="10" width="36" height="24" rx="8" fill="#47547c"/></pattern>` +
+    `<pattern id="grassV" patternUnits="userSpaceOnUse" width="480" height="20"><rect width="240" height="20" fill="${PITCH[0]}"/><rect x="240" width="240" height="20" fill="${PITCH[1]}"/></pattern>`;
+}
+const LAMPS = [.2, .38, .62, .8], lampY = () => Math.max(26, standTop() - (PORT ? 120 : 92));
+function skyArt() {
+  const top = standTop(), ly = lampY();
+  let s = `<rect x="-60" y="-60" width="${VW + 120}" height="${VH + 120}" fill="url(#sky)"/>`;
+  [[.16, .35, 130], [.55, .55, 170], [.84, .28, 110]].forEach(([fx, fy, w]) => {
+    const x = VW * fx, y = top * fy + 14;
+    s += `<g fill="#fff" opacity=".9"><ellipse cx="${x}" cy="${y}" rx="${w}" ry="${w * .26}"/><ellipse cx="${x - w * .3}" cy="${y - w * .12}" rx="${w * .42}" ry="${w * .26}"/><ellipse cx="${x + w * .28}" cy="${y - w * .16}" rx="${w * .5}" ry="${w * .32}"/></g>`;
+  });
+  LAMPS.forEach((fx, i) => {
+    const x = VW * fx, off = i < G.lampsOff;
+    s += `<rect x="${x - 7}" y="${ly + 40}" width="14" height="${top - ly}" fill="#7a869a"/><g data-lamp="${i}"><rect x="${x - 56}" y="${ly}" width="112" height="56" rx="10" fill="${off ? "#5c6680" : "#fff7cf"}" stroke="${INK}" stroke-width="5"/></g>`;
+  });
+  return s;
+}
+// The crowd: 12 sections, so a frame moves 12 elements whatever the number of heads
+function standArt(x, y, k, h) {
+  let s = `<g id="stand" transform="translate(${x} ${y}) scale(${k})"><rect x="${-6 * SEC}" y="-18" width="${12 * SEC}" height="${h + 60}" fill="url(#seats)"/><rect x="${-6 * SEC}" y="-32" width="${12 * SEC}" height="22" fill="${K ? K.kit : "#fff"}"/>`;
+  for (let i = 0; i < 12; i++) {
+    const flag = K && i % 3 === 1 ? `<g transform="translate(${60 + rand(120)} ${24 + rand(50)})"><rect width="200" height="84" rx="8" fill="${K.kit}" stroke="#fff" stroke-width="6"/><rect y="28" width="200" height="28" fill="#fff"/></g>` : "";
+    s += `<g class="sec" transform="translate(${(i - 6) * SEC} 0)"><rect width="${SEC}" height="${h}" fill="url(#cr${i % 3})"/>${flag}</g>`;
+  }
+  return s + "</g>";
+}
+function grabCrowd() { G.crowdEls = Array.from(document.querySelectorAll("#stand .sec")); }
+function hoarding(y, x0, w, h) {   // advertising boards around the pitch, plain stripes and no text
+  let s = `<rect x="${x0}" y="${y}" width="${w}" height="${h}" fill="#fff"/>`, c = K ? K.kit : SHIRTS[0].kit;
+  for (let i = 0; i * 180 < w; i++) if (i % 2) s += `<rect x="${x0 + i * 180}" y="${y}" width="180" height="${h}" fill="${c}"/>`;
+  return s + `<rect x="${x0}" y="${y + h - 5}" width="${w}" height="5" fill="${INK}" opacity=".35"/>`;
+}
+function bands(top, bot, n) {   // mowing stripes that widen towards the camera
+  const base = (bot - top) / (n + 0.45 * n * (n - 1) / 2);
+  let s = "", y = top;
+  for (let i = 0; i < n; i++) { const h = base * (1 + i * 0.45); s += `<rect x="-60" y="${n1(y)}" width="${VW + 120}" height="${n1(h + 2)}" fill="${PITCH[i % 2]}"/>`; y += h; }
+  return s;
+}
+function goalArt(g) {
+  const W = g.W, H = g.H, bk = (x, y) => `${n1(x * g.ins + g.dx)} ${n1(y * g.insy + g.dy)}`;
+  const c = [[-W / 2, -H], [W / 2, -H], [W / 2, 0], [-W / 2, 0]];
+  const back = c.map(p => bk(p[0], p[1])).join("L");
+  const side = c.map(p => `M${p[0]} ${p[1]}L${bk(p[0], p[1])}`).join("");
+  const p = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w, h) / 2}" fill="#fff" stroke="${INK}" stroke-width="5"/>`;
+  return `<g id="goalM" transform="matrix(${g.a} ${g.b} 0 1 ${g.x} ${g.y})"><g id="goalS"><path d="M${back}Z" fill="#fff" opacity=".2"/><path id="net" d="${meshD(g, 0, 0, 0)}" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round" opacity=".9"/><path d="${side}" stroke="#fff" stroke-width="4" opacity=".85" fill="none"/>` +
+    p(-W / 2 - 14, -H - 14, 28, H + 14) + p(W / 2 - 14, -H - 14, 28, H + 14) + p(-W / 2 - 14, -H - 14, W + 28, 28) + `</g></g>`;
+}
+function meshD(g, hx, hy, amp) {   // the net: a grid pushed away around the point the ball hits
+  const W = g.W, H = g.H, sig = W * 0.17, pt = (i, j) => {
+    const lx = -W / 2 + W * i / g.nx, ly = -H + H * j / g.ny, d2 = (lx - hx) * (lx - hx) + (ly - hy) * (ly - hy) * 1.6, k = amp * Math.exp(-d2 / (2 * sig * sig));
+    return `${n1(lx * g.ins + g.dx + (hx - lx) * k * 0.3 + g.bx * k)} ${n1(ly * g.insy + g.dy + (hy - ly) * k * 0.3 + g.by * k)}`;
+  };
+  let d = "";
+  for (let j = 0; j <= g.ny; j++) { d += "M" + pt(0, j); for (let i = 1; i <= g.nx; i++) d += "L" + pt(i, j); }
+  for (let i = 0; i <= g.nx; i++) { d += "M" + pt(i, 0); for (let j = 1; j <= g.ny; j++) d += "L" + pt(i, j); }
+  return d;
+}
+function bulge(g, l) {
+  const net = $("net"); if (!net) return;
+  tween(900, k => net.setAttribute("d", meshD(g, l.x, l.y, 1.5 * Math.exp(-3.6 * k) * Math.cos(k * 15) * Math.min(1, k * 12))));
+  const s = $("goalS");
+  tween(420, k => T(s, `translate(0 ${n1(-6 * Math.sin(k * 16) * (1 - k))})`));
+}
+const gloveArt = () => `<rect x="-74" y="-34" width="148" height="86" rx="20" fill="${K.kit}" stroke="${INK}" stroke-width="7"/><rect x="-74" y="-6" width="148" height="22" fill="#fff"/><rect x="-74" y="-34" width="148" height="86" rx="20" fill="none" stroke="${INK}" stroke-width="7"/>` +
+  [[-82, -258, 40, 110], [-40, -292, 40, 144], [2, -288, 40, 140], [42, -252, 40, 104]].map(f => `<rect x="${f[0]}" y="${f[1]}" width="${f[2]}" height="${f[3]}" rx="20" fill="#fff" stroke="${INK}" stroke-width="7"/>`).join("") +
+  `<path d="M-84 -176H84V-70Q84 -26 44 -26H-44Q-84 -26 -84 -70Z" fill="#fff" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/><path d="M-82 -96Q-160 -120 -158 -176Q-120 -196 -96 -150L-70 -124" fill="#fff" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>` +
+  `<path d="M-58 -120H58M-58 -84H58" stroke="${K.kit}" stroke-width="16" stroke-linecap="round"/>`;
+function shirtArt(c, t) {
+  return `<path d="M-74 -136Q0 -96 74 -136L168 -80L122 0L84 -22V146Q0 158 -84 146V-22L-122 0L-168 -80Z" fill="${c}" stroke="${INK}" stroke-width="8" stroke-linejoin="round"/><path d="M-74 -136Q0 -96 74 -136" fill="none" stroke="#fff" stroke-width="10"/>` +
+    `<text y="-36" text-anchor="middle" font-size="42" font-weight="900" fill="${t}" font-family="system-ui,sans-serif">EMMA</text><text y="84" text-anchor="middle" font-size="120" font-weight="900" fill="${t}" font-family="system-ui,sans-serif">10</text>`;
+}
+
+/* ===== Players: a rig of separate groups driven by a pose ===== */
+const STROKE = `stroke="${INK}" stroke-width="5" stroke-linejoin="round"`;
+function hairArt(o) {
+  const c = `fill="${o.hair}" ${STROKE}`, v = o.view, s = o.style, tie = K ? K.kit : "#fff";
+  const front = {
+    pony: `<path d="M-87 -226C-96 -350 96 -350 87 -226C76 -268 44 -292 6 -294C-6 -262 -54 -256 -87 -226Z" ${c}/>`,
+    short: `<path d="M-87 -232C-92 -344 92 -344 87 -232Q70 -274 30 -276Q0 -266 -30 -276Q-70 -274 -87 -232Z" ${c}/>`,
+    curl: `<path d="M-86 -240Q-112 -268 -84 -294Q-92 -330 -50 -330Q-34 -358 0 -342Q34 -358 50 -330Q92 -330 84 -294Q112 -268 86 -240Q60 -282 0 -278Q-60 -282 -86 -240Z" ${c}/>`,
+    buns: `<circle cx="-68" cy="-318" r="34" ${c}/><circle cx="68" cy="-318" r="34" ${c}/><path d="M-87 -228C-96 -346 96 -346 87 -228C70 -282 20 -286 0 -278C-20 -286 -70 -282 -87 -228Z" ${c}/>`,
+    bob: `<path d="M-87 -228C-96 -346 96 -346 87 -228C74 -280 30 -292 -8 -292C-20 -270 -60 -262 -87 -228Z" ${c}/>`,
+    tuft: `<path d="M-87 -232C-92 -344 92 -344 87 -232Q60 -282 0 -280Q-60 -282 -87 -232Z" ${c}/>`
+  };
+  const back = `<circle cy="-240" r="88" ${c}/><path d="M-48 -282Q-20 -312 26 -304" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="10" stroke-linecap="round"/>`;
+  const side = {
+    pony: `<path d="M-84 -214C-104 -344 76 -368 86 -262C60 -296 22 -292 4 -286C8 -252 -8 -226 -26 -206Q-60 -190 -84 -214Z" ${c}/>`,
+    short: `<path d="M-84 -218C-104 -342 76 -366 86 -262Q44 -292 2 -278Q-6 -244 -30 -214Q-62 -196 -84 -218Z" ${c}/>`,
+    curl: `<path d="M-84 -218Q-112 -250 -88 -284Q-92 -330 -44 -334Q-10 -362 30 -340Q84 -338 88 -262Q44 -292 2 -278Q-6 -244 -30 -214Q-62 -196 -84 -218Z" ${c}/>`,
+    buns: `<circle cx="-46" cy="-322" r="34" ${c}/><path d="M-84 -214C-104 -344 76 -368 86 -262Q44 -292 2 -278Q-6 -244 -30 -214Q-62 -196 -84 -214Z" ${c}/>`,
+    bob: `<path d="M-92 -170C-110 -350 76 -368 86 -262Q44 -292 8 -280Q10 -220 -14 -164Q-60 -152 -92 -170Z" ${c}/>`,
+    tuft: `<path d="M-84 -218C-104 -342 76 -366 86 -262Q44 -292 2 -278Q-6 -244 -30 -214Q-62 -196 -84 -218Z" ${c}/>`
+  };
+  const pony = {
+    side: `<g data-p="pony"><path d="M-76 -292C-130 -318 -176 -280 -176 -214C-176 -186 -164 -166 -152 -152C-152 -196 -130 -238 -74 -256Z" ${c}/></g><circle cx="-74" cy="-274" r="14" fill="${tie}" ${STROKE}/>`,
+    front: `<g data-p="pony"><path d="M44 -316C100 -350 158 -300 148 -226C144 -196 128 -176 116 -164C118 -204 96 -258 40 -280Z" ${c}/></g>`,
+    back: `<g data-p="pony"><path d="M-26 -296C-52 -262 -46 -192 -2 -158C44 -192 52 -262 26 -296Z" fill="${tint(o.hair, .14)}" ${STROKE}/></g><circle cy="-300" r="16" fill="${tie}" ${STROKE}/>`
+  };
+  const tuft = `<g data-p="pony"><path d="M-14 -322Q-22 -366 8 -384Q2 -352 24 -344Q10 -334 14 -320Z" ${c}/></g>`;
+  const bobBack = `<path d="M-96 -168C-116 -350 116 -350 96 -168Q60 -150 40 -180H-40Q-60 -150 -96 -168Z" ${c}/>`;
+  const buns2 = `<circle cx="-62" cy="-322" r="32" ${c}/><circle cx="62" cy="-322" r="32" ${c}/>`;
+  if (v === "front") return [s === "pony" ? pony.front : s === "bob" ? bobBack : "", front[s] + (s === "pony" ? `<circle cx="46" cy="-308" r="13" fill="${tie}" ${STROKE}/>` : "") + (s === "tuft" ? tuft : "")];
+  if (v === "back") return ["", (s === "buns" ? buns2 : "") + back + (s === "pony" ? pony.back : "") + (s === "bob" ? bobBack : "") + (s === "tuft" ? tuft : "")];
+  return [s === "pony" ? pony.side : "", side[s] + (s === "tuft" ? tuft : "")];
+}
+function rigArt(o) {
+  const v = o.view, isSide = v === "side", sk = o.skin, sh = o.shirt, boot = o.boot || INK, E = STROKE, dim = (c, far) => far ? tint(c, -0.16) : c;
+  const hand = far => o.gloves ? `<circle cy="64" r="27" fill="#fff" ${E}/><path d="M-13 58h26M-13 68h26" stroke="${INK}" stroke-width="3"/>` : `<circle cy="60" r="16" fill="${dim(sk, far)}" ${E}/>`;
+  const arm = (id, far) => `<g data-p="${id}"><path d="M-14 0V54a14 14 0 0 0 28 0V0a14 14 0 0 0 -28 0Z" fill="${dim(sk, far)}" ${E}/><path d="M-16 -4V26H16V-4a16 16 0 0 0 -32 0Z" fill="${dim(sh, far)}" ${E}/>${hand(far)}</g>`;
+  const foot = far => isSide ? `<path d="M-18 50H10Q40 52 42 66H-18Z" fill="${dim(boot, far)}" ${E}/>` : `<rect x="-20" y="50" width="40" height="17" rx="8" fill="${boot}" ${E}/>`;
+  const leg = (id, far) => `<g data-p="${id}"><rect x="-14" y="-6" width="28" height="50" rx="12" fill="${dim(sk, far)}" ${E}/><rect x="-16" y="24" width="32" height="32" rx="9" fill="${dim(o.socks, far)}" ${E}/>${foot(far)}</g>`;
+  const tc = o.text;
+  const torso = isSide
+    ? `<path d="M-42 -162Q0 -174 42 -162L38 -82Q0 -74 -38 -82Z" fill="${sh}" ${E}/><path d="M-42 -92H42L46 -50Q0 -42 -46 -50Z" fill="${o.shorts}" ${E}/><path d="M-30 -128l60 0" stroke="#fff" stroke-opacity=".35" stroke-width="10"/>`
+    : `<path d="M-46 -92H46L56 -50Q30 -44 8 -50L0 -64L-8 -50Q-30 -44 -56 -50Z" fill="${o.shorts}" ${E}/><path d="M-54 -158Q-40 -170 0 -166Q40 -170 54 -158L48 -84Q0 -76 -48 -84Z" fill="${sh}" ${E}/>` +
+      (v === "back"
+        ? (o.name ? `<text y="-126" text-anchor="middle" font-size="24" font-weight="900" fill="${tc}" font-family="system-ui,sans-serif">${o.name}</text><text y="-91" text-anchor="middle" font-size="37" font-weight="900" fill="${tc}" font-family="system-ui,sans-serif">${o.num}</text>` : "")
+        : `<path d="M-18 -164Q0 -146 18 -164" fill="none" stroke="#fff" stroke-width="6"/>` + (o.name ? `<text y="-100" text-anchor="middle" font-size="34" font-weight="900" fill="${tc}" font-family="system-ui,sans-serif">${o.num}</text>` : ""));
+  const [hb, hf] = hairArt(o);
+  const eyes = isSide
+    ? `<g data-p="eyes"><ellipse cx="28" cy="-238" rx="11" ry="16" fill="${INK}"/><ellipse cx="62" cy="-238" rx="8" ry="14" fill="${INK}"/><circle cx="32" cy="-244" r="4.5" fill="#fff"/><circle cx="65" cy="-244" r="3.5" fill="#fff"/></g>`
+    : `<g data-p="eyes"><ellipse cx="-30" cy="-238" rx="13" ry="18" fill="${INK}"/><ellipse cx="30" cy="-238" rx="13" ry="18" fill="${INK}"/><circle cx="-25" cy="-245" r="5.5" fill="#fff"/><circle cx="35" cy="-245" r="5.5" fill="#fff"/></g>`;
+  const face = `${eyes}<path data-p="alt" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round" display="none"/><ellipse cx="-54" cy="-206" rx="15" ry="9" fill="#ff8fa3" opacity=".5"/><ellipse cx="54" cy="-206" rx="15" ry="9" fill="#ff8fa3" opacity=".5"/><path data-p="brow" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path data-p="mouth" stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const faceS = `${eyes}<ellipse cx="34" cy="-204" rx="14" ry="8" fill="#ff8fa3" opacity=".5"/><g transform="translate(40 -40) scale(.6 .8)"><path data-p="brow" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path data-p="mouth" stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  const head = `<g data-p="head">${hb}` + (v === "front" ? `<circle cx="-84" cy="-232" r="15" fill="${sk}" ${E}/><circle cx="84" cy="-232" r="15" fill="${sk}" ${E}/>` : "") +
+    (v === "back" ? "" : `<circle cy="-240" r="85" fill="${sk}" ${E}/>`) + (isSide ? `<circle cx="-22" cy="-232" r="14" fill="${sk}" ${E}/>` : "") +
+    (v === "front" ? face : isSide ? faceS : "") + hf + `</g>`;
+  const stars = `<g data-p="stars" display="none">${[0, 1, 2].map(i => `<path data-p="st${i}" d="M0 -20l6 13l14 1l-11 9l4 14l-13 -8l-13 8l4 -14l-11 -9l14 -1Z" fill="#ffd60a" ${E}/>`).join("")}</g>`;
+  const body = isSide ? arm("aL", 1) + leg("lL", 1) + leg("lR", 0) + torso + head + arm("aR", 0) : leg("lL") + leg("lR") + torso + arm("aL") + arm("aR") + head;
+  return `<g data-p="root"><ellipse data-p="shad" cx="0" cy="2" rx="86" ry="20" fill="#1c3a23" opacity=".28"/><g data-p="body">${body}</g>${stars}</g>`;
+}
+function rig(o, x, y, s, dir) {
+  const g = el($("act"), rigArt(o)), p = {};
+  g.querySelectorAll("[data-p]").forEach(e => { p[e.dataset.p] = e; });
+  const r = { o, v: o.view, g, p, P: { ...REST, x, y }, s, dir: dir || 1, run: 0, ph: Math.random() * 6, seed: Math.random() * 6, wave: 0, dizzy: 0, blink: 1, bt: 1000 + rand(3000), pa: 0, pv: 0, lx: x, ly: 0, id: 0 };
+  mood(r, "smile"); rigs.push(r); return r;
+}
+const herKit = (t, view) => ({ ...TEAM[t], view, shirt: K.kit, shorts: "#fff", socks: K.kit, text: textOn(K.kit) });
+const oppKit = (t, view) => ({ ...OPPS[t], view, shirt: K.opp, shorts: tint(K.opp, -0.28), socks: K.opp, text: textOn(K.opp) });
+const keeperKit = () => ({ skin: SKIN[1], hair: "#c9562b", style: "tuft", num: 1, view: "front", shirt: KEEPER, shorts: "#3a5a40", socks: KEEPER, text: INK, gloves: 1 });
+function mood(r, m) {
+  const a = MOOD[m], p = r.p; r.m = m;
+  if (p.mouth) { p.mouth.setAttribute("d", a.m); p.mouth.setAttribute("fill", a.f ? "#8a2c3b" : "none"); p.brow.setAttribute("d", a.b); }
+  if (p.alt) {
+    const d = { arc: "M-46 -234Q-30 -258 -14 -234M14 -234Q30 -258 46 -234", shut: "M-46 -240Q-30 -226 -14 -240M14 -240Q30 -226 46 -240", x: "M-42 -250L-18 -226M-18 -250L-42 -226M18 -250L42 -226M42 -250L18 -226" }[a.e];
+    p.alt.setAttribute("display", d ? "inline" : "none"); if (d) p.alt.setAttribute("d", d);
+    p.eyes.setAttribute("display", d ? "none" : "inline");
+  }
+}
+function drawRig(r, dt) {
+  const P = r.P, p = r.p, side = r.v === "side";
+  r.ph += dt * 0.019 * (r.run ? 1 : 0);
+  const sw = Math.sin(r.ph) * r.run, ab = Math.abs(Math.sin(r.ph)) * r.run, br = Math.sin(now * 0.0032 + r.seed);
+  let lL = P.lL, lR = P.lR, aL = P.aL, aR = P.aR, lsL = P.lsL, lsR = P.lsR;
+  if (side) { lL += sw * 48; lR -= sw * 48; aL -= sw * 58; aR += sw * 58; }
+  else { lsL -= Math.max(0, sw) * 0.36; lsR -= Math.max(0, -sw) * 0.36; aL += sw * 22; aR -= sw * 22; }
+  if (r.wave) { aR = (side ? 104 : 150) + Math.sin(now * 0.014) * 24; P.asR = side ? 1.7 : 1.3; }
+  const air = Math.max(0, -P.j), w = 1 + (1 - P.sq) * 0.75, dy = P.j - ab * 16 - (r.wave ? Math.abs(Math.sin(now * 0.007)) * 10 : 0);
+  T(p.root, `translate(${n1(P.x)} ${n1(P.y)}) scale(${n3(r.s * r.dir)} ${n3(r.s)})`);
+  T(p.shad, `scale(${n3(Math.max(0.45, 1 - air * 0.0022))} 1)`);
+  T(p.body, `translate(0 ${n1(dy)}) scale(${n3(w * P.fx)} ${n3(P.sq)}) rotate(${n1(P.r)} 0 -130)`);
+  T(p.head, `translate(${n1(P.lx * 0.3)} ${n1(P.hy + br * 1.6)}) rotate(${n1(P.hr)} 0 -170)`);
+  const sL = side ? -1 : 1, sx = side ? 0 : 52;
+  T(p.aL, `translate(${-sx} -146) rotate(${n1(sL * aL)}) scale(1 ${n3(P.asL)})`);
+  T(p.aR, `translate(${sx} -146) rotate(${n1(-aR)}) scale(1 ${n3(P.asR)})`);
+  const hx = side ? 8 : 24;
+  T(p.lL, `translate(${-hx} -64) rotate(${n1(sL * lL)}) scale(1 ${n3(lsL)})`);
+  T(p.lR, `translate(${hx} -64) rotate(${n1(-lR)}) scale(1 ${n3(lsR)})`);
+  r.bt -= dt; if (r.bt < 0) { r.bt = 1800 + rand(3200); tween(170, k => { r.blink = 1 - 0.92 * Math.sin(k * Math.PI); }); }
+  if (p.eyes) T(p.eyes, `translate(${n1(P.lx)} ${n1(P.ly - 238)}) scale(1 ${n3(Math.max(0.08, P.eye * r.blink))}) translate(0 238)`);
+  if (p.pony) {   // the ponytail (or tuft) lags behind every move
+    const vx = (P.x - r.lx) / Math.max(dt, 1) * r.dir, vy = (dy - r.ly) / Math.max(dt, 1);
+    r.lx = P.x; r.ly = dy;
+    const tgt = clamp(vx * 26, -46, 46) * (r.v === "front" ? 0.6 : 1) + clamp(vy * 14, -36, 36) + Math.sin(r.ph) * 9 * r.run;
+    r.pv += ((tgt - r.pa) * 0.0009 - r.pv * 0.014) * dt; r.pa = clamp(r.pa + r.pv * dt, -70, 70);
+    const px = side ? -74 : r.v === "front" ? 46 : 0, py = side ? -274 : r.o.style === "tuft" ? -322 : r.v === "front" ? -308 : -300;
+    T(p.pony, `rotate(${n1(r.pa)} ${px} ${py})`);
+  }
+  if (r.dizzy > 0) {
+    p.stars.setAttribute("display", "inline");
+    const hx0 = Math.sin((P.r || 0) * 0.0175) * 110 * P.fx, hy0 = -240 - Math.cos((P.r || 0) * 0.0175) * 110 + 110 + P.j + P.hy - 84;
+    for (let i = 0; i < 3; i++) { const a = now * 0.008 + i * 2.09; T(p["st" + i], `translate(${n1(hx0 + Math.cos(a) * 112)} ${n1(hy0 - 30 + Math.sin(a) * 26)}) scale(${n3(1 + Math.sin(a) * 0.3)})`); }
+  } else p.stars.setAttribute("display", "none");
+}
+// steps: [{ p: pose, ms, e: easing, f: run at the start of the step, mood, dx, dy, x, y, run }]
+function poseTo(r, t, ms, e, id, done) {
+  const ks = Object.keys(t), a = {}, f = EASE[e || "io"];
+  ks.forEach(c => { a[c] = r.P[c]; });
+  tween(ms, k => { if (r.id !== id) return; const v = f(k); ks.forEach(c => { r.P[c] = a[c] + (t[c] - a[c]) * v; }); }, () => { if (r.id === id) done(); });
+}
+function act(r, steps, done) {
+  const id = ++r.id;
+  const go = i => {
+    if (r.id !== id) return;
+    if (i >= steps.length) { if (done) done(); return; }
+    const s = steps[i]; if (s.f) s.f(); if (s.mood) mood(r, s.mood); if (s.run !== undefined) r.run = s.run;
+    const t = { ...(s.p || {}) };
+    if (s.dx) t.x = r.P.x + s.dx; if (s.dy) t.y = r.P.y + s.dy;
+    if (s.x !== undefined) t.x = s.x; if (s.y !== undefined) t.y = s.y;
+    poseTo(r, t, s.ms, s.e, id, () => go(i + 1));
+  };
+  go(0);
+}
+
+/* ===== Ball ===== */
+const B = { x: 0, y: 0, z: 0, s: 1, sq: 1, rot: 0, r: 44, vis: false, shadow: true, fl: 0, id: 0, el: null };
+function makeBall() {
+  B.el = el($("ballFront"), `<ellipse data-b="sh" rx="40" ry="11" fill="#1c3a23" opacity=".3"/><g data-b="sp"><g data-b="r"><use href="#ballArt"/></g></g>`);
+  B.sh = B.el.querySelector('[data-b="sh"]'); B.sp = B.el.querySelector('[data-b="sp"]'); B.ro = B.el.querySelector('[data-b="r"]');
+  B.vis = false; B.shadow = true; B.z = 0; B.s = 1; B.sq = 1; B.fl = 0;
+}
+function drawBall() {
+  if (!B.el) return;
+  B.el.setAttribute("display", B.vis ? "inline" : "none");
+  if (!B.vis) return;
+  const k = B.r * B.s / 44, wx = B.fl ? Math.sin(now * 0.0042) * 16 : 0, wy = B.fl ? Math.sin(now * 0.0061) * 12 : 0;
+  T(B.sp, `translate(${n1(B.x + wx)} ${n1(B.y + wy - B.z)}) scale(${n3(k * (2 - B.sq))} ${n3(k * B.sq)})`);
+  T(B.ro, `rotate(${n1(B.rot)})`);
+  B.sh.setAttribute("display", B.shadow ? "inline" : "none");
+  if (B.shadow) { T(B.sh, `translate(${n1(B.x)} ${n1(B.y + B.r * B.s)}) scale(${n3(k * Math.max(0.5, 1 - B.z * 0.003))} ${n3(k)})`); }
+}
+function ballTo(x, y, ms, o, done) {
+  o = o || {};
+  const id = B.id, ax = B.x, ay = B.y, as = B.s, s1 = o.s === undefined ? B.s : o.s, f = EASE[o.e || "line"], h = o.h || 0, pw = o.pow || 1, spin = o.spin === undefined ? 900 : o.spin;
+  tween(ms, k => {
+    if (id !== B.id) return;
+    const v = f(k), g = Math.pow(v, pw);
+    B.x = ax + (x - ax) * g; B.y = ay + (y - ay) * g; B.s = as + (s1 - as) * g; B.z = h * Math.sin(Math.PI * k); B.rot += spin * 0.016;
+  }, () => { if (id === B.id && done) done(); });
+}
+function ballAtFoot(r) { B.x = r.P.x + r.dir * (72 + B.r * 0.3) * r.s; B.y = r.P.y - B.r + 6; B.z = 0; B.s = 1; B.vis = true; }
+
+/* ===== Particles on the canvas overlay, game clock, 150 at most ===== */
+const FX = { c: $("fx"), ctx: null, p: [], dpr: 1, on: false };
+function sizeFx() {
+  FX.dpr = Math.min(2, devicePixelRatio || 1); FX.c.width = innerWidth * FX.dpr; FX.c.height = innerHeight * FX.dpr;
+  FX.ctx = FX.c.getContext("2d");
+}
+function emit(p) { FX.p.push(p); if (FX.p.length > 150) FX.p.shift(); }
+function confetti(x, y, n, cols, sp, ang, spread) {
+  for (let i = 0; i < n; i++) {
+    const a = (ang === undefined ? Math.random() * 6.28 : ang + (Math.random() - 0.5) * (spread || 1)), v = (sp || 0.5) * (0.5 + Math.random() * 0.8);
+    emit({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.0009, dr: 0.0022, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.02, s: 8 + Math.random() * 10 * Math.min(1.6, innerHeight / 600), c: cols[rand(cols.length)], t: 0, ttl: 1500 + Math.random() * 1300, kind: 0 });
+  }
+}
+function firework(x, y, cols, quiet) {
+  if (!quiet) SFX.pop();
+  const n = 28, c = cols[rand(cols.length)], sp = Math.min(innerWidth, innerHeight) * 0.00082 + 0.1;
+  for (let i = 0; i < n; i++) { const a = i / n * 6.28; emit({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.00028, dr: 0.0024, r: 0, vr: 0, s: 5 + Math.min(innerWidth, innerHeight) * 0.005, c: i % 4 ? c : "#fff", t: 0, ttl: 800 + Math.random() * 500, kind: 1 }); }
+}
+function fxTick(dt) {
+  const c = FX.ctx; if (!c) return;
+  if (!FX.p.length) { if (FX.on) { c.clearRect(0, 0, FX.c.width, FX.c.height); FX.on = false; } return; }
+  FX.on = true; c.clearRect(0, 0, FX.c.width, FX.c.height); c.save(); c.scale(FX.dpr, FX.dpr);
+  FX.p = FX.p.filter(p => {
+    p.t += dt; if (p.t > p.ttl) return false;
+    const d = Math.max(0, 1 - p.dr * dt); p.vx *= d; p.vy = p.vy * d + p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+    c.globalAlpha = Math.min(1, (p.ttl - p.t) / 300); c.fillStyle = p.c;
+    if (p.kind) { c.beginPath(); c.arc(p.x, p.y, p.s, 0, 6.3); c.fill(); }
+    else { c.save(); c.translate(p.x, p.y); c.rotate(p.r); c.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.66 * Math.abs(Math.cos(p.r * 2.3))); c.restore(); }
+    return true;
+  });
+  c.restore();
+}
+const partyCols = () => K ? [K.kit, K.kit, tint(K.kit, 0.3), "#fff", GOLD[0]] : GOLD;
+function tapParty(x, y) {
+  if (G.screen === "lift") firework(x, y, [...GOLD, K.kit, "#fff"]);
+  else { confetti(x, y, 16, partyCols(), 0.42); SFX.pop(); }
+}
+
+/* ===== Sound for this game: synth for everything, optional real files ===== */
+const bufs = {}, clips = {};
+function loadClips() {   // decoded buffers like the other games, file:// can't fetch so it uses Audio elements, a missing file just leaves the synth
+  Object.entries({ ambiance: "foule-ambiance", but: "foule-but", sifflet: "sifflet", frappe: "frappe-ballon" }).forEach(([k, n]) => {
+    const url = "../sons/" + n + ".mp3";
+    fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => ac.decodeAudioData(ab, res, rej)))
+      .then(b => { bufs[k] = b; })
+      .catch(() => {
+        try {
+          const a = new Audio(); a.preload = "auto";
+          a.addEventListener("error", () => { clips[k] = null; });
+          a.addEventListener("canplaythrough", () => { clips[k] = a; });
+          a.src = url;
+        } catch (_) {}
+      });
+  });
+}
+function playClip(k, vol, loop) {
+  if (bufs[k] && ac) {
+    const s = ac.createBufferSource(), g = ac.createGain();
+    s.buffer = bufs[k]; g.gain.value = vol; s.connect(g); g.connect(master); s.start();
+    return true;
+  }
+  const a = clips[k]; if (!a) return false;
+  try { a.currentTime = 0; a.volume = vol; a.loop = !!loop; const p = a.play(); if (p && p.catch) p.catch(() => { clips[k] = null; }); return true; } catch (_) { return false; }
+}
+function swell(d, v, f, up) {   // a band of noise that rises then fades: the crowd
+  if (!ac) return;
+  const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain(), t = ac.currentTime;
+  s.buffer = b; fl.type = "bandpass"; fl.frequency.value = f; fl.Q.value = 0.5;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + d * up); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  s.connect(fl); fl.connect(g); g.connect(master); s.start(t);
+}
+const bed = { src: null, g: null, vol: 0 };
+function bedSet(v, sec) {   // the looping crowd bed: real file if there is one, else filtered noise
+  bed.vol = v;
+  if (clips.ambiance && !bufs.ambiance) {
+    if (bed.src) { const s = bed.src, g = bed.g; bed.src = null; bed.g = null; try { s.stop(); s.disconnect(); g.disconnect(); } catch (_) {} }
+    const a = clips.ambiance, v0 = a.paused ? 0 : a.volume;
+    if (a.paused) playClip("ambiance", 0.001, true);
+    tween(Math.max(16, sec * 1000), k => { a.volume = clamp(v0 + (v - v0) * k, 0, 1); }, () => { if (v <= 0) a.pause(); });
+    return;
+  }
+  if (!ac) return;
+  if (!bed.src) {
+    const s = ac.createBufferSource(), g = ac.createGain();
+    s.loop = true; g.gain.value = 0.0001;
+    if (bufs.ambiance) {   // the file has 0.25 s of wrap-around on each side, so the loop points never land on mp3 padding
+      s.buffer = bufs.ambiance; s.loopStart = 0.25; s.loopEnd = 11.75; s.connect(g);
+    } else {
+      const n = ac.sampleRate * 4, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), lo = ac.createBiquadFilter(), hi = ac.createBiquadFilter();
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      s.buffer = b; lo.type = "lowpass"; lo.frequency.value = 1100; hi.type = "highpass"; hi.frequency.value = 180;
+      s.connect(lo); lo.connect(hi); hi.connect(g);
+    }
+    g.connect(master); s.start(); bed.src = s; bed.g = g;
+  }
+  const t = ac.currentTime;
+  bed.g.gain.cancelScheduledValues(t); bed.g.gain.setValueAtTime(Math.max(0.0001, bed.g.gain.value), t); bed.g.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + sec);
+  if (v <= 0) { const s = bed.src, g = bed.g; bed.src = null; bed.g = null; after(sec * 1000 + 100, () => { try { s.stop(); s.disconnect(); g.disconnect(); } catch (_) {} }); }
+}
+function whistleTone(d) {
+  if (playClip("sifflet", 0.7) || !ac) return;
+  const t = ac.currentTime, g = ac.createGain(), l = ac.createOscillator(), lg = ac.createGain();
+  l.frequency.value = 42; lg.gain.value = 190; l.connect(lg);
+  [2500, 2590].forEach(f => { const o = ac.createOscillator(); o.frequency.value = f; lg.connect(o.frequency); o.connect(g); o.start(t); o.stop(t + d + 0.05); });
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.13, t + 0.02); g.gain.setValueAtTime(0.13, t + d - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  g.connect(master); l.start(t); l.stop(t + d + 0.05);
+}
+const SFX = {
+  pop: () => tone(480 + Math.random() * 260, 0.12, "sine", 0.3, 1200),
+  soft: () => tone(240, 0.1, "sine", 0.12, 200),
+  chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+  whistle: whistleTone,
+  kick: () => { if (playClip("frappe", 0.8)) return; tone(150, 0.14, "sine", 0.5, 55); noise(0.05, 0.3, 4000); },
+  swish: () => { noise(0.35, 0.3, 5200); noise(0.2, 0.2, 2600, 0.08); },
+  boing: () => { tone(150, 0.55, "sine", 0.5, 520); tone(160, 0.55, "triangle", 0.2, 560); tone(600, 0.3, "sine", 0.12, 200, 0.2); },
+  bonk: () => { tone(420, 0.14, "square", 0.1, 200); tone(240, 0.16, "sine", 0.4, 110); },
+  thud: () => { tone(120, 0.26, "sine", 0.55, 50); noise(0.12, 0.35, 700); },
+  flop: () => { tone(110, 0.2, "sine", 0.45, 60); noise(0.18, 0.25, 900); },
+  whoosh: () => noise(0.35, 0.22, 1800),
+  clap: n => { for (let i = 0; i < (n || 8); i++) noise(0.05, 0.16, 2200, i * 0.1 + Math.random() * 0.04); },
+  roar: () => { if (playClip("but", 0.85)) return; swell(3.3, 0.5, 700, 0.38); swell(3.1, 0.2, 1900, 0.42); },
+  cheer: () => { swell(1.3, 0.22, 800, 0.3); SFX.clap(6); },
+  fanfare: () => [[523, 0], [523, 0.14], [659, 0.28], [784, 0.42], [1047, 0.62]].forEach(([f, d], i) => { tone(f, i === 4 ? 1 : 0.2, "sawtooth", 0.1, null, d); tone(f, i === 4 ? 1 : 0.2, "triangle", 0.2, null, d); tone(f / 2, i === 4 ? 1 : 0.2, "triangle", 0.12, null, d); }),
+  lullaby: () => [659, 587, 523, 587, 659, 523, 494, 523].forEach((f, i) => tone(f, 0.9, "sine", 0.11, null, i * 0.55)),
+  clunk: () => { tone(90, 0.12, "sine", 0.22, 60); noise(0.04, 0.1, 900); }
+};
+document.addEventListener("visibilitychange", () => {
+  if (ac) { if (document.hidden) ac.suspend(); else ac.resume(); }
+  if (clips.ambiance && !clips.ambiance.paused && document.hidden) clips.ambiance.pause();
+  else if (clips.ambiance && bed.vol > 0 && !document.hidden) clips.ambiance.play().catch(() => {});
+});
+
+/* ===== Camera, cuts, waiting ===== */
+const CAM = { x: 0, tx: 0, on: false, z: 1, cx: 0, cy: 0, shake: 0 };
+function cut(fn) {
+  after(0, () => {
+    clearClock(); fn();
+    const f = $("flash"); tween(200, k => { f.style.opacity = n3(0.75 * (1 - k)); });
+  });
+}
+function setScene(name) {
+  rigs = []; B.id++; ["act", "top", "ballBack", "ballFront", "glows"].forEach(i => { $(i).innerHTML = ""; });
+  glowEls.length = 0; hand = null; CAM.on = false; CAM.z = 1; CAM.shake = 0; T($("cam"), ""); T($("wrld"), "");
+  scene = SCENES[name]; scene.bg(); makeBall(); makeHand();
+}
+function wait(fn, target) { G.waiting = true; G.busy = false; G.act = fn; G.waitMs = 0; G.hint = false; G.target = target; }
+function busy() { G.waiting = false; G.busy = true; G.hint = false; }
+function punch(x, y, z) {
+  CAM.cx = x; CAM.cy = y; CAM.shake = 1;
+  tween(620, k => { CAM.z = 1 + (z - 1) * EASE.back(Math.min(1, k * 1.5)); CAM.shake = 1 - k; });
+}
+function drawCam(dt) {
+  if (CAM.on) {
+    CAM.x += (CAM.tx - CAM.x) * Math.min(1, dt * 0.0055);
+    const t = `translate(${n1(VW / 2 - CAM.x * Z)} ${HZ}) scale(${n3(Z)})`;
+    T($("wrld"), t); T($("pitch"), t);
+    T($("stand"), `translate(${n1(VW / 2 - CAM.x * 0.35)} ${standTop()})`);
+  }
+  const sx = CAM.shake ? (Math.random() - 0.5) * 22 * CAM.shake : 0, sy = CAM.shake ? (Math.random() - 0.5) * 22 * CAM.shake : 0;
+  T($("cam"), CAM.z === 1 && !CAM.shake ? "" : `translate(${n1(CAM.cx + sx)} ${n1(CAM.cy + sy)}) scale(${n3(CAM.z)}) translate(${n1(-CAM.cx)} ${n1(-CAM.cy)})`);
+}
+// Scene space of a point in the pass world
+const toScene = (x, y) => [VW / 2 + (x - CAM.x) * Z, HZ + y * Z];
+const glowEls = []; let hand = null;
+function makeHand() { hand = el($("top"), `<text class="emo" text-anchor="middle" font-size="150" display="none">👆</text>`).firstChild; }
+function drawGlows() {
+  const ts = G.waiting && G.target ? G.target() : [];
+  while (glowEls.length < ts.length) glowEls.push(el($("glows"), `<circle r="84" fill="url(#glowG)"/><circle r="84" fill="none" stroke="#fff" stroke-width="6"/>`));
+  const p = 0.5 + 0.5 * Math.sin(now * 0.006), hot = G.hint ? 1 : 0;
+  glowEls.forEach((g, i) => {
+    const t = ts[i]; g.setAttribute("display", t ? "inline" : "none"); if (!t) return;
+    const m = (1 + p * (0.07 + hot * 0.12)) * Math.max(t.r, 40 / PX), rx = Math.min(m, VW / 2 - 8), ry = Math.min(m * (t.ry || t.r) / t.r, VH / 2 - 8);
+    T(g, `translate(${n1(clamp(t.x, rx + 8, VW - rx - 8))} ${n1(clamp(t.y, ry + 8, VH - ry - 8))}) scale(${n3(rx / 84)} ${n3(ry / 84)})`);
+    g.setAttribute("opacity", n3(hot ? 1 : 0.62 + p * 0.25));
+  });
+  if (hand) {
+    const on = G.hint && ts.length > 0;
+    hand.setAttribute("display", on ? "inline" : "none");
+    if (on) { const t = ts[0], fs = Math.max(150, 92 / PX), ry = t.ry || t.r; hand.setAttribute("font-size", n1(fs)); hand.setAttribute("x", n1(clamp(t.x, fs * .5, VW - fs * .5))); hand.setAttribute("y", n1(Math.min(VH - 16, t.y + Math.min(ry, 170) + fs * 0.72 + Math.sin(now * 0.008) * 16))); }
+  }
+}
+function crowdTick() {
+  const c = G.crowdEls; if (!c) return;
+  const amp = calm ? 0 : 5, wx = G.wave;
+  c.forEach((e, i) => {
+    let y = Math.sin(now * 0.0034 + i * 0.9) * amp - G.cheer * Math.abs(Math.sin(now * 0.012 + i * 1.3)) * 26;
+    if (wx >= 0) { const d = i - wx; y -= 46 * Math.exp(-d * d / 1.8); }
+    T(e, `translate(${(i - 6) * SEC} ${n1(y)})`);
+  });
+}
+function mexican() {
+  tween(2400, k => { G.wave = -2 + k * 16; }, () => { G.wave = -1; });
+  G.cheer = 1; tween(3800, k => { G.cheer = 1 - k * k; });
+}
+
+/* ===== Shirt picker ===== */
+function shirtSpots() {
+  const cols = PORT ? 2 : 4, cw = VW / cols, size = PORT ? Math.min(cw * 0.86, (VH * 0.56) / 2) : Math.min(cw * 0.86, VH * 0.56), k = size / 340;
+  return SHIRTS.map((s, i) => ({ x: cw * ((PORT ? i % 2 : i) + 0.5), y: PORT ? VH * (i < 2 ? 0.34 : 0.61) : VH * 0.47, k, size }));
+}
+function bgPicker() {
+  const top = standTop();
+  $("bg").innerHTML = skyArt() + standArt(VW / 2, top, 1, Math.ceil((HZ - top + 200) / 44) * 44) + bands(HZ, VH + 40, 6) + hoarding(HZ - 40, -40, VW + 80, 44);
+  grabCrowd();
+}
+function placePicker() {
+  $("act").innerHTML = ""; G.shirtEls = [];
+  const sp = shirtSpots(), saved = SHIRTS.findIndex(s => s.id === mem.shirt);
+  sp.forEach((p, i) => {
+    const c = SHIRTS[i];
+    const ring = i === saved ? `<circle r="214" fill="#fff" opacity=".85"/><circle r="214" fill="none" stroke="${INK}" stroke-width="16"/>` : `<circle r="190" fill="#fff" opacity=".35"/>`;
+    const g = el($("act"), ring + shirtArt(c.kit, textOn(c.kit)));
+    T(g, `translate(${n1(p.x)} ${n1(p.y)}) scale(${n3(p.k)})`); G.shirtEls.push(g);
+  });
+  let row = "";
+  const n = Math.min(10, mem.trophies), w = Math.min(VW * 0.09, 110), x0 = VW / 2 - (n + (mem.trophies > 10 ? 1 : 0) - 1) * w / 2, y = VH - Math.max(36, 16 / PX);
+  for (let i = 0; i < n; i++) row += `<g transform="translate(${n1(x0 + i * w)} ${y}) scale(${n3(w / 300)})"><use href="#cupArt"/></g>`;
+  if (mem.trophies > 10) row += `<path transform="translate(${n1(x0 + n * w)} ${y - w * .4}) scale(${n3(w / 90)})" d="M0 -32l9 21l23 2l-17 15l5 22l-20 -12l-20 12l5 -22l-17 -15l23 -2Z" fill="${GOLD[0]}" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>`;
+  el($("act"), row);
+}
+function showPicker() {
+  G.screen = "picker"; G.goals = 0; G.stepIndex = 0; G.party = false; G.nk = 0; G.lampsOff = 0; G.lastCeleb = null; K = null;
+  $("slots").style.display = "none"; $("slots").style.opacity = 1; $("again").style.display = "none"; buildDefs();
+  setScene("picker"); placePicker();
+  const saved = SHIRTS.findIndex(s => s.id === mem.shirt);
+  wait(pickShirt, () => { const sp = shirtSpots(); return [sp[Math.max(0, saved)]].map(p => ({ x: p.x, y: p.y, r: p.size * 0.62 })); });
+}
+function pickShirt(x, y) {
+  let best = 0, d0 = 1e9; const sp = shirtSpots();
+  sp.forEach((p, i) => { const d = Math.hypot(p.x - x, p.y - y); if (d < d0) { d0 = d; best = i; } });
+  K = SHIRTS[best]; mem.shirt = K.id; G.shirt = K.id; store(KEY, mem);
+  SFX.chime();
+  sp.forEach((p, i) => {
+    const g = G.shirtEls[i];
+    if (i === best) tween(620, k => T(g, `translate(${n1(lerp(p.x, VW / 2, Math.min(1, k * 1.6)))} ${n1(lerp(p.y, VH * .46, Math.min(1, k * 1.6)) - Math.sin(k * Math.PI) * 40)}) scale(${n3(p.k * (1 + EASE.back(k) * 0.34))}) rotate(${n1(Math.sin(k * 18) * 6 * (1 - k))})`));
+    else tween(300, k => { T(g, `translate(${n1(p.x)} ${n1(p.y + k * k * 900)}) scale(${n3(p.k)})`); });
+  });
+  after(850, () => cut(kickOff));
+}
+
+/* ===== Kick-off and the pass world ===== */
+const PS = { D: 640, GD: 760, L0: 100, L1: 420 };
+function passGeo() {
+  const w = VW / Z;
+  PS.D = Math.round(Math.min(640, w * (PORT ? 0.5 : 0.6))); PS.GD = Math.round(Math.min(780, w * 0.62));
+  PS.L0 = 110; PS.L1 = Math.min(Math.round((VH - HZ - 30) / Z), 480);
+}
+const lane = f => lerp(PS.L0, PS.L1, f);
+function bgPass() {
+  const top = standTop(), d = G.pass, goal = d && d.goal;
+  let lines = `<rect x="-3000" y="4" width="9000" height="9" fill="#fff"/><rect x="-5" y="4" width="10" height="2400" fill="#fff"/><ellipse cx="0" cy="${lane(.55)}" rx="330" ry="110" fill="none" stroke="#fff" stroke-width="9"/><circle cx="0" cy="${lane(.55)}" r="11" fill="#fff"/>`;
+  if (goal) {
+    const g = goal, nx = g.x + 40, top0 = 4, bot = lane(1.15);
+    lines = `<rect x="-3000" y="4" width="9000" height="9" fill="#fff"/><path d="M${nx - 560} ${top0 + 40}L${nx - 760} ${bot}" stroke="#fff" stroke-width="9"/><path d="M${nx - 560} ${top0 + 40}H${nx + 300}M${nx - 760} ${bot}H${nx + 300}" stroke="#fff" stroke-width="9"/>`;
+  }
+  $("bg").innerHTML = skyArt() + standArt(VW / 2, top, 1, Math.ceil((HZ - top + 90) / 44) * 44) +
+    `<g id="pitch"><rect x="-3000" y="0" width="9000" height="2600" fill="url(#grassV)"/>${hoarding(-46, -3000, 9000, 48)}${lines}${goal ? goalArt(goal) : ""}</g>`;
+  grabCrowd();
+}
+function kickOff() {
+  G.screen = "kickoff"; busy(); G.step = null; G.pass = null; passGeo();
+  G.celebs = Object.keys(CELEBS).sort(() => Math.random() - 0.5);
+  const sl = $("slots"); sl.style.display = "flex"; sl.innerHTML = MATCH.map(() => `<i><svg viewBox="-48 -48 96 96"><use href="#ballArt"/></svg></i>`).join("");
+  buildDefs(); setScene("pass"); CAM.on = true; CAM.x = CAM.tx = 0;
+  bedSet(0.09, 0.2); after(100, () => bedSet(0.2, 1.8));
+  const y1 = lane(.2), y2 = lane(.55), y3 = lane(.92), d = Math.min(200, VW / Z * 0.2);
+  const mine = [rig(herKit(1, "side"), -d * 1.5, y1, 1, 1), rig(herKit(2, "side"), -d * 1.5, y3, 1, 1), rig(herKit(0, "side"), -d * .75, y2, 1, 1)];
+  const them = [rig(oppKit(0, "side"), d * 1.5, y1, 1, -1), rig(oppKit(1, "side"), d * 1.5, y3, 1, -1), rig(oppKit(2, "side"), d * .9, y2, 1, -1)];
+  B.r = footR(); B.x = 0; B.y = y2 - B.r + 6; B.vis = true;
+  const all = mine.concat(them);
+  all.forEach((r, i) => after(120 * i, () => act(r, [{ p: { sq: 0.9 }, ms: 120 }, { p: { j: -40, sq: 1.05, aL: 40, aR: 40 }, ms: 160, e: "out" }, { p: { j: 0, sq: 1, aL: 10, aR: 10 }, ms: 160, e: "in" }])));
+  after(1500, () => { SFX.whistle(0.7); all.forEach(r => act(r, [{ p: { sq: 0.92 }, ms: 90 }, { p: { sq: 1, j: -24 }, ms: 120 }, { p: { j: 0 }, ms: 120 }])); });
+  after(2500, () => cut(() => runStep(MATCH[G.stepIndex])));
+}
+const STEPS = { pass: startPass, penalty: startPenalty, save: startSave };
+function runStep(s) { G.step = s; STEPS[s.k](s); }
+function startPass(st) {
+  G.screen = "pass"; busy(); passGeo();
+  const n = st.passes, D = PS.D, gx = n * D + PS.GD, gy = lane(.5) + 40;
+  const goal = { W: 760, H: 340, a: 0.52, b: 0.26, x: gx, y: gy, ins: 1, insy: 1, dx: 124, dy: -16, bx: 120, by: -8, nx: 14, ny: 7 };
+  G.pass = { n, i: 0, fork: !!st.fork, goal, opp: [] };
+  setScene("pass"); G.g = goal;
+  const S = G.pass, a = rig(herKit(1, "side"), 0, lane(.3), 1, 1), b = rig(herKit(2, "side"), 0, lane(.8), 1, 1), h = rig(herKit(0, "side"), 0, lane(.6), 1, 1);
+  S.a = a; S.b = b; G.hero = h; S.ch = [];
+  for (let i = 0; i < n; i++) S.ch.push((n - 1 - i) % 2 ? a : b);
+  S.ch.push(h);
+  const seen = new Set();
+  S.ch.forEach((r, i) => { if (!seen.has(r)) { seen.add(r); const m = markOf(i); r.P.x = m.x; r.P.y = m.y; r.lx = m.x; } });
+  if (!seen.has(a)) { a.P.x = -D * 0.9; a.lx = a.P.x; }
+  G.k = rig(keeperKit(), gx - 10, gy + 18, 0.88, 1); Object.assign(G.k.P, POSE.ready, { x: gx - 10, y: gy + 18 });
+  [0, 1].forEach(i => { const r = rig(oppKit(i, "side"), D * (i ? -0.2 : 0.9), lane(i ? 1.02 : 0), 1, -1); S.opp.push({ r, t: 1200 + rand(1500), off: i ? -340 : 430 }); });
+  CAM.on = true; B.r = footR(); ballAtFoot(S.ch[0]); B.shadow = true;
+  CAM.x = CAM.tx = (S.ch[0].P.x + S.ch[1].P.x) / 2;
+  bedSet(0.2, 0.3);
+  readyPass(0);
+}
+function markOf(i) {
+  const S = G.pass, f = [.4, .72, .3, .62][i % 4];
+  if (i === S.n) return { x: i * PS.D + (S.fork ? 110 : 0), y: lane(S.fork ? .92 : .6) };
+  return { x: i * PS.D, y: lane(f) };
+}
+function runTo(r, m, done) {
+  const d = Math.hypot(m.x - r.P.x, m.y - r.P.y);
+  if (d < 6) { done(); return; }
+  r.dir = m.x >= r.P.x ? 1 : -1;
+  act(r, [{ x: m.x, y: m.y, run: 1, ms: Math.max(320, d * 0.92), e: "line" }, { p: { ...POSE.stand, j: 0 }, run: 0, ms: 140, f: () => { r.dir = 1; } }], done);
+}
+function readyPass(i) {
+  const S = G.pass; S.i = i;
+  if (i === S.n) { readyShot(); return; }
+  const fork = S.fork && i === S.n - 1, rc = S.ch[i + 1], list = [{ r: rc, m: markOf(i + 1) }];
+  if (fork) { const other = S.ch[i] === S.a ? S.b : S.a; list.push({ r: other, m: { x: (i + 1) * PS.D - 130, y: lane(.04) } }); }
+  CAM.tx = (S.ch[i].P.x + list[0].m.x) / 2;
+  let left = list.length;
+  list.forEach(l => runTo(l.r, l.m, () => {
+    if (--left) return;
+    list.forEach(q => { q.r.wave = 1; q.r.dir = -1; mood(q.r, "open"); });
+    wait((x, y) => doPass(i, list, x, y), () => list.map(q => { const p = toScene(q.r.P.x, q.r.P.y - 150); return { x: p[0], y: p[1], r: (list.length > 1 ? 150 : 190) * Z }; }));
+  }));
+}
+function doPass(i, list, x, y) {
+  const S = G.pass, ho = S.ch[i];
+  let pick = list[0];
+  if (list.length > 1) { const d = q => { const p = toScene(q.r.P.x, q.r.P.y - 150); return Math.hypot(p[0] - x, p[1] - y); }; pick = d(list[0]) <= d(list[1]) ? list[0] : list[1]; }
+  list.forEach(q => { q.r.wave = 0; q.r.P.asR = 1; mood(q.r, "smile"); });
+  kickTo(ho, pick.r, () => {
+    if (list.length < 2 || pick.r === G.hero) { readyPass(i + 1); return; }
+    // the fork went to the teammate: a quick pass inside to the hero
+    after(240, () => kickTo(pick.r, G.hero, () => readyPass(S.n)));
+  });
+}
+function kickTo(from, to, done) {
+  const fx = to.P.x - (72 + B.r * 0.3), fy = to.P.y - B.r + 6;
+  to.dir = -1; CAM.tx = (from.P.x + to.P.x) / 2 + 80;
+  act(from, [{ p: POSE.windup, ms: 110, e: "out" }, { p: POSE.strike, ms: 90, e: "out", f: SFX.kick }, { p: POSE.stand, ms: 300 }]);
+  after(120, () => ballTo(fx, fy, 600, { h: 90, e: "io", spin: 1500 }, () => {
+    B.z = 0; SFX.soft();
+    CAM.tx = to.P.x + 60;
+    act(to, [{ p: { sq: 0.86, lR: 26 }, ms: 90, e: "out" }, { p: { sq: 1, lR: 0, j: -14 }, ms: 120, e: "out", f: () => { to.dir = 1; ballTo(to.P.x + 72 + B.r * 0.3, fy, 150, { spin: 700 }); } }, { p: { j: 0 }, ms: 90, e: "in" }]);
+    after(300, done);
+  }));
+}
+function readyShot() {
+  const S = G.pass, g = S.goal, h = G.hero; S.i = S.n;
+  CAM.tx = (h.P.x + g.x) / 2 + 40;
+  act(h, [{ p: { ...POSE.stand, sq: 0.97 }, ms: 200, mood: "open" }]);
+  wait(shootPass, () => { const p = toScene(g.x + 40, g.y - g.H * .5); return [{ x: p[0], y: p[1], r: 235 * Z, ry: 290 * Z }]; });
+}
+function shootPass() {
+  const S = G.pass, g = S.goal, h = G.hero, gag = pickGag(), A = { x: (Math.random() < .5 ? -1 : 1) * g.W * .31, y: -g.H * (.3 + Math.random() * .35) };
+  const c = { g, k: G.k, A: gag === "tunnel" ? { x: 0, y: -34 } : A, ms: 430, endS: 0.82 }; c.side = A.x > 0 ? -1 : 1;
+  act(h, [{ p: POSE.windup, ms: 140, e: "out" }, { p: POSE.strike, ms: 100, e: "out", f: () => { SFX.kick(); B.shadow = false; GAGS[gag](c); } }, { p: POSE.stand, ms: 340, mood: "joy" }]);
+}
+function passTick(dt) {
+  const S = G.pass; if (!S || !S.opp) return;
+  S.opp.forEach(o => {   // two opponents stumble about: they trip and never reach the ball
+    const r = o.r; if (o.down) return;
+    const tx = B.x + o.off, dx = tx - r.P.x, near = Math.abs(r.P.x - B.x) < 210 && Math.abs(r.P.y - B.y) < 170;
+    o.t -= dt;
+    if (near || o.t < 0) {
+      o.down = true; o.t = 1800 + rand(2200);
+      const s = r.dir;
+      act(r, [{ p: { r: 24, aL: 170, aR: 150, j: -20, asL: 1.3, asR: 1.3 }, run: 0, ms: 200, mood: "oh", f: SFX.soft }, { p: { r: 84, j: 62, sq: 0.8, aL: 150, aR: 150 }, ms: 240, e: "in" }, { p: { sq: 1 }, ms: 140, e: "back", f: SFX.flop, mood: "sad" }, { ms: 500 }, { p: { ...POSE.stand }, ms: 280, e: "back", mood: "worry" }], () => { o.down = false; r.dir = s; });
+      return;
+    }
+    if (Math.abs(dx) > 30) { r.run = 0.8; r.dir = dx > 0 ? 1 : -1; r.P.x += Math.sign(dx) * dt * 0.17; r.P.r = Math.sin(now * 0.009 + r.seed) * 9; } else { r.run = 0; r.P.r = 0; }
+  });
+  if (G.waiting || S.i >= S.n) { const k = G.k; k.P.x += Math.sin(now * 0.004) * 0.5; k.P.hr = Math.sin(now * 0.0026) * 5; }
+  // the nearest players are drawn in front
+  const list = rigs.slice().sort((a, b) => a.P.y - b.P.y), kids = $("act").children;
+  for (let i = 0; i < list.length; i++) if (kids[i] !== list[i].g) { list.forEach(r => $("act").appendChild(r.g)); break; }
+}
+function placePass() {
+  const S = G.pass; if (!S) return;
+  const d0 = PS.D, l0 = PS.L1; passGeo();
+  const fx = PS.D / d0, fy = PS.L1 / l0;   // resized in the middle of a step: everything scales to the new frame
+  rigs.forEach(r => { r.P.x *= fx; r.P.y *= fy; r.lx = r.P.x; });
+  B.x *= fx; B.y *= fy; CAM.x *= fx; CAM.tx *= fx;
+  if (S.goal) { S.goal.x *= fx; S.goal.y *= fy; scene.bg(); }
+}
+
+/* ===== Penalty ===== */
+function penGeo() {
+  const W = Math.min(VW * (PORT ? 0.9 : 0.68), 1080), H = W * 0.42, cx = VW / 2, sb = $("slots").getBoundingClientRect().bottom / PX + 14;
+  const gy = Math.round(Math.max(VH * (PORT ? 0.42 : 0.6), sb + H + 16)), hs = PORT ? 1.75 : clamp((VH - gy) / 270, 0.95, 1.3);
+  return { W, H, cx, gy, hs, spot: Math.round(PORT ? VH * 0.82 : VH - 92 * hs), a: 1, b: 0, x: cx, y: gy, ins: 0.9, insy: 0.92, dx: 0, dy: -14, bx: 0, by: -30, nx: 16, ny: 7 };
+}
+function bgPen() {
+  const g = penGeo(), top = Math.max(standTop(), g.gy - g.H - 150), pt = g.gy - 60;
+  G.g = g;
+  const y2 = Math.min(VH + 300, g.gy + (g.spot - g.gy) * 0.46), w1 = g.W * .62, w2 = g.W * (PORT ? 1.05 : .92), y3 = g.gy + (g.spot - g.gy) * 0.2, w3 = g.W * .58, w4 = g.W * .72;
+  $("bg").innerHTML = skyArt() + standArt(VW / 2, top, 1, Math.ceil((pt - top + 80) / 44) * 44) + hoarding(pt - 48, -40, VW + 80, 50) + bands(pt, VH + 40, 7) +
+    `<path d="M-60 ${g.gy + 2}H${VW + 60}" stroke="#fff" stroke-width="8"/><path d="M${g.cx - w1} ${g.gy}L${g.cx - w2} ${y2}H${g.cx + w2}L${g.cx + w1} ${g.gy}M${g.cx - w3} ${g.gy}L${g.cx - w4} ${y3}H${g.cx + w4}L${g.cx + w3} ${g.gy}" fill="none" stroke="#fff" stroke-width="7"/>` +
+    `<ellipse cx="${g.cx}" cy="${g.spot + 40}" rx="30" ry="11" fill="#fff" opacity=".9"/>` + goalArt(g);
+  grabCrowd();
+}
+function placePen() {
+  const g = penGeo(); if (!G.hero || G.screen !== "penalty" || !G.waiting) return;
+  const h = G.hero, k = G.k; h.s = g.hs; h.P.x = g.cx - 190 * g.hs; h.P.y = g.spot + 70 * Math.min(1, g.hs);
+  k.s = g.H * 0.76 / 324; k.P.x = g.cx; k.P.y = g.gy + 6; B.r = shotR(); B.x = g.cx; B.y = g.spot; B.s = 1;
+}
+function startPenalty() {
+  G.screen = "penalty"; busy(); G.pass = null; setScene("penalty");
+  const g = penGeo(), k = rig(keeperKit(), g.cx, g.gy + 6, g.H * 0.76 / 324, 1), h = rig(herKit(0, "back"), g.cx - 190 * g.hs, g.spot + 70 * Math.min(1, g.hs), g.hs, 1);
+  G.k = k; G.hero = h; Object.assign(k.P, POSE.ready, { x: g.cx, y: g.gy + 6 });
+  B.r = shotR(); B.x = g.cx; B.y = g.spot; B.vis = true; B.shadow = true; B.s = 1; G.pop = null;
+  wait(penaltyShot, () => { const e = G.g; return [{ x: e.x, y: e.y - e.H * 0.5, r: Math.min(e.W * 0.52, VW * .44), ry: e.H * 0.8 }]; });
+}
+function penaltyShot(x, y) {
+  const g = G.g, h = G.hero, m = shotR() * 0.75, A = { x: clamp(x - g.x, -g.W / 2 + m, g.W / 2 - m), y: clamp(y - g.y, -g.H + m, -m) };
+  const star = el($("top"), `<path d="M0 -60l17 38l42 4l-32 28l10 41l-37 -22l-37 22l10 -41l-32 -28l42 -4Z" fill="#ffd60a" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>`);
+  tween(240, k => T(star, `translate(${n1(g.x + A.x)} ${n1(g.y + A.y)}) scale(${n3(EASE.back(k) * 1.1)}) rotate(${n1(k * 40)})`));
+  G.star = star;
+  const gag = pickGag(), c = { g, k: G.k, A, ms: 500, endS: 0.52, pen: 1 };
+  c.side = A.x > 0 ? -1 : A.x < 0 ? 1 : (Math.random() < .5 ? -1 : 1);
+  if (gag === "tunnel") {
+    c.A = { x: A.x * .8, y: -34 };
+    after(120, () => act(c.k, [{ dx: c.A.x * .8, p: { lL: 10, lR: 22 }, ms: 190, mood: "worry", e: "line" }, { dx: c.A.x * .2, p: { lL: 22, lR: 10 }, ms: 190, e: "line" }, { p: { lL: 16, lR: 16 }, ms: 120 }]));
+  }
+  const s = g.hs;
+  act(h, [
+    { p: { sq: 0.9 }, ms: 90, e: "out" },
+    { x: g.cx - 96 * s, y: g.spot + 74 * Math.min(1, s), run: 1, ms: 400, e: "line" },
+    { p: { r: -14, sq: 0.9, aL: 66, aR: 36, lR: 20, lsR: 1.06 }, run: 0, ms: 130, e: "out" },
+    { p: { r: 11, j: -32, sq: 1.06, aL: 96, aR: 84, lR: -8, lsR: 0.5 }, ms: 110, e: "out", f: () => { SFX.kick(); B.shadow = false; GAGS[gag](c); } },
+    { p: { r: 3, j: 0, sq: 1, aL: 24, aR: 24, lR: 0, lsR: 1 }, ms: 320, e: "in" }
+  ]);
+}
+
+/* ===== The keeper gags ===== */
+const pt = (c, l) => ({ x: c.g.x + c.g.a * l.x, y: c.g.y + c.g.b * l.x + l.y });
+const along = (c, f) => ({ dx: c.side * c.g.W * c.g.a * f, dy: c.side * c.g.W * c.g.b * f });
+function dust(c) {   // a puff of grass where the keeper hits the ground
+  const p = c.k.P, q = CAM.on ? toScene(p.x, p.y) : [p.x, p.y], s = screenPt(svg, q[0], q[1]);
+  confetti(s[0], s[1], 12, ["#a8e6a1", "#4f9e57", "#fff"], 0.3, -1.57, 2.4);
+}
+function shot(c, A, done) {
+  const p = pt(c, A);
+  ballTo(p.x, p.y, c.ms, { s: c.endS, spin: 2200 }, () => { if (done) done(); else intoNet(c, A); });
+}
+function intoNet(c, A) {
+  SFX.swish(); bulge(c.g, A);
+  if (G.star) { const e = G.star; G.star = null; tween(260, k => e.setAttribute("opacity", n3(1 - k))); }
+  $("ballBack").appendChild(B.el);
+  const p = pt(c, { x: A.x, y: -B.r * B.s - 6 });
+  ballTo(p.x, p.y, 520, { e: "in", spin: 200 });
+  goal();
+}
+const GAGS = {
+  plonge(c) {   // dives the wrong way, hangs in the air, flops and bounces, then looks round
+    const s = c.side;
+    act(c.k, [
+      { p: { sq: 0.8, lL: 22, lR: 22, aL: 34, aR: 34 }, ms: 130, e: "out", mood: "oh" },
+      { ...along(c, .3), p: { j: -170, r: s * 74, sq: 1.1, aL: 152, aR: 152, asL: 1.7, asR: 1.7, lL: 6, lR: 6 }, ms: 340, e: "out", f: SFX.whoosh },
+      { ...along(c, .1), p: { j: 34, r: s * 92, sq: 1 }, ms: 220, e: "in" },
+      { p: { sq: 0.66 }, ms: 70, e: "out", f: () => { SFX.flop(); dust(c); } },
+      { p: { j: -6, sq: 1.08, r: s * 86 }, ms: 130, e: "out", mood: "worry" },
+      { p: { j: 34, sq: 0.78, r: s * 92 }, ms: 120, e: "in", f: SFX.soft },
+      { p: { sq: 1 }, ms: 160, e: "back" },
+      { ms: 240, mood: "sad" },
+      { p: { hr: -s * 26, lx: -s * 10 }, ms: 240, e: "back" }
+    ]);
+    after(120, () => shot(c, c.A));
+  },
+  glisse(c) {   // runs on the spot, the feet shoot away, lands on its bottom
+    const s = c.side;
+    act(c.k, [
+      { ...along(c, .08), run: 1, ms: 200, e: "line", mood: "worry", p: { aL: 40, aR: 40 } },
+      { p: { j: -92, sq: 1.08, aL: 150, aR: 120, asL: 1.5, asR: 1.5, lL: 62, lR: 62, r: s * 12 }, ms: 190, run: 0, e: "out", mood: "oh", f: SFX.whoosh },
+      { ...along(c, .12), p: { j: 58, sq: 0.68, lL: 78, lR: 78, aL: 70, aR: 70, r: 0 }, ms: 170, e: "in" },
+      { p: { j: 22, sq: 1.03, aL: 44, aR: 44 }, ms: 130, e: "out", f: () => { SFX.flop(); dust(c); } },
+      { p: { j: 52, sq: 0.74 }, ms: 120, e: "in", f: SFX.soft },
+      { p: { j: 40, sq: 0.9 }, ms: 120, e: "out" },
+      { p: { j: 50, sq: 0.8, hr: -6 }, ms: 140, e: "in", mood: "dizzy", f: () => { c.k.dizzy = 1; } },
+      { p: { hr: 8 }, ms: 300 }, { p: { hr: -8 }, ms: 300 }
+    ]);
+    after(180, () => shot(c, c.A));
+  },
+  tourne(c) {   // spins round and round in the wind of the ball, then wobbles with stars around its head
+    const s = c.side, k = c.k, x0 = k.P.x, y0 = k.P.y;
+    k.dizzy = 1; mood(k, "oh");
+    k.id++;
+    tween(1250, t => {
+      k.P.fx = Math.cos(t * Math.PI * 7); k.P.x = x0 + s * c.g.W * c.g.a * 0.22 * EASE.out(t); k.P.y = y0 + s * c.g.W * c.g.b * 0.22 * EASE.out(t);
+      k.P.aL = k.P.aR = 80 + 30 * Math.sin(t * 22); k.P.j = -Math.abs(Math.sin(t * 15)) * 18; k.P.sq = 1 + Math.sin(t * 15) * 0.04;
+    }, () => {
+      k.P.fx = 1; mood(k, "dizzy");
+      act(k, [{ p: { r: 13, aL: 50, aR: 90, j: 0 }, ms: 300 }, { p: { r: -13, aL: 90, aR: 50 }, ms: 340 }, { p: { r: 9 }, ms: 300 }, { p: { r: -7 }, ms: 280 }]);
+    });
+    after(160, () => shot(c, c.A));
+  },
+  tunnel(c) {   // legs apart, the ball rolls between them, it bends down and stares through its own legs
+    const k = c.k;
+    act(k, [
+      { p: { lL: 34, lR: 34, sq: 0.93, aL: 62, aR: 62 }, ms: 170, mood: "worry", e: "out" },
+      { ms: 200 },
+      { p: { hy: 28, ly: 10, lx: 0, sq: 0.84, aL: 30, aR: 30, r: 0 }, ms: 240, e: "back", mood: "oh" },
+      { ms: 200 },
+      { p: { hy: 48, sq: 0.76 }, ms: 240, e: "out", mood: "worry" },
+      { p: { hr: 12 }, ms: 240 }, { p: { hr: -12 }, ms: 260 }, { p: { hr: 0 }, ms: 180 }
+    ]);
+    $("ballBack").appendChild(B.el);   // behind the keeper as it goes through
+    shot(c, c.A);
+  },
+  poteau(c) {   // the post rings, the ball bounces off the keeper's head and drops into the net
+    const k = c.k, side = c.A.x >= 0 ? 1 : -1, post = { x: side * c.g.W / 2, y: clamp(c.A.y, -c.g.H * .8, -c.g.H * .35) }, A2 = { x: -side * c.g.W * .32, y: -c.g.H * .3 };
+    act(k, [{ p: { sq: 0.92, aL: 60, aR: 60 }, ms: 120, mood: "oh" }, { p: { hr: side * 12, lx: side * 9 }, ms: 160 }]);
+    shot(c, post, () => {
+      SFX.boing(); const q = pt(c, post), sg = $("goalS");
+      tween(560, t => T(sg, `translate(${n1(side * 12 * Math.sin(t * 24) * (1 - t))} 0)`));
+      const hp = { x: k.P.x, y: k.P.y - 290 * k.s };
+      B.sq = 0.7; tween(160, t => { B.sq = 0.7 + 0.3 * t; });
+      after(70, () => ballTo(hp.x, hp.y, 420, { h: 70, e: "line", spin: -1200 }, () => {
+        SFX.bonk(); k.dizzy = 1; B.sq = 0.75; tween(160, t => { B.sq = 0.75 + 0.25 * t; });
+        act(k, [
+          { p: { sq: 0.72, hy: 18, j: 0, aL: 40, aR: 40 }, ms: 80, e: "out", mood: "dizzy" },
+          { p: { sq: 1.06, hy: 0 }, ms: 150, e: "back" },
+          { p: { r: 11, aL: 62, aR: 34 }, ms: 340 }, { p: { r: -11, aL: 34, aR: 62 }, ms: 360 },
+          { p: { ...POSE.sit, hr: 8 }, ms: 240, e: "in", f: SFX.soft }, { p: { hr: -8 }, ms: 300 }
+        ]);
+        const p = pt(c, A2);
+        ballTo(p.x, p.y, 560, { h: 150, e: "line", spin: 900 }, () => intoNet(c, A2));
+      }));
+    });
+  }
+};
+function pickGag() {
+  let g = G.force.gag;
+  if (!g) g = G.lastGag !== "poteau" && Math.random() < 1 / 3 ? "poteau" : (() => { const p = EXPR.filter(e => e !== G.lastGag); return p[rand(p.length)]; })();
+  G.lastGag = g; return g;
+}
+
+/* ===== Save: first person, she is the keeper ===== */
+const GL = [{ x: 0, y: 0, r: 0, s: 1 }, { x: 0, y: 0, r: 0, s: 1 }];
+const gloveS = () => PORT ? 1.3 : Math.min(VW * 0.00095, VH * 0.00148);
+function bgSave() {
+  const top = standTop(), cx = VW / 2, w = VW * .3;
+  $("bg").innerHTML = skyArt() + standArt(cx, top, 1, Math.ceil((HZ - top + 80) / 44) * 44) + hoarding(HZ - 44, -40, VW + 80, 46) + bands(HZ, VH + 40, 7) +
+    `<path d="M${cx - w * 1.5} ${VH + 40}L${cx - w} ${HZ + (VH - HZ) * .3}H${cx + w}L${cx + w * 1.5} ${VH + 40}M${cx - w * .72} ${HZ + (VH - HZ) * .3}Q${cx} ${HZ + (VH - HZ) * .12} ${cx + w * .72} ${HZ + (VH - HZ) * .3}" fill="none" stroke="#fff" stroke-width="8"/>`;
+  grabCrowd();
+}
+function homeGlove(i) { const s = gloveS(), d = (PORT ? 270 : Math.min(VW * .27, 420)) * (i ? 1 : -1); return { x: VW / 2 + d, y: VH + 112 * s, r: i ? -9 : 9 }; }
+function placeSave() {
+  GL.forEach((g, i) => { Object.assign(g, homeGlove(i)); });
+  if (G.waiting) { const R = B.r * B.s; B.x = clamp(B.x, R + 20, VW - R - 20); B.y = VH * .44; }
+}
+function drawGloves(dt) {
+  if (!G.gl) return;
+  const s = gloveS(), sw = Math.sin(now * 0.0024) * 8;
+  GL.forEach((g, i) => T(G.gl[i], `translate(${n1(g.x + (G.shake ? Math.sin(now * 0.05) * 12 : 0))} ${n1(g.y + (i ? sw : -sw) + (G.shake ? Math.cos(now * 0.06) * 9 : 0))}) rotate(${n1(g.r)}) scale(${n3((i ? -1 : 1) * s)} ${n3(s)})`));
+}
+function startSave(st) {
+  G.screen = "save"; busy(); G.pass = null; setScene("save");
+  G.sv = { n: st.saves, done: 0, then: st.then, last: 0 }; G.gl = [el($("top"), gloveArt()), el($("top"), gloveArt())];
+  placeSave(); B.r = 44; B.shadow = false; nextShot();
+}
+function nextShot() {
+  const S = G.sv, side = [-1, 1, 0, 1, -1][S.done % 5], ox = VW / 2 + side * Math.min(VW * .26, 300), oy = HZ + (VH - HZ) * (PORT ? .2 : .2);
+  const r = rig(oppKit(S.done % 3, "front"), ox + side * VW * .5 + (side ? 0 : VW * .55), oy, PORT ? .78 : .62, 1);
+  B.vis = false; G.shooter = r;
+  r.P.aL = r.P.aR = 12;
+  act(r, [
+    { x: ox - side * 10, y: oy, run: 1, ms: 700, e: "out" }, { p: { ...POSE.stand, aL: 36, aR: 36 }, run: 0, ms: 120, f: () => { B.x = ox; B.y = oy - 28 * r.s; B.s = 0.45; B.z = 0; B.vis = true; } },
+    { p: { sq: 0.86, r: -6, lsR: 0.7, aL: 60, aR: 60 }, ms: 200, e: "out", mood: "open" },
+    { p: { sq: 1.06, r: 6, j: -30, lsR: 1.1, lR: 30, aL: 70, aR: 20 }, ms: 110, e: "out", f: () => {
+      SFX.kick();
+      const R = Math.min(VW * .19, VH * .21), S2 = R / 44, tx = VW / 2 + side * VW * (PORT ? .1 : .2), ty = VH * (PORT ? .46 : .44);
+      ballTo(tx, ty, 2000, { s: S2, pow: 2.4, h: 60, spin: 420, e: "line" }, () => {
+        B.fl = 1;
+        wait(catchBall, () => [{ x: B.x, y: B.y, r: B.r * B.s * 1.3 }]);
+      });
+    } },
+    { p: { ...POSE.stand }, ms: 260, e: "back" }
+  ]);
+}
+function catchBall() {
+  const S = G.sv, s = gloveS(), R = B.r * B.s, xb = B.x, yb = B.y, a = GL.map(g => ({ ...g }));
+  B.fl = 0;
+  [0, 1].forEach(i => { const b = { x: xb + (i ? 1 : -1) * R * 1.16, y: yb + R * .8 + 40 * s, r: i ? -13 : 13 }; tween(190, k => { const v = EASE.back(k), g = GL[i]; g.x = lerp(a[i].x, b.x, v); g.y = lerp(a[i].y, b.y, v); g.r = lerp(a[i].r, b.r, v); }); });
+  after(150, () => {
+    SFX.thud(); SFX.cheer(); G.shake = 1; S.done++;
+    B.sq = 0.82; tween(220, k => { B.sq = 0.82 + 0.18 * EASE.back(k); });
+    const p = screenPt(svg, xb, yb); confetti(p[0], p[1], 18, ["#fff", GOLD[0], K.kit], 0.5);
+    G.cheer = 0.8; tween(1300, k => { G.cheer = 0.8 * (1 - k); });
+    if (G.shooter) { const r = G.shooter; act(r, [{ ms: 200, mood: "sad", p: { aL: 16, aR: 16 } }, { dx: (r.P.x < VW / 2 ? -1 : 1) * VW * .6, run: .8, ms: 1000, e: "in" }]); }
+    after(420, () => {
+      G.shake = 0;
+      if (S.done < S.n) {
+        const b = GL.map(g => ({ ...g }));
+        tween(300, k => { GL.forEach((g, i) => { const h = homeGlove(i); g.x = lerp(b[i].x, h.x, k); g.y = lerp(b[i].y, h.y, k); g.r = lerp(b[i].r, h.r, k); }); B.y = yb + k * k * VH * .5; B.x = xb + 0; B.s = lerp(B.s, B.s, k); });
+        after(320, () => { B.vis = false; nextShot(); });
+      } else wait(throwOut, () => [{ x: B.x, y: B.y, r: R * 1.35 }]);
+    });
+  });
+}
+function throwOut() {
+  const xb = B.x, yb = B.y, a = GL.map(g => ({ ...g })), s0 = B.s;
+  tween(170, k => { const v = EASE.out(k); GL.forEach((g, i) => { g.y = a[i].y + v * 110; }); B.y = yb + v * 110; });
+  after(170, () => {
+    SFX.whoosh();
+    tween(240, k => { GL.forEach((g, i) => { g.y = a[i].y + 110 - k * 260; }); });
+    ballTo(VW / 2 + VW * .1, HZ - 50, 520, { s: 0.3, h: 160, pow: .7, spin: 900 });
+    after(620, () => { G.gl = null; cut(() => runStep(G.sv.then)); });
+  });
+}
+
+/* ===== Goal and celebration ===== */
+function goal() {
+  G.waiting = false; G.busy = true; G.screen = "goal"; G.party = true; G.goals++;
+  SFX.whistle(0.5); SFX.roar(); mexican();
+  after(280, () => popSlot(G.goals - 1));
+  after(260, () => { const h = G.hero; if (h && h.g.isConnected) act(h, [{ p: { sq: .86, r: 0, lR: 0, lsR: 1 }, ms: 110, e: "out", mood: "joy" }, { p: { j: -80, sq: 1.08, aL: 148, aR: 148, asL: 1.8, asR: 1.8 }, ms: 210, e: "out" }, { p: { j: 0, sq: .9 }, ms: 190, e: "in" }, { p: { j: -54, sq: 1.05 }, ms: 180, e: "out" }, { p: { j: 0, sq: 1 }, ms: 170, e: "in" }]); });
+  after(460, () => {
+    const w = innerWidth, h = innerHeight, c = partyCols();
+    const v = 0.75 + Math.max(w, h) * 0.0006;
+    confetti(0, h * .9, 60, c, v, -1.05, 1); confetti(w, h * .9, 60, c, v, -2.1, 1); confetti(w / 2, h * .08, 28, c, 0.55, 1.57, 2.4);
+    const q = G.g ? (CAM.on ? toScene(G.g.x, G.g.y - G.g.H * .5) : [G.g.x, G.g.y - G.g.H * .5]) : [VW / 2, VH / 2];
+    punch(q[0], q[1], 1.1); rays(q[0], q[1]);
+  });
+  after(1750, () => cut(closeUp));
+}
+function rays(x, y) {
+  let d = "";
+  for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283, b = a + 0.2; d += `M0 0L${n1(Math.cos(a) * 100)} ${n1(Math.sin(a) * 100)}L${n1(Math.cos(b) * 100)} ${n1(Math.sin(b) * 100)}Z`; }
+  const r = el($("glows"), `<path d="${d}" fill="#fff"/><circle r="26" fill="#fff"/>`), m = Math.max(VW, VH) * 0.0115;
+  tween(620, k => { T(r, `translate(${n1(x)} ${n1(y)}) rotate(${n1(k * 34)}) scale(${n3(EASE.out(k) * m)})`); r.setAttribute("opacity", n3(0.75 * (1 - k))); }, () => r.remove());
+}
+function popSlot(i) {
+  const s = $("slots").children[i]; if (!s) return;
+  const v = s.firstChild; SFX.pop(); tone(880, 0.16, "triangle", 0.22, 1320);
+  tween(420, k => { v.style.opacity = 1; v.style.transform = `scale(${n3(EASE.back(k) * 1.0 + Math.sin(k * Math.PI) * 0.4)})`; });
+}
+function bgClose() {
+  const k = PORT ? 3 : 2.3, h = Math.ceil(VH / k / 44 + 4) * 44, gy = closeY(), y0 = gy - 92;
+  $("bg").innerHTML = `<rect x="-60" y="-60" width="${VW + 120}" height="${VH + 120}" fill="#39466b"/>` + standArt(VW / 2, -30, k, h) + `<rect x="-60" y="-60" width="${VW + 120}" height="${VH + 120}" fill="#fff" opacity=".22"/>` + bands(y0, VH + 40, 4) + hoarding(y0 - 64, -40, VW + 80, 68);
+  grabCrowd();
+}
+const closeS = () => Math.min(VH * 0.72 / 340, VW * (PORT ? 0.7 : 0.8) / 300);
+const closeY = () => Math.round(PORT ? VH * 0.74 : VH - 40);
+function closeUp() {
+  G.screen = "celeb"; setScene("close");
+  const s = closeS(), h = rig(herKit(0, "front"), VW / 2, closeY(), s, 1), c = pickCeleb();
+  G.hero = h; G.lastCeleb = c; mood(h, "joy");
+  B.vis = false; G.cheer = 0.7; SFX.clap(14);
+  CELEBS[c](h, { s, w: VW * (PORT ? .08 : .2), cx: VW / 2, gy: closeY() }, () => after(260, () => cut(nextStep)));
+}
+function pickCeleb() {
+  if (G.force.celeb) return G.force.celeb;
+  const c = G.celebs.shift(); return c || Object.keys(CELEBS)[rand(6)];
+}
+function nextStep() {
+  G.party = false; G.cheer = 0; G.stepIndex++;
+  if (G.stepIndex >= MATCH.length) trophy(); else runStep(MATCH[G.stepIndex]);
+}
+function floatEmo(e, x, y, size, ms, rise) {
+  const t = el($("top"), `<text class="emo" text-anchor="middle" font-size="${size}">${e}</text>`);
+  tween(ms, k => { T(t, `translate(${n1(x + Math.sin(k * 7) * 40)} ${n1(y - k * (rise || size * 4.4))}) scale(${n3(Math.min(1, k * 5) * (1 + k * .4))})`); t.setAttribute("opacity", n3(1 - k * k)); }, () => t.remove());
+}
+const CELEBS = {
+  avion(h, c, done) {   // arms out like a plane, swooping from one side to the other
+    h.run = 0.7; const up = { asL: PORT ? 1.2 : 1.5, asR: PORT ? 1.2 : 1.5 };
+    act(h, [
+      { p: { ...up, aL: 92, aR: 92, r: 18, sq: 1 }, dx: -c.w, ms: 520, e: "io" },
+      { p: { aL: 92, aR: 92, r: -20 }, dx: c.w * 2, ms: 800, e: "io", mood: "joy" },
+      { p: { r: 20 }, dx: -c.w * 2, ms: 800, e: "io", mood: "open" },
+      { p: { r: 0, aL: 146, aR: 146, asL: 1.9, asR: 1.9 }, dx: c.w, ms: 520, e: "back", mood: "joy", run: 0 }
+    ], done);
+  },
+  glissade(h, c, done) {   // slides in on the knees, grass flying, then two fist pumps
+    h.P.x = -c.s * 140; Object.assign(h.P, { j: 34, lsL: .42, lsR: .42, lL: 18, lR: 18, r: -8, aL: 130, aR: 130, asL: 1.5, asR: 1.5, sq: .96 });
+    h.lx = h.P.x; SFX.whoosh();
+    const spray = () => { const p = screenPt(svg, h.P.x - 60 * c.s, h.P.y); confetti(p[0], p[1], 6, ["#a8e6a1", "#4f9e57", "#fff"], 0.5, -2.6, 1); };
+    act(h, [
+      { x: c.cx, ms: 1050, e: "out", f: () => { [0, 160, 320, 480, 640].forEach(t => after(t, spray)); } },
+      { p: { r: 7, sq: .9 }, ms: 120, e: "out" },
+      { p: { r: 0, sq: 1, aL: 146, aR: 146, asL: 1.9, asR: 1.9 }, ms: 240, e: "back", mood: "joy" },
+      { p: { aL: 110, aR: 110, asL: 1.2, asR: 1.2, j: 44 }, ms: 170 }, { p: { aL: 148, aR: 148, asL: 2, asR: 2, j: 26 }, ms: 190, e: "back", mood: "open" },
+      { p: { aL: 110, aR: 110, asL: 1.2, asR: 1.2, j: 44 }, ms: 170 }, { p: { aL: 148, aR: 148, asL: 2, asR: 2, j: 26 }, ms: 190, e: "back", mood: "joy" },
+      { ms: 200 }
+    ], done);
+  },
+  danse(h, c, done) {   // hip wiggle with the arms up
+    const b = [];
+    for (let i = 0; i < 6; i++) { const s = i % 2 ? 1 : -1; b.push({ p: { r: s * 11, aL: s > 0 ? 148 : 112, aR: s > 0 ? 112 : 148, asL: s > 0 ? 2 : 1.3, asR: s > 0 ? 1.3 : 2, lsL: s > 0 ? .8 : 1, lsR: s > 0 ? 1 : .8, sq: .95, hr: -s * 9 }, dx: s * 44 * c.s * .5, ms: 300, e: "io", mood: i % 3 === 2 ? "open" : "joy", f: () => tone(i % 2 ? 196 : 262, 0.08, "triangle", 0.12) }); }
+    b.push({ p: { r: 0, aL: 146, aR: 146, asL: 1.9, asR: 1.9, sq: 1.04, j: -60, hr: 0, lsL: 1, lsR: 1 }, x: c.cx, ms: 200, e: "out" }, { p: { j: 0, sq: 1 }, ms: 220, e: "back" });
+    act(h, b, done);
+  },
+  salto(h, c, done) {   // deep crouch, a backflip with a hang at the top, a landing that squashes
+    act(h, [
+      { p: { sq: .68, aL: 30, aR: 30, r: 6 }, ms: 300, e: "out", mood: "smile" },
+      { p: { j: -130, sq: 1.14, aL: 148, aR: 148, asL: 1.7, asR: 1.7, r: 0 }, ms: 230, e: "out", f: SFX.whoosh, mood: "open" },
+      { p: { j: -160, r: -180, sq: .86, lL: 60, lR: 60, lsL: .7, lsR: .7, aL: 40, aR: 40, asL: 1, asR: 1 }, ms: 340, e: "line" },
+      { p: { j: -90, r: -350, sq: .96, lL: 10, lR: 10, lsL: 1, lsR: 1, aL: 120, aR: 120 }, ms: 260, e: "line" },
+      { p: { j: 0, r: -360, sq: 1.04 }, ms: 130, e: "in" },
+      { p: { sq: .7, aL: 70, aR: 70 }, ms: 90, e: "out", f: () => { SFX.thud(); h.P.r = 0; }, mood: "joy" },
+      { p: { sq: 1, aL: 146, aR: 146, asL: 1.9, asR: 1.9 }, ms: 420, e: "elastic" },
+      { ms: 420 }
+    ], done);
+    after(1090, () => { h.P.r = 0; });
+  },
+  coeur(h, c, done) {   // hands meet on the chest, hearts float up, a little sway
+    const hearts = () => { for (let i = 0; i < 7; i++) after(i * 330, () => { floatEmo("❤️", c.cx + (rand(3) - 1) * 70 * c.s, c.gy - 120 * c.s, 74 / Math.max(.5, PX) * .8 + 40, 1500); tone(880 + i * 90, 0.12, "sine", 0.1); }); };
+    act(h, [
+      { p: { aL: -46, aR: -46, asL: 1.1, asR: 1.1, sq: 1.02 }, ms: 260, e: "back", f: hearts, mood: "smile" },
+      { p: { r: -7, hr: 7 }, ms: 500 }, { p: { r: 7, hr: -7 }, ms: 600, mood: "joy" }, { p: { r: -6, hr: 7 }, ms: 600 },
+      { p: { r: 0, hr: 0, aL: 146, aR: 146, asL: 1.9, asR: 1.9, j: -50 }, ms: 240, e: "out", mood: "open" }, { p: { j: 0 }, ms: 220, e: "back" }
+    ], done);
+  },
+  calin(h, c, done) {   // two teammates run in, a big squeeze, three happy bounces together
+    const s = c.s * .86, a = rig(herKit(1, "front"), -c.s * 160, c.gy, s, 1), b = rig(herKit(2, "front"), VW + c.s * 160, c.gy, s, 1), x = c.s * 76;
+    $("act").appendChild(h.g);
+    const all = [a, b];
+    all.forEach((r, i) => { r.run = 1; mood(r, "joy"); r.lx = r.P.x; });
+    const bounce = [];
+    for (let i = 0; i < 3; i++) bounce.push({ p: { j: -56, sq: 1.05 }, ms: 170, e: "out", f: () => tone(330 + i * 110, 0.12, "triangle", 0.14) }, { p: { j: 0, sq: .9 }, ms: 170, e: "in" }, { p: { sq: 1 }, ms: 110, e: "back" });
+    act(a, [{ x: c.cx - x, ms: 640, e: "in", p: { aL: 80, aR: 150, asR: 1.5 } }, { p: { aR: 96, r: 12, sq: .9 }, ms: 120, run: 0, e: "out" }, { p: { sq: 1 }, ms: 120 }, ...bounce]);
+    act(b, [{ x: c.cx + x, ms: 640, e: "in", p: { aR: 80, aL: 150, asL: 1.5 } }, { p: { aL: 96, r: -12, sq: .9 }, ms: 120, run: 0, e: "out" }, { p: { sq: 1 }, ms: 120 }, ...bounce]);
+    act(h, [{ p: { aL: 150, aR: 150, asL: 1.5, asR: 1.5 }, ms: 400, e: "back" }, { ms: 240 }, { p: { sq: .84, aL: 96, aR: 96 }, ms: 120, e: "out", f: SFX.thud }, { p: { sq: 1 }, ms: 120 }, ...bounce, { ms: 160 }], done);
+  }
+};
+
+/* ===== Trophy and night ===== */
+function pod() {
+  const s = PORT ? .98 : clamp(VH / 900, .95, 1.15) * .92, gy = Math.round(VH * (PORT ? .68 : .87));
+  return { s, gy, cx: VW / 2, sp: PORT ? 182 : 260 * s, h1: PORT ? 200 * s : Math.min(200 * s, VH * .14), h2: PORT ? 124 * s : Math.min(124 * s, VH * .09), h3: 54 * s, cup: { x: VW / 2, y: Math.min(VH - 16, gy + 104 * s), s: (PORT ? .92 : .8) * s } };
+}
+function bgPodium() {
+  const top = standTop(), d = pod(), c = K.kit, st = (x, w, h) => `<rect x="${n1(x - w / 2)}" y="${n1(d.gy - h)}" width="${n1(w)}" height="${n1(h + 30)}" rx="14" fill="#fff" stroke="${INK}" stroke-width="6"/><rect x="${n1(x - w / 2 + 12)}" y="${n1(d.gy - h + 14)}" width="${n1(w - 24)}" height="${n1(Math.max(10, h - 2))}" rx="9" fill="${c}"/>`;
+  const w = d.sp * 1.02;
+  $("bg").innerHTML = skyArt() + standArt(VW / 2, top, 1, Math.ceil((HZ - top + 80) / 44) * 44) + hoarding(HZ - 44, -40, VW + 80, 46) + bands(HZ, VH + 40, 7) +
+    st(d.cx - d.sp * 2, w, d.h3) + st(d.cx + d.sp * 2, w, d.h3) + st(d.cx - d.sp, w, d.h2) + st(d.cx + d.sp, w, d.h2) + st(d.cx, w * 1.3, d.h1);
+  grabCrowd(); skyNight();
+  if (G.screen === "end") G.crowdEls.forEach(e => e.setAttribute("opacity", 0));   // resized after the crowd went home
+}
+function skyNight() {   // the layer that darkens the scene, with what shines through it
+  const old = $("nightL"); if (old) old.remove();
+  const n = el($("top"), `<rect id="dusk" x="-60" y="-60" width="${VW + 120}" height="${VH + 120}" fill="#0b1240" opacity="${G.nk * .68}"/><g id="sky2" opacity="${G.nk}"></g><g id="lit"></g>`);
+  n.id = "nightL";
+  let s = "";
+  for (let i = 0; i < 26; i++) { const x = rand(VW), y = rand(standTop() * 1.1), r = 2 + rand(4); s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${.6 + Math.random() * .4}"/>`; }
+  const mx = VW * .71, my = lampY() + (PORT ? -30 : 48), mr = PORT ? 62 : 54;
+  s += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="#fff3b0"/><circle cx="${mx + mr * .4}" cy="${my - mr * .2}" r="${mr * .82}" fill="#111a4d"/>`;
+  $("sky2").innerHTML = s;
+  $("lit").innerHTML = LAMPS.map((fx, i) => i < G.lampsOff ? "" : `<g data-lit="${i}"><circle cx="${VW * fx}" cy="${lampY() + 28}" r="130" fill="url(#glowG)" opacity=".8"/><rect x="${VW * fx - 56}" y="${lampY()}" width="112" height="56" rx="10" fill="#fff7cf" stroke="${INK}" stroke-width="5"/></g>`).join("");
+  $("lit").setAttribute("opacity", G.nk);
+}
+const podSpots = d => [[0, d.h1], [-1, d.h2], [1, d.h2], [-2, d.h3], [2, d.h3]];
+function trophy() {
+  G.screen = "trophy"; G.goals = Math.max(G.goals, MATCH.length); busy(); G.pass = null; setScene("podium");
+  const d = pod();
+  G.team = podSpots(d).map((q, i) => { const r = rig(herKit(i, "front"), d.cx + q[0] * d.sp, d.gy - q[1], d.s, 1); mood(r, i ? "open" : "joy"); r.P.aL = r.P.aR = 34; return r; });
+  G.hero = G.team[0];
+  G.team.forEach((r, i) => { const hop = () => { if ((G.screen !== "trophy" && G.screen !== "lift") || (r === G.hero && G.screen === "lift")) return; act(r, [{ p: { sq: .9 }, ms: 120 }, { p: { j: -42, sq: 1.04, aL: 150, aR: 150, asL: 1.4, asR: 1.4 }, ms: 190, e: "out" }, { p: { j: 0, sq: 1 }, ms: 170, e: "in" }, { p: { aL: 34, aR: 34, asL: 1, asR: 1 }, ms: 220 }], () => after(500 + rand(900), hop)); }; after(rand(500), hop); });
+  G.cup = { ...d.cup, r: 0 };
+  G.cupEl = el($("top"), `<use href="#cupArt"/>`); $("top").insertBefore(G.cupEl, $("top").firstChild); drawCup();
+  [0, 480, 960].forEach(t => after(t, () => SFX.whistle(0.3))); SFX.cheer(); bedSet(0.26, 0.5);
+  wait(lift, () => { const c = G.cup; return [{ x: c.x, y: c.y - 170 * c.s, r: Math.min(240 * c.s, VH - c.y + 170 * c.s - 10) }]; });
+}
+function placePodium() {
+  const d = pod(), h = G.hero; if (!G.team) return;
+  podSpots(d).forEach((q, i) => { const r = G.team[i]; r.s = d.s; r.P.x = d.cx + q[0] * d.sp; r.P.y = d.gy - q[1]; r.lx = r.P.x; });
+  if (G.screen === "trophy") G.cup = { ...d.cup, r: 0 };
+  else if (G.screen === "lift") G.cup = { x: h.P.x, y: h.P.y - 336 * h.s, s: h.s * (PX < .6 ? .56 : .7), r: 0 };
+  else { h.P.x -= 70 * h.s; G.cup = { x: h.P.x + 192 * h.s, y: h.P.y + 4, s: h.s * .66, r: 0 }; G.team.slice(1).forEach(r => { r.P.x = -2000; }); }
+  drawCup();
+}
+function drawCup() { if (G.cupEl) { const c = G.cup; T(G.cupEl, `translate(${n1(c.x)} ${n1(c.y)}) rotate(${n1(c.r)}) scale(${n3(c.s)})`); } }
+function lift() {
+  G.screen = "lift"; G.party = true; mem.trophies += 1; store(KEY, mem);
+  const h = G.hero, d = pod(), a = { ...G.cup }, b = { x: h.P.x, y: h.P.y - 336 * h.s, s: h.s * (PX < .6 ? .56 : .7) };
+  SFX.fanfare(); SFX.roar(); mexican();
+  const cols = [...GOLD, K.kit, "#fff"], w = innerWidth, sc = innerHeight;
+  act(h, [{ p: { sq: .84, aL: 44, aR: 44 }, ms: 170, e: "out", mood: "open" }, { p: { aL: 163, aR: 163, asL: 2.5, asR: 2.5, sq: 1.08, j: -18, hr: 0 }, ms: 340, e: "back", mood: "joy" }, { p: { sq: 1, j: 0 }, ms: 240 }]);
+  tween(520, k => { const v = EASE.back(k); G.cup.x = lerp(a.x, b.x, v); G.cup.y = lerp(a.y, b.y, v); G.cup.s = lerp(a.s, b.s, v); drawCup(); });
+  { const v = 0.75 + Math.max(w, sc) * 0.0006; confetti(0, sc * .85, 55, GOLD, v, -1.05, 1); confetti(w, sc * .85, 55, GOLD, v, -2.1, 1); }
+  for (let i = 0; i < 9; i++) after(250 + i * 620, () => { firework(w * (.14 + Math.random() * .72), sc * (.12 + Math.random() * .4), cols); if (i % 3 === 2) confetti(w * Math.random(), 0, 22, GOLD, .3, 1.57, 2); });
+  after(800, () => { const c = G.cup, hh = G.hero; tween(4600, k => { if (G.screen === "lift") c.r = Math.sin(k * 16) * 4, drawCup(), hh.P.j = -Math.abs(Math.sin(k * 16)) * 10; }); });
+  after(6000, night);
+}
+function lamp(i) {
+  G.lampsOff = i + 1; SFX.clunk();
+  const g = document.querySelector(`[data-lamp="${i}"] rect`), l = document.querySelector(`[data-lit="${i}"]`);
+  if (g) g.setAttribute("fill", "#5c6680"); if (l) l.remove();
+}
+function night() {
+  G.screen = "night"; G.party = false; busy(); G.cheer = 0;
+  const h = G.hero, d = pod(), s = h.s, c0 = { ...G.cup }, tx = h.P.x + 122 * s, ty = h.P.y + 4;
+  G.team.slice(1).forEach((r, i) => { r.id++; const dir = r.P.x < h.P.x ? -1 : 1; r.dir = 1; after(i * 160, () => act(r, [{ p: { ...POSE.stand }, ms: 120 }, { dx: dir * VW * .75, run: 1, ms: 1500, e: "in" }])); });
+  act(h, [
+    { p: { aL: 120, aR: 120, asL: 1.2, asR: 1.2, j: 0, r: 0 }, ms: 500, mood: "smile" },
+    { p: { aL: 20, aR: 60, asL: 1, asR: 1 }, ms: 500, e: "io" },
+    { ms: 300 },
+    { p: { hy: -4 }, ms: 420, mood: "oh" }, { p: { hy: 0 }, ms: 300, mood: "smile" },
+    { p: { ...POSE.sit, r: 11, hr: 16, aL: 20, aR: 40 }, dx: -70 * s, ms: 620, e: "back", mood: "smile" },
+    { p: { eye: .45 }, ms: 360 }, { p: { eye: 1 }, ms: 240 }, { p: { eye: .25 }, ms: 420 }, { ms: 200, mood: "sleep" }
+  ]);
+  tween(900, k => { const v = EASE.io(k); G.cup.x = lerp(c0.x, tx, v); G.cup.y = lerp(c0.y, ty, v); G.cup.s = lerp(c0.s, s * .66, v); G.cup.r = lerp(c0.r, 0, v); drawCup(); });
+  bedSet(0, 5);
+  tween(5200, k => { G.nk = k; const a = $("dusk"), b = $("sky2"), l = $("lit"); if (a) a.setAttribute("opacity", n3(k * .68)); if (b) b.setAttribute("opacity", n3(Math.max(0, k * 1.6 - .6))); if (l) l.setAttribute("opacity", n3(Math.min(1, k * 3))); $("slots").style.opacity = n3(1 - k * .55); });
+  (G.crowdEls || []).forEach((e, i) => after(1200 + i * 280, () => tween(700, k => e.setAttribute("opacity", n3(1 - k)))));
+  [0, 1, 2, 3].forEach(i => after(1500 + i * 900, () => lamp(i)));
+  after(5200, () => {
+    SFX.lullaby();
+    const zz = () => { if (G.screen !== "night" && G.screen !== "end") return; floatEmo("💤", h.P.x + 30 * s, h.P.y - 260 * s, Math.max(90, 40 / PX), 2600, 170 * s); after(1600, zz); };
+    zz();
+  });
+  after(9000, () => { G.screen = "end"; G.busy = false; $("again").style.display = "flex"; });
+}
+
+/* ===== Scenes and input ===== */
+const SCENES = {
+  picker: { bg: bgPicker, place: () => { if (G.screen === "picker") placePicker(); } },
+  pass: { bg: bgPass, place: placePass, tick: passTick },
+  penalty: { bg: bgPen, place: placePen },
+  save: { bg: bgSave, place: placeSave, tick: drawGloves },
+  close: { bg: bgClose },
+  podium: { bg: bgPodium, place: placePodium }
+};
+ticks.push(dt => {
+  if (G.waiting) { G.waitMs += dt; if (G.waitMs > 3000) G.hint = true; }
+  crowdTick(); if (scene && scene.tick) scene.tick(dt);
+  rigs.forEach(r => drawRig(r, dt)); drawBall(); drawCam(dt); drawGlows(); fxTick(dt);
+});
+// One handler: a tap reads the state and does one thing, and clearing "waiting" first means extra fingers cannot act twice
+$("stage").addEventListener("pointerdown", e => {
+  const x = e.clientX, y = e.clientY, q = scenePt(svg, x, y);
+  if (G.party) { tapParty(x, y); return; }
+  if (G.waiting) {
+    const a = G.act; busy(); SFX.pop(); spark(x, y); a(q[0], q[1]); return;
+  }
+  SFX.soft(); spark(x, y);
+});
+$("again").addEventListener("pointerdown", () => { if (G.screen === "end") { SFX.chime(); cut(showPicker); } });
+window.onStart = () => { loadClips(); showPicker(); };
+buildDefs(); fit();
+Object.assign(__game, {
+  mem, force: G.force, G,
+  st: () => ({ screen: G.screen, stepIndex: G.stepIndex, goals: G.goals, waiting: G.waiting, busy: G.busy, hint: G.hint, shirt: G.shirt, trophies: mem.trophies, lastGag: G.lastGag, lastCeleb: G.lastCeleb }),
+  tap(x, y) { const t = document.elementFromPoint(x, y) || document.body; t.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1 })); }
+});
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>

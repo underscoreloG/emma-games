@@ -22,6 +22,17 @@ Véhicules
   voiture.mp3  pinpon.mp3  train.mp3  avion.mp3  sonnette.mp3 (vélo)  bateau.mp3
   helico.mp3  tracteur.mp3
 
+Football
+  foule-ambiance.mp3 (foule de stade, en boucle)  foule-but.mp3 (foule qui crie au but)
+  sifflet.mp3 (arbitre)  frappe-ballon.mp3
+
+Fichiers présents et crédits
+  foule-ambiance.mp3, foule-but.mp3 : extraits de "Free Crowd Cheering Sounds" de Gregor Quendel,
+    pistes 10 et 04, CC-BY 4.0, https://opengameart.org/content/free-crowd-cheering-sounds
+    Modifiés : coupés, bouclés, volume ajusté. Le crédit doit rester visible (note parents du menu).
+  sifflet.mp3 : "218318 splicesound referee whistle blow gymnasium", Wikimedia Commons, CC0. Coupé.
+  frappe-ballon.mp3 : "Ball Kicked", BigSoundBank n° 1044, CC0. Coupé.
+
 Conseils
   - Des sons courts (1 à 3 secondes). Les jeux coupent de toute façon les sons trop longs.
   - Sources gratuites sans compte : Kenney.nl (packs audio CC0), BigSoundBank, Wikimedia Commons.

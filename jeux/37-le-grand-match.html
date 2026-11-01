@@ -513,18 +513,29 @@ function tapParty(x, y) {
 }
 
 /* ===== Sound for this game: synth for everything, optional real files ===== */
-const clips = {};
-function loadClips() {   // Audio elements work on file://, a missing file just leaves the synth
+const bufs = {}, clips = {};
+function loadClips() {   // decoded buffers like the other games, file:// can't fetch so it uses Audio elements, a missing file just leaves the synth
   Object.entries({ ambiance: "foule-ambiance", but: "foule-but", sifflet: "sifflet", frappe: "frappe-ballon" }).forEach(([k, n]) => {
-    try {
-      const a = new Audio(); a.preload = "auto";
-      a.addEventListener("error", () => { clips[k] = null; });
-      a.addEventListener("canplaythrough", () => { clips[k] = a; });
-      a.src = "../sons/" + n + ".mp3";
-    } catch (_) {}
+    const url = "../sons/" + n + ".mp3";
+    fetch(url).then(r => { if (!r.ok) throw new Error("absent"); return r.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => ac.decodeAudioData(ab, res, rej)))
+      .then(b => { bufs[k] = b; })
+      .catch(() => {
+        try {
+          const a = new Audio(); a.preload = "auto";
+          a.addEventListener("error", () => { clips[k] = null; });
+          a.addEventListener("canplaythrough", () => { clips[k] = a; });
+          a.src = url;
+        } catch (_) {}
+      });
   });
 }
 function playClip(k, vol, loop) {
+  if (bufs[k] && ac) {
+    const s = ac.createBufferSource(), g = ac.createGain();
+    s.buffer = bufs[k]; g.gain.value = vol; s.connect(g); g.connect(master); s.start();
+    return true;
+  }
   const a = clips[k]; if (!a) return false;
   try { a.currentTime = 0; a.volume = vol; a.loop = !!loop; const p = a.play(); if (p && p.catch) p.catch(() => { clips[k] = null; }); return true; } catch (_) { return false; }
 }
@@ -540,7 +551,7 @@ function swell(d, v, f, up) {   // a band of noise that rises then fades: the cr
 const bed = { src: null, g: null, vol: 0 };
 function bedSet(v, sec) {   // the looping crowd bed: real file if there is one, else filtered noise
   bed.vol = v;
-  if (clips.ambiance) {
+  if (clips.ambiance && !bufs.ambiance) {
     if (bed.src) { const s = bed.src, g = bed.g; bed.src = null; bed.g = null; try { s.stop(); s.disconnect(); g.disconnect(); } catch (_) {} }
     const a = clips.ambiance, v0 = a.paused ? 0 : a.volume;
     if (a.paused) playClip("ambiance", 0.001, true);
@@ -549,11 +560,17 @@ function bedSet(v, sec) {   // the looping crowd bed: real file if there is one,
   }
   if (!ac) return;
   if (!bed.src) {
-    const n = ac.sampleRate * 4, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    const s = ac.createBufferSource(), lo = ac.createBiquadFilter(), hi = ac.createBiquadFilter(), g = ac.createGain();
-    s.buffer = b; s.loop = true; lo.type = "lowpass"; lo.frequency.value = 1100; hi.type = "highpass"; hi.frequency.value = 180; g.gain.value = 0.0001;
-    s.connect(lo); lo.connect(hi); hi.connect(g); g.connect(master); s.start(); bed.src = s; bed.g = g;
+    const s = ac.createBufferSource(), g = ac.createGain();
+    s.loop = true; g.gain.value = 0.0001;
+    if (bufs.ambiance) {   // the file has 0.25 s of wrap-around on each side, so the loop points never land on mp3 padding
+      s.buffer = bufs.ambiance; s.loopStart = 0.25; s.loopEnd = 11.75; s.connect(g);
+    } else {
+      const n = ac.sampleRate * 4, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), lo = ac.createBiquadFilter(), hi = ac.createBiquadFilter();
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      s.buffer = b; lo.type = "lowpass"; lo.frequency.value = 1100; hi.type = "highpass"; hi.frequency.value = 180;
+      s.connect(lo); lo.connect(hi); hi.connect(g);
+    }
+    g.connect(master); s.start(); bed.src = s; bed.g = g;
   }
   const t = ac.currentTime;
   bed.g.gain.cancelScheduledValues(t); bed.g.gain.setValueAtTime(Math.max(0.0001, bed.g.gain.value), t); bed.g.gain.linearRampToValueAtTime(Math.max(0.0001, v), t + sec);

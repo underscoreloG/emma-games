@@ -10,6 +10,8 @@ Slug: le-grand-match. Size: S. Phase: 5 (fun gate).
 - 2026-11-01: she picks one of 4 shirts, colours only, no crests or real names.
 - 2026-11-01: every shot scores. Keeper failures are the joke, about 1 shot in 4 hits the post and goes in.
 - 2026-11-01: real CC0 crowd, whistle and kick recordings wanted, optional files in sons/, synth fallback. Each file is approved before download.
+- 2026-11-01: owner approved all 4 sounds. No CC0 crowd was found, so the crowd is CC-BY 4.0 with a credit in the parents' notes and sons/LISEZMOI.txt.
+- 2026-11-01: clips load as decoded buffers like the other games, with Audio elements only for file://. Apple documents the Audio element volume as read-only on iOS, and play() outside a tap can fail there.
 
 ## Work packages
 
@@ -21,6 +23,6 @@ Slug: le-grand-match. Size: S. Phase: 5 (fun gate).
 ## Open
 
 - Fun gate: she plays it, then a parent moves the tile out of En test.
-- Sounds: no file downloaded yet. Whistle and kick exist as CC0, crowd only as CC-BY or CC-BY-SA, so crowd files would need a credit line.
+- Sounds: 4 files in sons/, cut by measurement. Nobody has listened to them yet: check for speech or chanting, level balance and the loop seam by ear.
 - Not tested: sound by ear, real touch, frame rate on a real tablet, fullscreen in a real browser (the preview pane refuses it).
 - Known weak spots: side-view open mouth, fork receivers overlap a little on short screens, empty grass at the bottom in portrait on pass and trophy, resizing during an animation can misplace things until the next scene.

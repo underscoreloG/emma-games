@@ -22,6 +22,10 @@ Véhicules
   voiture.mp3  pinpon.mp3  train.mp3  avion.mp3  sonnette.mp3 (vélo)  bateau.mp3
   helico.mp3  tracteur.mp3
 
+Football
+  foule-ambiance.mp3 (foule de stade, en boucle)  foule-but.mp3 (foule qui crie au but)
+  sifflet.mp3 (arbitre)  frappe-ballon.mp3
+
 Conseils
   - Des sons courts (1 à 3 secondes). Les jeux coupent de toute façon les sons trop longs.
   - Sources gratuites sans compte : Kenney.nl (packs audio CC0), BigSoundBank, Wikimedia Commons.

@@ -12,6 +12,7 @@ Slug: le-grand-match. Size: S. Phase: 5 (fun gate).
 - 2026-11-01: real CC0 crowd, whistle and kick recordings wanted, optional files in sons/, synth fallback. Each file is approved before download.
 - 2026-11-01: owner approved all 4 sounds. No CC0 crowd was found, so the crowd is CC-BY 4.0 with a credit in the parents' notes and sons/LISEZMOI.txt.
 - 2026-11-01: clips load as decoded buffers like the other games, with Audio elements only for file://. Apple documents the Audio element volume as read-only on iOS, and play() outside a tap can fail there.
+- 2026-11-01: the blue 4-square button goes back to the shirts from any moment of the match. The match restarts from zero, the saved shirt and trophies stay. It stops the running sounds. In narrow portrait the ball slots move under the buttons.
 
 ## Work packages
 

@@ -15,7 +15,7 @@ Fun gate (asked after she plays it): does she ask to play again, and does she la
 
 ## Session shape
 
-Start screen (big play button, FOUNDATIONS rule 9), then shirt picker, then kick-off, then 5 goals, then trophy, then night, then a replay button. Target about 2-3 minutes per match.
+Start screen (big play button, FOUNDATIONS rule 9), then shirt picker, then kick-off, then 5 goals, then trophy, then night, then a replay button. Target about 2-3 minutes per match. From kick-off on, the blue 4-square button next to the house goes back to the shirt picker at any moment and restarts the match.
 
 ### Shirt picker
 
@@ -42,7 +42,7 @@ const MATCH = [
 ];
 ```
 
-Adding or reordering steps must not touch the engine. Progress is a row of 5 ball slots at top centre that fill up on each goal, clear of the house button at every size. No score numbers.
+Adding or reordering steps must not touch the engine. Progress is a row of 5 ball slots at top centre that fill up on each goal, clear of the house and blue buttons at every size (under them in narrow portrait). No score numbers.
 
 ## Input rule
 

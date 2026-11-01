@@ -23,6 +23,6 @@ Slug: le-grand-match. Size: S. Phase: 5 (fun gate).
 ## Open
 
 - Fun gate: she plays it, then a parent moves the tile out of En test.
-- Sounds: 4 files in sons/, cut by measurement. Nobody has listened to them yet: check for speech or chanting, level balance and the loop seam by ear.
+- Sounds: 4 files in sons/, passed by the owner's listen on 2026-11-01. Sound on a real iPad or iPhone is still untested.
 - Not tested: sound by ear, real touch, frame rate on a real tablet, fullscreen in a real browser (the preview pane refuses it).
 - Known weak spots: side-view open mouth, fork receivers overlap a little on short screens, empty grass at the bottom in portrait on pass and trophy, resizing during an animation can misplace things until the next scene.

@@ -426,7 +426,7 @@ const ringMesh = (() => { const m = new Mesh(); m.ring(0.82, 1, 0, WHITE, 36); r
 
 /* ===== State ===== */
 const TOTAL = 8;
-const G = { running: false, state: "title", truck: { x: SPAWN.x, z: SPAWN.z, h: SPAWN.h, v: 0, st: 0, wa: 0, tyaw: SPAWN.h, tpitch: 0.3, bump: 0 }, fires: [], spawned: 0, out: 0, dusk: 0, t: 0, spray: false, parts: [], acc: 0, camH: SPAWN.h, nextSiren: 0 };
+const G = { running: false, state: "title", truck: { x: SPAWN.x, z: SPAWN.z, h: SPAWN.h, v: 0, st: 0, wa: 0, tyaw: SPAWN.h, tpitch: 0.3, bump: 0 }, fires: [], spawned: 0, out: 0, dusk: 0, t: 0, spray: false, parts: [], acc: 0, camH: SPAWN.h };
 const K = {}, aim = { x: 0, y: 0, wx: 0, wz: 0, d: 10 };
 const mouse = { down: false }, touch = { stick: null, aim: null }, sv = { x: 0, y: 0 };
 const SUN_DAY = { fog: [0.56, 0.83, 1], sky: [0.66, 0.74, 0.86], ground: [0.42, 0.5, 0.38], sunCol: [0.5, 0.46, 0.38], sun: [-0.35, 0.8, 0.4] };
@@ -434,11 +434,10 @@ const SUN_DUSK = { fog: [0.96, 0.6, 0.45], sky: [0.5, 0.4, 0.55], ground: [0.32,
 const mixv = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
 
 /* ===== Sound ===== */
-let spGain = null, enOsc = null, enGain = null;
+let spGain = null, enOsc = null, enGain = null, siOsc = null, siGain = null, siMix = null;
 const SFX = {
   chime() { tone(660, .2, "triangle", .2); tone(880, .25, "triangle", .2, null, .12); tone(1320, .3, "triangle", .18, null, .24); },
   alarm() { tone(520, .18, "square", .07); tone(390, .22, "square", .07, null, .2); },
-  siren() { tone(700, .45, "sawtooth", .035, 960); tone(960, .45, "sawtooth", .035, 700, .45); },
   out() { noise(.9, .35, 2600); [523, 659, 784, 1047].forEach((f, i) => tone(f, .3, "triangle", .22, null, .1 + i * .11)); },
   done() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, .35, "triangle", .22, null, i * .14)); },
   crackle() { noise(.07, .1, 3200); },
@@ -450,6 +449,10 @@ const SFX = {
     spGain = ac.createGain(); spGain.gain.value = 0; s.connect(f); f.connect(spGain); spGain.connect(master); s.start();
     enOsc = ac.createOscillator(); enOsc.type = "triangle"; enOsc.frequency.value = 50; const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;
     enGain = ac.createGain(); enGain.gain.value = 0.0; enOsc.connect(lp); lp.connect(enGain); enGain.connect(master); enOsc.start();
+    // French two-tone horn, "pin-pon": about 435 Hz then 580 Hz, switching every 0.55 s
+    siOsc = [ac.createOscillator(), ac.createOscillator()]; siOsc[0].type = "sawtooth"; siOsc[1].type = "square";
+    const sl = ac.createBiquadFilter(); sl.type = "lowpass"; sl.frequency.value = 2400; siMix = ac.createGain(); siMix.gain.value = 0.35;
+    siGain = ac.createGain(); siGain.gain.value = 0; siOsc[0].connect(sl); siOsc[1].connect(siMix); siMix.connect(sl); sl.connect(siGain); siGain.connect(master); siOsc.forEach(o => { o.frequency.value = 435; o.start(); });
   }
 };
 window.SFXchime = () => SFX.chime();
@@ -643,8 +646,12 @@ function update(dtms) {
     near = Math.min(near, Math.hypot(f.cx - t.x, f.cz - t.z));
   }
   if (near < 28 && Math.random() < 0.06) SFX.crackle();
-  // siren while rushing to a fire
-  if ((G.fires.length || G.state === "home") && Math.abs(t.v) > 5 && now >= G.nextSiren) { G.nextSiren = now + 900; SFX.siren(); }
+  // two-tone horn while rushing to a fire or home
+  if (siGain) {
+    const on = (G.fires.length || G.state === "home") && Math.abs(t.v) > 3, hi = Math.floor(now / 550) % 2, f = hi ? 580 : 435;
+    siOsc[0].frequency.setTargetAtTime(f, ac.currentTime, 0.008); siOsc[1].frequency.setTargetAtTime(f, ac.currentTime, 0.008);
+    siGain.gain.setTargetAtTime(on ? 0.06 : 0, ac.currentTime, on ? 0.03 : 0.12);
+  }
   if (G.state === "home" && Math.hypot(t.x - HOME.x, t.z - HOME.z) < 7.5) finish();
 }
 ticks.push(update);
@@ -753,7 +760,7 @@ updateCam();
 Object.assign(window.__game, {
   G, K, aim, mouse, buildings, HOME, spawnFire, fireOut, project,
   st: () => ({ state: G.state, out: G.out, spawned: G.spawned, fires: G.fires.map(f => ({ hp: Math.round(f.hp), x: Math.round(f.cx), z: Math.round(f.cz) })), truck: { x: +G.truck.x.toFixed(1), z: +G.truck.z.toFixed(1), h: +G.truck.h.toFixed(2), v: +G.truck.v.toFixed(1) }, parts: G.parts.length, dusk: +G.dusk.toFixed(2) }),
-  audioDbg: () => ({ en: enGain && enGain.gain.value, sp: spGain && spGain.gain.value, ctx: ac && ac.state }),
+  audioDbg: () => ({ en: enGain && enGain.gain.value, sp: spGain && spGain.gain.value, si: siGain && siGain.gain.value, sif: siOsc && siOsc[0].frequency.value, ctx: ac && ac.state }),
   tp(x, z, h) { Object.assign(G.truck, { x, z, h, v: 0 }); G.camH = h; }
 });
 }

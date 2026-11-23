@@ -426,7 +426,7 @@ const SFX = {
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     const s = ac.createBufferSource(), f = ac.createBiquadFilter(); s.buffer = buf; s.loop = true; f.type = "bandpass"; f.frequency.value = 1900; f.Q.value = 0.5;
     spGain = ac.createGain(); spGain.gain.value = 0; s.connect(f); f.connect(spGain); spGain.connect(master); s.start();
-    enOsc = ac.createOscillator(); enOsc.type = "sawtooth"; enOsc.frequency.value = 50; const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;
+    enOsc = ac.createOscillator(); enOsc.type = "triangle"; enOsc.frequency.value = 50; const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;
     enGain = ac.createGain(); enGain.gain.value = 0.0; enOsc.connect(lp); lp.connect(enGain); enGain.connect(master); enOsc.start();
   }
 };
@@ -588,7 +588,7 @@ function update(dtms) {
       G.parts.push({ x: mx + dir[0] * 2.2, y: MY + 0.4, z: mz + dir[1] * 2.2, vx: dx / T + j() * 1.6 + Math.sin(t.h) * t.v * 0.0, vy: vy + j() * 1.4, vz: dz / T + j() * 1.6, g: gg, life: 1.6, max: 1.6, s: 0.38 + Math.random() * 0.15, grow: 0, c: [0.62, 0.86, 1], a: 0.9, k: 0 });
     }
   } else G.acc = 0;
-  if (spGain) { spGain.gain.setTargetAtTime(spraying ? 0.2 : 0, ac.currentTime, 0.05); enOsc.frequency.setTargetAtTime(48 + Math.abs(t.v) * 4.5, ac.currentTime, 0.1); enGain.gain.setTargetAtTime(0.03 + 0.035 * Math.abs(thr), ac.currentTime, 0.1); }
+  if (spGain) { spGain.gain.setTargetAtTime(spraying ? 0.2 : 0, ac.currentTime, 0.05); enOsc.frequency.setTargetAtTime(48 + Math.abs(t.v) * 4.5, ac.currentTime, 0.1); enGain.gain.setTargetAtTime(Math.abs(t.v) < 0.5 ? 0 : 0.012 + 0.03 * Math.abs(t.v) / 17, ac.currentTime, 0.15); }
   // particles
   const ps = G.parts; let n = 0;
   for (let i = 0; i < ps.length; i++) {
@@ -723,6 +723,7 @@ updateCam();
 Object.assign(window.__game, {
   G, K, aim, mouse, buildings, HOME, spawnFire, fireOut, project,
   st: () => ({ state: G.state, out: G.out, spawned: G.spawned, fires: G.fires.map(f => ({ hp: Math.round(f.hp), x: Math.round(f.cx), z: Math.round(f.cz) })), truck: { x: +G.truck.x.toFixed(1), z: +G.truck.z.toFixed(1), h: +G.truck.h.toFixed(2), v: +G.truck.v.toFixed(1) }, parts: G.parts.length, dusk: +G.dusk.toFixed(2) }),
+  audioDbg: () => ({ en: enGain && enGain.gain.value, sp: spGain && spGain.gain.value, ctx: ac && ac.state }),
   tp(x, z, h) { Object.assign(G.truck, { x, z, h, v: 0 }); G.camH = h; }
 });
 }

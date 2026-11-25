@@ -425,7 +425,7 @@ SC.board = {
     }
     // the toy box with every card (always all there: a card can be used several times in a day)
     const [bx, by, bw, bh] = L.box;
-    s += `<g id="tray"${full ? ` opacity=".5"` : ""}><rect x="${bx}" y="${by + 14}" width="${bw}" height="${bh}" rx="36" fill="#e0b97a"/><rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="36" fill="#ffe8c2" ${ST}/>`;
+    s += `<g id="tray"${full ? ` opacity=".5"` : ""}><rect x="${bx}" y="${by + 14}" width="${bw}" height="${bh}" rx="36" fill="#e0b97a"/><rect id="boxr" x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="36" fill="#ffe8c2" ${ST}/>`;
     ACTS.forEach((k, j) => {
       const [cx, cy, sz] = this.mid(L.tray(j));
       s += `<g id="card${j}" data-k="card" data-i="${j}" data-t="translate(${cx} ${cy})" transform="translate(${cx} ${cy})">${cardSVG(k, sz, true)}</g>`;
@@ -496,7 +496,8 @@ SC.board = {
       if (Math.hypot(px - d.sx, py - d.sy) < 25) return;
       d.moved = true; d.el.setAttribute("transform", d.el.dataset.t);
       d.z = (d.k === "card" ? this.L().tray(0) : this.L().slot(0))[2];
-      if (d.k === "slot") { const f = $("sb" + d.i); if (f) f.setAttribute("opacity", ".2"); }
+      // a card leaving the day: the toy box lights up, that is where it goes back
+      if (d.k === "slot") { const f = $("sb" + d.i); if (f) f.setAttribute("opacity", ".2"); $("tray").setAttribute("opacity", "1"); $("boxr").setAttribute("stroke", "#ffd23f"); $("boxr").setAttribute("stroke-width", "14"); }
       d.g = flyG(cardSVG(d.kind, d.z, true));
     }
     d.x = px; d.y = py; d.g.setAttribute("transform", `translate(${px} ${py}) scale(1.1)`);
@@ -506,13 +507,16 @@ SC.board = {
     this.drag = null; d.el.setAttribute("transform", d.el.dataset.t);
     if (!d.moved) { if (d.k === "card") this.add(d.i); else openSlot(d.i); return; }
     const t = this.slotAt(d.x, d.y), sz = this.L().slot(0)[2];
+    // a wobbly tap (released over where it started) is still a tap
+    if (d.k === "slot" && t === d.i) { d.g.remove(); openSlot(d.i); return; }
+    if (d.k === "card") { const [cx, cy, cz] = this.mid(this.L().tray(d.i)); if (Math.abs(d.x - cx) < cz / 2 && Math.abs(d.y - cy) < cz / 2) { d.g.remove(); render(); this.add(d.i); return; } }
     if (d.k === "card") {
       if (t < 0) { SFX.soft(); this.flyHome(d.kind, d.x, d.y, d.z * 1.1, d.g, d.z); return; }
       const old = mem.plan[t];
       mem.plan[t] = d.kind; mem.done[t] = false; save(); SFX.whoosh();
       if (old) { const [ox, oy] = this.mid(this.L().slot(t)); this.flyHome(old, ox, oy, sz); }
       this.flyIn(d.kind, d.x, d.y, d.z * 1.1, t, d.g, d.z);
-    } else if (t === d.i || (t >= 0 && this.arriving.has(t))) {
+    } else if (t >= 0 && this.arriving.has(t)) {
       const f = $("sb" + d.i); if (f) f.setAttribute("opacity", ".2");
       SFX.soft(); this.flyIn(d.kind, d.x, d.y, d.z * 1.1, d.i, d.g, d.z);
     } else if (t >= 0) {

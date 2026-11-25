@@ -39,7 +39,7 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-
 .zz{animation:blink 2s ease-in-out infinite}
 .np{pointer-events:none}
 @keyframes blink{50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){#start .play,.soft,.stink path,.zz{animation:none!important}.spark{animation-duration:.3s}}
+@media (prefers-reduced-motion:reduce){#start .play,.glow,.soft,.stink path,.zz{animation:none!important}.spark{animation-duration:.3s}}
 </style>
 <style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
 html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
@@ -294,6 +294,7 @@ function setActs() {
   $("acts").innerHTML = (scene.acts || []).map(k => `<button class="act${ACTBTN[k][2][0] === "<" ? "" : " emo"}" type="button" data-a="${k}" aria-label="${ACTBTN[k][1]}" style="background:${ACTBTN[k][0]}">${ACTBTN[k][2]}</button>`).join("");
 }
 function go(id) {
+  timers = []; tweens = []; // a scene left early must not jump back later
   unhint(); stopLullaby();
   sid = id; scene = SC[id]; if (scene.enter) scene.enter();
   render(); setActs();
@@ -305,12 +306,9 @@ function unhint() { const g = $("glow"); if (g) g.style.display = "none"; }
 const scr = (x, y) => screenPt($("sv"), x, y);
 function sparkAt(x, y, e) { const [a, b] = scr(x, y); spark(a, b, e); }
 function emptyTap(e) { SFX.soft(); spark(e.clientX, e.clientY, "✨"); }
-// an activity is finished: star on its card, back to the board, the sun moves on
-function finish() {
-  const from = slot;
-  if (slot >= 0 && slot < 4) { mem.done[slot] = true; save(); }
-  go("board"); SC.board.moved(from);
-}
+// an activity is finished: its star is saved at once (leaving early keeps it), then back to the board, the sun moves on
+function markDone() { if (slot >= 0 && slot < 4 && !mem.done[slot]) { mem.done[slot] = true; save(); } }
+function finish() { const from = slot; markDone(); go("board"); SC.board.moved(from); }
 function openSlot(i) { slot = i; SFX.whoosh(); go(i === 4 ? "nap" : mem.plan[i]); }
 
 $("pic").addEventListener("pointerdown", e => {
@@ -440,9 +438,9 @@ SC.feed = {
     s += `<ellipse cx="${hx}" cy="${hy + 118}" rx="90" ry="18" fill="rgba(0,0,0,.12)"/><g id="bottle" data-k="bottle" data-i="0" transform="translate(${hx} ${hy}) rotate(-8)">${bottleArt(1, "milk")}</g>`;
     return s;
   },
-  tap(k, i) {
+  tap(k, i, el, e) {
     if (k === "baby") { if (!this.fed[i] && !this.busy) this.feed(i); else { SFX.giggle(); hop(i); } }
-    else if (k === "bottle") { const n = this.fed.indexOf(false); if (n >= 0 && !this.busy) this.feed(n); else SFX.soft(); }
+    else if (k === "bottle") { const n = this.fed.indexOf(false); if (n >= 0 && !this.busy) this.feed(n); else emptyTap(e); }
   },
   feed(i) {
     this.busy = true;
@@ -463,7 +461,7 @@ SC.feed = {
           SFX.burp(); hop(i, "b", 30); setEyes(i, "happy"); sparkAt(x, y - 330 * s, "💖");
           this.fed[i] = true; this.busy = false;
           after(900, () => setEyes(i, "open"));
-          if (this.fed.every(Boolean)) after(700, () => { burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j)); after(1900, finish); });
+          if (this.fed.every(Boolean)) markDone(), after(700, () => { burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j)); after(1900, finish); });
         });
       });
     });
@@ -518,13 +516,13 @@ SC.change = {
   },
   next() {
     const n = this.dirty.find(i => !this.done.includes(i));
-    if (n === undefined) { burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j, "q")); after(1900, finish); return; }
+    if (n === undefined) { markDone(); burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j, "q")); after(1900, finish); return; }
     this.cur = n; this.step = 0; this.busy = false; render(); hop(n, "b", 70); SFX.boing();
   },
-  tap(k, i, el) {
-    if (k === "baby") { if (!this.busy) this.doStep(); }
+  tap(k, i, el, e) {
+    if (k === "baby") { if (!this.busy) this.doStep(); else emptyTap(e); }
     else if (k === "tool") {
-      if (this.busy || this.cur < 0) return;
+      if (this.busy || this.cur < 0) { SFX.soft(); wiggle(el); return; }
       if (i === this.step) this.doStep();
       else { SFX.soft(); wiggle(el); this.hint(); }
     } else if (k === "qbaby") { SFX.giggle(); hop(i, "q", 30); }
@@ -636,10 +634,10 @@ SC.puzzle = {
     tween(380, k => { const e = ease(k); el.setAttribute("transform", `translate(${x0 + (hx - x0) * e} ${y0 + (hy - y0) * e - 90 * hopAt(k)}) scale(${1.12 - 0.14 * e})`); }, () => {
       SFX.pop(); SFX.grow(); sparkAt(hx, hy);
       const b = this.cheer++ % 4; hop(b); SFX.giggle(); setEyes(b, "happy"); after(800, () => setEyes(b, "open"));
-      if (this.items.every(t => t.in)) after(600, () => { burst(); for (let i = 0; i < 4; i++) { after(i * 120, () => hop(i)); setEyes(i, "happy"); } after(2000, finish); });
+      if (this.items.every(t => t.in)) markDone(), after(600, () => { burst(); for (let i = 0; i < 4; i++) { after(i * 120, () => hop(i)); setEyes(i, "happy"); } after(2000, finish); });
     });
   },
-  tap(k, i) { if (k === "baby") { SFX.giggle(); hop(i); } },
+  tap(k, i, el, e) { if (k === "baby") { SFX.giggle(); hop(i); } else emptyTap(e); },
   hint() { const j = this.items.findIndex(t => !t.in); if (j < 0) return; const [x, y] = this.pos(this.items[j]); glowAt(x, y, 100); }
 };
 
@@ -652,7 +650,7 @@ SC.paint = {
   enter() { for (let i = 0; i < 4; i++) bo[i] = { eyes: "open" }; this.drawing = null; },
   L() {
     return PORT ? { paper: [40, 220, 920], cell: j => [100 + j * 114, 1010], r: 48, baby: i => [130 + i * 247, 1500, 0.7], fy: 1180 }
-      : { paper: [320, 180, 880], cell: j => [110 + (j % 2) * 110, 250 + (j >> 1) * 112], r: 46, baby: i => [1360 + (i % 2) * 160, 560 + (i >> 1) * 400, 0.55], fy: 860 };
+      : { paper: [320, 180, 880], cell: j => [110 + (j % 2) * 110, 290 + (j >> 1) * 112], r: 46, baby: i => [1360 + (i % 2) * 160, 560 + (i >> 1) * 400, 0.55], fy: 860 };
   },
   draw() {
     const L = this.L(), [px, py, pw] = L.paper, ph = pw * 0.75, sc = pw / 1000;
@@ -694,11 +692,12 @@ SC.paint = {
     if (++this.count % 3 === 0) { const b = rand(4); hop(b); SFX.giggle(); setEyes(b, "happy"); after(700, () => setEyes(b, "open")); }
   },
   redraw() { const ink = $("ink"); if (ink) ink.innerHTML = inkSVG(mem.cur); },
-  tap(k, i) {
+  tap(k, i, el, e) {
     if (k === "col") { this.col = PAINT[i]; SFX.pop(); render(); }
     else if (k === "tool") { this.tool = i ? "p" : "b"; SFX.pop(); render(); }
     else if (k === "hang") this.on_hang();
     else if (k === "baby") { SFX.giggle(); hop(i); }
+    else emptyTap(e);
   },
   on_undo() {
     const h = this.hist.pop();
@@ -712,7 +711,7 @@ SC.paint = {
   },
   on_hang() {
     if (!mem.cur.length) { SFX.soft(); const [px, py, pw] = this.L().paper; glowAt(px + pw / 2, py + pw * 0.375, pw * 0.45); return; }
-    mem.pics.unshift(mem.cur.splice(0)); mem.pics.length = Math.min(mem.pics.length, 4); this.hist = []; save();
+    mem.pics.unshift(mem.cur.splice(0)); mem.pics.length = Math.min(mem.pics.length, 4); this.hist = []; markDone(); save();
     burst(); for (let i = 0; i < 4; i++) { after(i * 120, () => hop(i)); setEyes(i, "happy"); }
     after(1600, finish);
   },
@@ -764,12 +763,12 @@ SC.nap = {
     }
     s += `<rect id="dim" class="np" x="-3000" y="-3000" width="${W + 6000}" height="${H + 6000}" fill="#0b1340" opacity="${this.music ? 0.45 : 0}"/>`;
     if (this.music) s += `<g class="np">` + Array.from({ length: 14 }, (_, j) => `<text class="emo soft" x="${(j * 397) % W}" y="${60 + (j * 173) % (H * 0.45)}" font-size="40" text-anchor="middle" dominant-baseline="central">✨</text>`).join("") + `</g>`;
-    if (this.end) s += `<g data-k="again" data-i="0" id="again"><circle class="soft" cx="${W / 2}" cy="${H * 0.36}" r="140" fill="#fff3b0"/><circle cx="${W / 2}" cy="${H * 0.36}" r="115" fill="#ffd60a" stroke="#fb8500" stroke-width="8"/><text class="emo" x="${W / 2}" y="${H * 0.36 + 6}" font-size="120" text-anchor="middle" dominant-baseline="central">☀️</text></g>`;
+    if (this.end) s += `<g data-k="again" data-i="0" id="again"><circle class="soft" cx="${W / 2}" cy="${H * 0.36}" r="140" fill="#ffffff" opacity=".8"/><circle cx="${W / 2}" cy="${H * 0.36}" r="115" fill="#a0c4ff" stroke="#fff" stroke-width="10"/><text class="emo" x="${W / 2}" y="${H * 0.36 + 6}" font-size="120" text-anchor="middle" dominant-baseline="central">☀️</text></g>`;
     return s;
   },
-  tap(k, i) {
+  tap(k, i, el, e) {
     if (k === "baby" || k === "cradle") {
-      if (this.busy) return;
+      if (this.busy) { emptyTap(e); return; }
       if (this.st[i] === 0) this.toCradle(i);
       else if (this.st[i] === 1) this.sleep(i);
       else { SFX.kiss(); const L = this.L(); sparkAt(L.x[i], L.cb - 300 * L.cs, "💗"); }

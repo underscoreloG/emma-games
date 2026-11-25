@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>La crèche des doudous</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍼%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="../icone.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+:root{--bs:min(max(9vmin,72px),84px);--ink:#2b2d42;--bg:#fff3d6;--accent:#ef476f}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg)}
+.emo{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
+#start{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;gap:5vmin;align-items:center;justify-content:center;background:#ffd6e0}
+#start .deco{font-size:18vmin}
+#start .play{width:34vmin;height:34vmin;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1.5vmin 0 rgba(0,0,0,.15);animation:pulse 1.4s ease-in-out infinite}
+#start .play svg{width:50%;height:50%;margin-left:8%;fill:var(--accent)}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#sortie{position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:var(--bs);height:var(--bs);border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 2px 6px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;z-index:200}
+#sortie svg{width:60%;height:60%}
+#sortie:active{transform:scale(.9)}
+/* Blue square with 4 white squares: back to the day board */
+.gb{position:fixed;top:max(10px,env(safe-area-inset-top));left:calc(max(10px,env(safe-area-inset-left)) + var(--bs) + 10px);width:var(--bs);height:var(--bs);border-radius:18px;border:0;background:#a0c4ff;display:none;grid-template-columns:1fr 1fr;gap:calc(var(--bs)*.07);padding:calc(var(--bs)*.2);box-shadow:0 5px 0 rgba(0,0,0,.15);z-index:40}
+.gb i{background:#fff;border-radius:18%}
+.gb:active,.act:active{transform:scale(.9)}
+#pic{position:fixed;inset:0}
+#pic svg{width:100%;height:100%;display:block;overflow:visible}
+#acts{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));display:flex;gap:10px;z-index:40}
+.act{width:var(--bs);height:var(--bs);border:0;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:calc(var(--bs)*.52);box-shadow:0 5px 0 rgba(0,0,0,.15);background:#cdb4db}
+.act svg{width:58%;height:58%}
+.spark{position:fixed;font-size:7vmin;margin:-3.5vmin 0 0 -3.5vmin;pointer-events:none;animation:spark .9s ease-out forwards;z-index:60}
+@keyframes spark{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) rotate(180deg);opacity:0}}
+/* SVG: only opacity is animated in CSS (transforms are set from JS) */
+.glow{fill:none;stroke:#ffd23f;stroke-width:16;pointer-events:none;animation:blink 1s ease-in-out infinite}
+.soft{animation:blink 2.4s ease-in-out infinite}
+.stink path{animation:blink 1.2s ease-in-out infinite}
+.zz{animation:blink 2s ease-in-out infinite}
+.np{pointer-events:none}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#start .play,.soft,.stink path,.zz{animation:none!important}.spark{animation-duration:.3s}}
+</style>
+<style id="big-cursor">/* large arrow so a 3-year-old can follow the mouse */
+html,html *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 32 32'%3E%3Cpath d='M4 2 L4 26 L10.5 20.5 L14.5 30 L19 28 L15 18.8 L24 18.8 Z' fill='%23ffd23f' stroke='%232b2d42' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4,auto!important}</style>
+</head>
+<body>
+<div id="pic"></div>
+<div id="acts"></div>
+<button id="gridBtn" class="gb" type="button" aria-label="Le planning"><i></i><i></i><i></i><i></i></button>
+<a id="sortie" href="../index.html" aria-label="Retour au menu"><svg viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 L12 3.5 L21 11.5 M5.5 9.5 V20 H10 V14.5 H14 V20 H18.5 V9.5"/></svg></a>
+<div id="start"><div class="deco emo">🧸🍼</div><div class="play"><svg viewBox="0 0 100 100"><polygon points="30,20 30,80 82,50"/></svg></div></div>
+
+<script>
+"use strict";
+/* ===== Shared core: sound (no voice), game clock, saving ===== */
+const $ = id => document.getElementById(id);
+let ac = null, master = null;
+function audio() {
+  if (!ac) {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    ac = new C(); master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+  }
+  if (ac.state === "suspended") ac.resume();
+}
+function tone(f, d = 0.2, type = "sine", v = 0.25, f2 = null, delay = 0, out = null) {
+  if (!ac) return;
+  const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(v, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(out || master); o.start(t); o.stop(t + d + 0.05);
+}
+function noise(d = 0.3, v = 0.3, freq = 800, delay = 0) {
+  if (!ac) return;
+  const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), data = b.getChannelData(0);
+  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = b; fl.type = "lowpass"; fl.frequency.value = freq; g.gain.value = v;
+  s.connect(fl); fl.connect(g); g.connect(master); s.start(ac.currentTime + delay);
+}
+const SFX = {
+  pop: () => tone(480 + Math.random() * 260, 0.12, "sine", 0.3, 1200),
+  plop: () => tone(330, 0.16, "sine", 0.35, 170),
+  soft: () => tone(240, 0.1, "sine", 0.12, 200),
+  whoosh: () => noise(0.35, 0.2, 1800),
+  boing: () => { tone(160, 0.4, "sine", 0.3, 480); tone(170, 0.4, "triangle", 0.08, 520); },
+  grow: () => tone(300, 0.25, "sine", 0.2, 700),
+  giggle: () => [880, 988, 880, 1047, 1175].forEach((f, i) => tone(f, 0.11, "sine", 0.14, f * 0.9, i * 0.09)),
+  chime: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.6, "triangle", 0.14, null, i * 0.08)),
+  tada: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.9 : 0.25, "triangle", 0.2, null, i * 0.12)),
+  back: () => tone(700, 0.15, "sine", 0.2, 350),
+  // crèche sounds (all synthesized, never a voice)
+  gulp: () => tone(260, 0.12, "sine", 0.28, 170),
+  burp: () => { tone(120, 0.3, "sawtooth", 0.1, 75); noise(0.22, 0.22, 320); },
+  wipe: () => noise(0.28, 0.16, 3800),
+  puff: () => { noise(0.22, 0.3, 900); noise(0.18, 0.2, 1400, 0.12); },
+  snap: () => { tone(1800, 0.04, "square", 0.07); tone(1300, 0.05, "square", 0.05, null, 0.07); },
+  paint: () => tone(420 + Math.random() * 300, 0.09, "sine", 0.1, 300),
+  kiss: () => tone(1500, 0.08, "sine", 0.12, 2400)
+};
+// Game clock: timers and tweens run on it, so the game can be stepped when requestAnimationFrame is throttled
+let now = 0, timers = [], tweens = [];
+const ticks = [];
+function after(ms, fn) { timers.push({ at: now + ms, fn }); }
+// Game movements always play, even when the device asks for reduced motion; reduced motion only calms decorative CSS loops.
+function tween(ms, fn, done) { tweens.push({ t0: now, ms, fn, done }); fn(0); }
+function tick(dt) {
+  now += dt;
+  const due = timers.filter(t => t.at <= now); timers = timers.filter(t => t.at > now); due.forEach(t => t.fn());
+  // tweens started by a finishing tween (chained moves) are kept: they land in the fresh list
+  const running = tweens; tweens = [];
+  const left = running.filter(w => { const k = Math.min(1, (now - w.t0) / w.ms); w.fn(k); if (k >= 1 && w.done) w.done(); return k < 1; });
+  tweens = left.concat(tweens);
+  ticks.forEach(f => f(dt));
+}
+let lastT = 0;
+function frame(t) { tick(Math.min(50, lastT ? t - lastT : 16)); lastT = t; requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+function spark(x, y, e) {
+  const s = document.createElement("div"); s.className = "spark emo"; s.textContent = e || "✨";
+  s.style.left = x + "px"; s.style.top = y + "px"; document.body.appendChild(s); setTimeout(() => s.remove(), 950);
+}
+function burst() {
+  SFX.tada(); const x = innerWidth / 2, y = innerHeight / 2;
+  spark(x, y, "⭐"); spark(x - innerWidth * .2, y - innerHeight * .15); spark(x + innerWidth * .2, y - innerHeight * .1); spark(x, y + innerHeight * .2);
+}
+function load(key, def) { try { const m = JSON.parse(localStorage.getItem(key)); if (m && typeof m === "object") return m; } catch (_) {} return def; }
+function store(key, o) { try { localStorage.setItem(key, JSON.stringify(o)); } catch (_) {} }
+const hopAt = k => Math.sin(k * Math.PI);
+const rand = n => Math.floor(Math.random() * n);
+const ease = t => t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+function scenePt(svg, cx, cy) { const m = svg.getScreenCTM(); return m ? [(cx - m.e) / m.a, (cy - m.f) / m.d] : [0, 0]; }
+function screenPt(svg, x, y) { const m = svg.getScreenCTM(); return m ? [m.a * x + m.e, m.d * y + m.f] : [innerWidth / 2, innerHeight / 2]; }
+$("start").addEventListener("pointerdown", () => { audio(); $("start").style.display = "none"; SFX.chime(); if (window.onStart) window.onStart(); });
+addEventListener("pointerdown", audio);
+["contextmenu", "gesturestart", "dblclick", "selectstart", "dragstart"].forEach(t => addEventListener(t, e => e.preventDefault()));
+addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+
+/* ===== The game ===== */
+// The crèche of the plush babies. The day board is the hub: she taps picture cards to plan the day
+// (bottle, diaper, shape sorter, painting), then plays each card in turn. Nap always ends the day.
+const KEY = "creche-v1", mem = load(KEY, {});
+if (!Array.isArray(mem.plan) || mem.plan.length !== 4) mem.plan = [null, null, null, null];
+if (!Array.isArray(mem.done) || mem.done.length !== 4) mem.done = [false, false, false, false];
+if (!Array.isArray(mem.pics)) mem.pics = [];
+if (!Array.isArray(mem.cur)) mem.cur = [];
+const save = () => store(KEY, mem);
+const INK = "#2b2d42", DARK = "#3d405b";
+const ACTS = ["feed", "change", "puzzle", "paint"];
+const CARD_BG = { feed: "#caffbf", change: "#a0c4ff", puzzle: "#ffd6a5", paint: "#ffc6ff", nap: "#bdb2ff" };
+const ST = `stroke="${INK}" stroke-width="5" stroke-linejoin="round"`;
+let uidN = 0;
+const uid = () => "u" + (++uidN);
+
+// Layout: one coordinate space per orientation, the SVG letterboxes and the backgrounds overflow past the edges
+let PORT = false, W = 1600, H = 1000;
+function measure() { PORT = innerHeight > innerWidth; W = PORT ? 1000 : 1600; H = PORT ? 1600 : 1000; }
+
+// --- the four plush babies (content: edit this list to match the real doudous)
+const BB = [
+  { fur: "#c68b59", light: "#f3d9bf", ear: "round", limb: "#c68b59" },               // ourson
+  { fur: "#f8f4ef", light: "#ffd6e0", ear: "long", limb: "#f8f4ef" },                // lapin
+  { fur: "#eab676", light: "#fff3dc", ear: "flop", limb: "#eab676", patch: "#a86b32" }, // chiot
+  { fur: "#ffffff", light: "#ffffff", ear: "panda", limb: DARK }                       // panda
+];
+// Baby drawn sitting, feet at (0,0), about 240 wide and 330 tall
+function babyInner(i, o) {
+  const b = BB[i], eyes = o.eyes || "open", mouth = o.mouth || "smile", dia = o.diaper || "clean";
+  const panda = b.ear === "panda", lc = panda ? "#fff" : INK;
+  let s = "";
+  if (b.ear === "round" || panda) {
+    const f = panda ? DARK : b.fur;
+    s += `<circle cx="-58" cy="-292" r="30" fill="${f}" ${ST}/><circle cx="58" cy="-292" r="30" fill="${f}" ${ST}/>`;
+    if (!panda) s += `<circle cx="-58" cy="-292" r="14" fill="${b.light}"/><circle cx="58" cy="-292" r="14" fill="${b.light}"/>`;
+  }
+  if (b.ear === "long") s += `<ellipse cx="-36" cy="-338" rx="22" ry="62" fill="${b.fur}" ${ST} transform="rotate(-12 -36 -300)"/><ellipse cx="-36" cy="-338" rx="10" ry="44" fill="${b.light}" transform="rotate(-12 -36 -300)"/>` +
+    `<ellipse cx="36" cy="-338" rx="22" ry="62" fill="${b.fur}" ${ST} transform="rotate(12 36 -300)"/><ellipse cx="36" cy="-338" rx="10" ry="44" fill="${b.light}" transform="rotate(12 36 -300)"/>`;
+  s += `<ellipse cx="0" cy="-100" rx="80" ry="84" fill="${b.fur}" ${ST}/>`;
+  if (!panda) s += `<ellipse cx="0" cy="-116" rx="46" ry="42" fill="${b.light}"/>`;
+  if (dia !== "none") s += `<path d="M-79 -78 Q-84 -6 -36 0 L36 0 Q84 -6 79 -78 Q0 -50 -79 -78Z" fill="${dia === "dirty" ? "#efdcaa" : "#fff"}" ${ST}/>` +
+    `<rect x="-74" y="-80" width="24" height="16" rx="6" fill="#a0c4ff" ${ST}/><rect x="50" y="-80" width="24" height="16" rx="6" fill="#a0c4ff" ${ST}/>` +
+    (dia === "dirty" ? `<ellipse cx="10" cy="-26" rx="16" ry="9" fill="#c9a66b"/>` : `<circle cx="0" cy="-30" r="8" fill="#ffadc6"/>`);
+  s += `<ellipse cx="-48" cy="-16" rx="34" ry="24" fill="${b.limb}" ${ST}/><ellipse cx="48" cy="-16" rx="34" ry="24" fill="${b.limb}" ${ST}/>` +
+    `<ellipse cx="-48" cy="-14" rx="14" ry="9" fill="${panda ? "#6d6875" : b.light}"/><ellipse cx="48" cy="-14" rx="14" ry="9" fill="${panda ? "#6d6875" : b.light}"/>`;
+  s += `<ellipse cx="-80" cy="-126" rx="22" ry="42" fill="${b.limb}" ${ST} transform="rotate(28 -80 -126)"/><ellipse cx="80" cy="-126" rx="22" ry="42" fill="${b.limb}" ${ST} transform="rotate(-28 80 -126)"/>`;
+  if (o.bib) s += `<path d="M-50 -166 Q0 -128 50 -166 Q54 -110 0 -98 Q-54 -110 -50 -166Z" fill="#ffadad" ${ST}/><circle cx="0" cy="-124" r="9" fill="#fff"/>`;
+  s += `<circle cx="0" cy="-232" r="84" fill="${b.fur}" ${ST}/>`;
+  if (b.ear === "flop") s += `<ellipse cx="-82" cy="-226" rx="26" ry="54" fill="${b.patch}" ${ST} transform="rotate(16 -82 -226)"/><ellipse cx="82" cy="-226" rx="26" ry="54" fill="${b.patch}" ${ST} transform="rotate(-16 82 -226)"/>`;
+  if (panda) s += `<ellipse cx="-32" cy="-246" rx="22" ry="27" fill="${DARK}" transform="rotate(-25 -32 -246)"/><ellipse cx="32" cy="-246" rx="22" ry="27" fill="${DARK}" transform="rotate(25 32 -246)"/>`;
+  s += `<ellipse cx="0" cy="-200" rx="40" ry="30" fill="${panda ? "#fff" : b.light}"/><ellipse cx="0" cy="-214" rx="13" ry="9" fill="${INK}"/>`;
+  s += `<circle cx="-56" cy="-200" r="13" fill="#ff8fab" opacity=".5"/><circle cx="56" cy="-200" r="13" fill="#ff8fab" opacity=".5"/>`;
+  for (const x of [-32, 32]) {
+    if (eyes === "open") s += panda ? `<circle cx="${x}" cy="-246" r="10" fill="#fff"/><circle cx="${x}" cy="-245" r="6" fill="${INK}"/>`
+      : `<circle cx="${x}" cy="-246" r="11" fill="${INK}"/><circle cx="${x + 4}" cy="-250" r="3.5" fill="#fff"/>`;
+    else if (eyes === "happy") s += `<path d="M${x - 14} -242 Q${x} -260 ${x + 14} -242" fill="none" stroke="${lc}" stroke-width="7" stroke-linecap="round"/>`;
+    else s += `<path d="M${x - 14} -250 Q${x} -236 ${x + 14} -250" fill="none" stroke="${lc}" stroke-width="7" stroke-linecap="round"/>`;
+  }
+  if (mouth === "o") s += `<ellipse cx="0" cy="-188" rx="10" ry="12" fill="#9e2a2b" stroke="${INK}" stroke-width="4"/>`;
+  else s += `<path d="M-15 -193 Q0 -178 15 -193" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
+  if (o.stink) s += `<g class="stink np">` + [-128, 128, 150].map((x, j) => `<path d="M${x} ${-30 - j * 40} q-16 -22 0 -44 q16 -22 0 -44" fill="none" stroke="#8ac926" stroke-width="8" stroke-linecap="round"/>`).join("") + `</g>`;
+  return s;
+}
+// Every baby on screen keeps its look in bo[i]; p is an id prefix (two drawings of one baby never share ids)
+const bo = [{}, {}, {}, {}];
+function babyG(i, x, y, s, k = "baby", p = "b") {
+  return `<g transform="translate(${x} ${y}) scale(${s})"><g id="${p}h${i}"><g id="${p}a${i}" data-k="${k}" data-i="${i}">${babyInner(i, bo[i])}</g></g></g>`;
+}
+function setB(i, patch, p = "b") { Object.assign(bo[i], patch); const el = $(p + "a" + i); if (el) el.innerHTML = babyInner(i, bo[i]); }
+function hop(i, p = "b", hgt = 50) {
+  const el = $(p + "h" + i); if (!el) return;
+  tween(420, k => el.setAttribute("transform", `translate(0 ${-hgt * hopAt(k)}) scale(${1 + 0.06 * hopAt(k)} ${1 - 0.04 * hopAt(k)})`));
+}
+function wiggle(el) { if (el) tween(360, k => el.setAttribute("transform", (el.dataset.t || "") + ` rotate(${Math.sin(k * Math.PI * 4) * 9 * (1 - k)})`)); }
+// babies blink now and then
+const blinkAt = [2500, 4000, 3200, 5200];
+ticks.push(dt => {
+  for (let i = 0; i < 4; i++) {
+    blinkAt[i] -= dt;
+    if (blinkAt[i] > 0) continue;
+    blinkAt[i] = 2500 + Math.random() * 4000;
+    if ((bo[i].eyes || "open") === "open" && $("ba" + i)) { setB(i, { eyes: "closed", blink: 1 }); after(150, () => { if (bo[i].blink) setB(i, { eyes: "open", blink: 0 }); }); }
+  }
+});
+function setEyes(i, eyes) { bo[i].blink = 0; setB(i, { eyes }); }
+
+// --- objects
+function bottleArt(level, id) {
+  const c = uid(), mh = 168 * level;
+  return `<path d="M-18 -112 Q0 -142 18 -112 L24 -86 L-24 -86Z" fill="#f7c59f" ${ST}/>` +
+    `<rect x="-42" y="-90" width="84" height="32" rx="9" fill="#a0c4ff" ${ST}/>` +
+    `<clipPath id="${c}"><rect x="-46" y="-60" width="92" height="170" rx="30"/></clipPath>` +
+    `<rect x="-46" y="-60" width="92" height="170" rx="30" fill="#cfe6ff"/>` +
+    `<rect ${id ? `id="${id}"` : ""} clip-path="url(#${c})" x="-46" y="${110 - mh}" width="92" height="${mh}" fill="#fffdf7"/>` +
+    `<path d="M-28 -24 H-6 M-28 16 H-6 M-28 56 H-6" stroke="#7d9cc6" stroke-width="5" stroke-linecap="round"/>` +
+    `<rect x="-46" y="-60" width="92" height="170" rx="30" fill="none" ${ST}/>`;
+}
+function diaperArt(dirty) {
+  return `<path d="M-95 -50 Q-100 40 -40 56 L40 56 Q100 40 95 -50 Q0 -14 -95 -50Z" fill="${dirty ? "#efdcaa" : "#fff"}" ${ST}/>` +
+    `<path d="M-90 -44 Q0 -8 90 -44" fill="none" stroke="#a0c4ff" stroke-width="10" stroke-linecap="round"/>` +
+    `<rect x="-104" y="-64" width="32" height="24" rx="8" fill="#ffd166" ${ST}/><rect x="72" y="-64" width="32" height="24" rx="8" fill="#ffd166" ${ST}/>` +
+    (dirty ? `<ellipse cx="8" cy="22" rx="22" ry="12" fill="#c9a66b"/>` : `<path d="M0 34 C-22 18 -14 2 0 12 C14 2 22 18 0 34Z" fill="#ff8fab"/>`);
+}
+const SHAPES = {
+  circle: "M-68 0a68 68 0 1 0 136 0a68 68 0 1 0 -136 0Z",
+  square: "M-60 -60H60V60H-60Z",
+  triangle: "M0 -70L74 60H-74Z",
+  heart: "M0 64 C-96 4 -72 -72 0 -30 C72 -72 96 4 0 64Z",
+  star: (() => { let d = ""; for (let j = 0; j < 10; j++) { const a = -Math.PI / 2 + j * Math.PI / 5, r = j % 2 ? 32 : 76; d += (j ? "L" : "M") + (Math.cos(a) * r).toFixed(1) + " " + (Math.sin(a) * r + 6).toFixed(1); } return d + "Z"; })()
+};
+const PCOL = ["#ef476f", "#118ab2", "#ffd166", "#06d6a0", "#9b5de5", "#f78c6b"];
+function sorterArt() {
+  return `<rect x="-92" y="-62" width="184" height="124" rx="18" fill="#e9c46a" ${ST}/>` +
+    `<g transform="translate(-48 -8) scale(.36)"><path d="${SHAPES.circle}" fill="#6b4f3a"/></g><g transform="translate(0 -8) scale(.36)"><path d="${SHAPES.star}" fill="#6b4f3a"/></g><g transform="translate(48 -8) scale(.36)"><path d="${SHAPES.square}" fill="#6b4f3a"/></g>` +
+    `<g transform="translate(34 -78) scale(.42)"><path d="${SHAPES.heart}" fill="#ef476f" ${ST}/></g>`;
+}
+function cardIcon(kind, sz) {
+  if (kind === "feed") return `<g transform="scale(${sz / 260}) rotate(-15)">${bottleArt(1)}</g>`;
+  if (kind === "change") return `<g transform="scale(${sz / 220})">${diaperArt(false)}</g>`;
+  if (kind === "puzzle") return `<g transform="scale(${sz / 200})">${sorterArt()}</g>`;
+  const e = kind === "paint" ? "🎨" : "🌙";
+  return `<text class="emo" x="0" y="${sz * 0.06}" font-size="${sz * 0.78}" text-anchor="middle" dominant-baseline="central">${e}</text>`;
+}
+function pawSVG(x, y, c) {
+  return `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})" fill="${c}"><ellipse cx="0" cy="10" rx="30" ry="25"/><circle cx="-30" cy="-20" r="12"/><circle cx="-11" cy="-34" r="12"/><circle cx="11" cy="-34" r="12"/><circle cx="30" cy="-20" r="12"/></g>`;
+}
+function strokeD(p) { let d = `M${p[0].toFixed(0)} ${p[1].toFixed(0)}`; if (p.length === 2) return d + "l0.1 0"; for (let j = 2; j < p.length; j += 2) d += `L${p[j].toFixed(0)} ${p[j + 1].toFixed(0)}`; return d; }
+function strokeSVG(s) {
+  if (s.p) { let h = ""; for (let j = 0; j < s.pts.length; j += 2) h += pawSVG(s.pts[j], s.pts[j + 1], s.c); return `<g>${h}</g>`; }
+  return `<path d="${strokeD(s.pts)}" fill="none" stroke="${s.c}" stroke-width="${s.w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+const inkSVG = list => list.map(strokeSVG).join("");
+function bg(wall, floor, fy) {
+  return `<rect x="-3000" y="-3000" width="${W + 6000}" height="${fy + 3000}" fill="${wall}"/><rect x="-3000" y="${fy}" width="${W + 6000}" height="4000" fill="${floor}"/>` +
+    `<rect x="-3000" y="${fy - 14}" width="${W + 6000}" height="14" fill="rgba(0,0,0,.06)"/>`;
+}
+
+// --- scenes
+let scene = null, sid = "", slot = -1, idle = 0, hinted = false, started = false;
+const SC = {};
+function render() {
+  $("pic").innerHTML = `<svg id="sv" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${scene.draw()}<circle id="glow" class="glow" cx="0" cy="0" r="0" style="display:none"/></svg>`;
+}
+const ACTBTN = {
+  undo: ["#ffe066", "Annuler", `<svg viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5 L3.5 9.5 L8 14"/><path d="M3.5 9.5 H14 a6 6 0 0 1 0 12 H8"/></svg>`],
+  hang: ["#95d5b2", "Accrocher au mur", `<svg viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 L10 18 L20 6"/></svg>`],
+  wand: ["#cdb4db", "Surprise", "🪄"],
+  sponge: ["#ffc8dd", "Effacer", "🧽"]
+};
+function setActs() {
+  $("acts").innerHTML = (scene.acts || []).map(k => `<button class="act${ACTBTN[k][2][0] === "<" ? "" : " emo"}" type="button" data-a="${k}" aria-label="${ACTBTN[k][1]}" style="background:${ACTBTN[k][0]}">${ACTBTN[k][2]}</button>`).join("");
+}
+function go(id) {
+  unhint(); stopLullaby();
+  sid = id; scene = SC[id]; if (scene.enter) scene.enter();
+  render(); setActs();
+  $("gridBtn").style.display = id === "board" ? "none" : "grid";
+  if (scene.after) scene.after();
+}
+function glowAt(x, y, r) { const g = $("glow"); if (!g) return; g.setAttribute("cx", x); g.setAttribute("cy", y); g.setAttribute("r", r); g.style.display = ""; }
+function unhint() { const g = $("glow"); if (g) g.style.display = "none"; }
+const scr = (x, y) => screenPt($("sv"), x, y);
+function sparkAt(x, y, e) { const [a, b] = scr(x, y); spark(a, b, e); }
+function emptyTap(e) { SFX.soft(); spark(e.clientX, e.clientY, "✨"); }
+// an activity is finished: star on its card, back to the board, the sun moves on
+function finish() {
+  const from = slot;
+  if (slot >= 0 && slot < 4) { mem.done[slot] = true; save(); }
+  go("board"); SC.board.moved(from);
+}
+function openSlot(i) { slot = i; SFX.whoosh(); go(i === 4 ? "nap" : mem.plan[i]); }
+
+$("pic").addEventListener("pointerdown", e => {
+  if (!scene || !started) return;
+  idle = 0; hinted = false; unhint();
+  const el = e.target.closest("[data-k]");
+  if (scene.down && scene.down(e, el)) return;
+  if (el && scene.tap) scene.tap(el.dataset.k, +el.dataset.i, el, e); else emptyTap(e);
+});
+addEventListener("pointermove", e => { if (scene && scene.move) scene.move(e); });
+addEventListener("pointerup", e => { if (scene && scene.up) scene.up(e); });
+addEventListener("pointercancel", e => { if (scene && scene.up) scene.up(e); });
+$("acts").addEventListener("pointerdown", e => {
+  const b = e.target.closest(".act"); if (!b || !scene) return;
+  idle = 0; hinted = false; unhint(); scene["on_" + b.dataset.a]();
+});
+$("gridBtn").addEventListener("pointerdown", () => { SFX.back(); go("board"); });
+// if she hesitates, the next thing to do glows
+ticks.push(dt => { if (!started || !scene) return; idle += dt; if (idle > 5000 && !hinted && scene.hint) { hinted = true; scene.hint(); } });
+
+/* ----- The day board ----- */
+SC.board = {
+  acts: ["wand", "sponge"],
+  enter() { for (let i = 0; i < 4; i++) bo[i] = { eyes: "open" }; },
+  L() {
+    return PORT ? { slot: i => [65 + i * 180, 180, 150], go: [500, 450, 75], tray: j => [60 + j * 225, 580, 190], frame: j => [50 + j * 230, 850, 200, 150], baby: i => [130 + i * 247, 1500, 0.8], fy: 1180 }
+      : { slot: i => [180 + i * 195, 140, 165], go: [1300, 225, 80], tray: j => [90 + (j % 2) * 210, 400 + (j >> 1) * 210, 180], frame: j => [560 + j * 240, 400, 210, 158], baby: i => [680 + i * 220, 975, 0.78], fy: 690 };
+  },
+  cur() { const i = mem.plan.findIndex((p, j) => p && !mem.done[j]); if (i >= 0) return i; return mem.done.some(Boolean) ? 4 : -1; },
+  draw() {
+    const L = this.L(), cur = this.cur();
+    let s = bg("#fff3d6", "#f6d7a7", L.fy);
+    const [x0, y0, z] = L.slot(0), [x4] = L.slot(4);
+    s += `<rect x="${x0 - 22}" y="${y0 - 22}" width="${x4 - x0 + z + 44}" height="${z + 44}" rx="40" fill="#ffffff" opacity=".65"/>`;
+    for (let i = 0; i < 5; i++) {
+      const [x, y, sz] = L.slot(i), kind = i === 4 ? "nap" : mem.plan[i], cx = x + sz / 2, cy = y + sz / 2;
+      const empty = !kind, dim = i === 4 && cur !== 4;
+      s += `<g id="slot${i}" data-k="slot" data-i="${i}" data-t="translate(${cx} ${cy})" transform="translate(${cx} ${cy})"${dim ? ` opacity=".55"` : ""}>` +
+        `<rect x="${-sz / 2}" y="${-sz / 2}" width="${sz}" height="${sz}" rx="28" fill="${empty ? "#fff" : CARD_BG[kind]}" ${empty ? `stroke="#c9ced6" stroke-width="7" stroke-dasharray="18 14"` : ST}/>` +
+        (empty ? `<circle r="${sz * 0.12}" fill="#e9ecef"/>` : cardIcon(kind, sz * 0.8)) +
+        (i < 4 && mem.done[i] ? `<text class="emo np" x="${sz * 0.36}" y="${-sz * 0.36}" font-size="${sz * 0.36}" text-anchor="middle" dominant-baseline="central">⭐</text>` : "") + `</g>`;
+    }
+    if (cur >= 0) {
+      const [x, y, sz] = L.slot(cur);
+      s += `<g id="sun" class="np" transform="translate(${x + sz / 2} ${y - 4})"><g>` + Array.from({ length: 8 }, (_, j) => `<rect x="-5" y="-50" width="10" height="18" rx="5" fill="#ffb703" transform="rotate(${j * 45})"/>`).join("") +
+        `<circle r="28" fill="#ffd60a" stroke="#fb8500" stroke-width="5"/></g></g>`;
+      const [gx, gy, gr] = L.go;
+      s += `<g data-k="go" data-i="0" id="goBtn"><circle class="soft" cx="${gx}" cy="${gy}" r="${gr + 16}" fill="#b7efc5"/><circle cx="${gx}" cy="${gy}" r="${gr}" fill="#06d6a0" stroke="#fff" stroke-width="8"/>` +
+        `<polygon points="${gx - gr * 0.3},${gy - gr * 0.42} ${gx - gr * 0.3},${gy + gr * 0.42} ${gx + gr * 0.45},${gy}" fill="#fff" stroke-linejoin="round"/></g>`;
+    }
+    ACTS.forEach((k, j) => {
+      const [x, y, sz] = L.tray(j), cx = x + sz / 2, cy = y + sz / 2;
+      s += `<g id="card${j}" data-k="card" data-i="${j}" data-c="${k}" data-t="translate(${cx} ${cy})" transform="translate(${cx} ${cy})">` +
+        `<rect x="${-sz / 2}" y="${-sz / 2 + 8}" width="${sz}" height="${sz}" rx="30" fill="rgba(0,0,0,.12)"/><rect x="${-sz / 2}" y="${-sz / 2}" width="${sz}" height="${sz}" rx="30" fill="${CARD_BG[k]}" ${ST}/>${cardIcon(k, sz * 0.8)}</g>`;
+    });
+    for (let j = 0; j < 4; j++) {
+      const [x, y, w, h] = L.frame(j), pic = mem.pics[j];
+      s += `<g data-k="frame" data-i="${j}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${pic ? "#d4a373" : "#fdebc8"}"${pic ? ` ${ST}` : ""}/>` +
+        `<rect x="${x + 12}" y="${y + 12}" width="${w - 24}" height="${h - 24}" fill="${pic ? "#fff" : "#fff8ea"}"/>` +
+        (pic ? `<g transform="translate(${x + 12} ${y + 12}) scale(${(w - 24) / 1000})">${inkSVG(pic)}</g>` : "") + `</g>`;
+    }
+    const [bx0] = L.baby(0), [bx3, by] = L.baby(3);
+    s += `<ellipse cx="${(bx0 + bx3) / 2}" cy="${by - 6}" rx="${(bx3 - bx0) / 2 + 160}" ry="46" fill="#bde0fe"/>`;
+    for (let i = 0; i < 4; i++) { const [x, y, sc] = L.baby(i); s += babyG(i, x, y, sc); }
+    return s;
+  },
+  popSlot(i) { const el = $("slot" + i); if (el) tween(300, k => el.setAttribute("transform", el.dataset.t + ` scale(${0.4 + 0.6 * k + 0.2 * hopAt(k)})`)); },
+  moved(from) {
+    const L = this.L(), to = this.cur();
+    if (from >= 0 && from < 4) { const [x, y, z] = L.slot(from); after(250, () => { SFX.chime(); sparkAt(x + z / 2, y + z / 2, "⭐"); }); }
+    const sun = $("sun"); if (!sun || from < 0 || to < 0) return;
+    const [fx, , z] = L.slot(from), [tx, ty] = L.slot(to);
+    tween(700, k => { const e = ease(k); sun.setAttribute("transform", `translate(${fx + (tx - fx) * e + z / 2} ${ty - 4 - 60 * hopAt(k)})`); });
+  },
+  tap(k, i, el) {
+    const cur = this.cur();
+    if (k === "card") {
+      const j = mem.plan.indexOf(null);
+      if (j < 0) { SFX.soft(); wiggle(el); const [gx, gy, gr] = this.L().go; glowAt(gx, gy, gr + 30); return; }
+      mem.plan[j] = el.dataset.c; save(); SFX.pop(); render(); this.popSlot(j);
+      const L = this.L(), [x, y, sz] = L.slot(j); sparkAt(x + sz / 2, y + sz / 2);
+    } else if (k === "slot") {
+      if (i === cur) openSlot(i);
+      else if (i < 4 && mem.plan[i] && !mem.done[i]) { mem.plan.splice(i, 1); mem.plan.push(null); mem.done.splice(i, 1); mem.done.push(false); save(); SFX.plop(); render(); }
+      else if (i < 4 && mem.done[i]) { SFX.chime(); const [x, y, z] = this.L().slot(i); sparkAt(x + z / 2, y + z / 2, "⭐"); }
+      else { SFX.soft(); wiggle(el); this.hint(); }
+    } else if (k === "go") { if (cur >= 0) openSlot(cur); }
+    else if (k === "baby") { SFX.giggle(); hop(i); setEyes(i, "happy"); after(700, () => setEyes(i, "open")); }
+    else if (k === "frame") { SFX.pop(); const [x, y, w, h] = this.L().frame(i); sparkAt(x + w / 2, y + h / 2); }
+  },
+  hint() {
+    const L = this.L();
+    if (this.cur() >= 0) { const [gx, gy, gr] = L.go; glowAt(gx, gy, gr + 30); }
+    else { const [x, y, sz] = L.tray(rand(4)); glowAt(x + sz / 2, y + sz / 2, sz * 0.7); }
+  },
+  on_wand() {
+    const empty = mem.plan.map((p, j) => p ? -1 : j).filter(j => j >= 0);
+    if (!empty.length) { SFX.soft(); return; }
+    empty.forEach((j, n) => after(n * 220, () => { if (sid !== "board") return; mem.plan[j] = ACTS[rand(4)]; save(); SFX.pop(); render(); this.popSlot(j); }));
+  },
+  on_sponge() {
+    let n = 0; for (let j = 0; j < 4; j++) if (mem.plan[j] && !mem.done[j]) { mem.plan[j] = null; n++; }
+    if (!n) { SFX.soft(); return; }
+    save(); SFX.wipe(); render();
+  }
+};
+
+/* ----- Bottle time ----- */
+SC.feed = {
+  acts: [],
+  enter() { this.fed = [false, false, false, false]; this.busy = false; for (let i = 0; i < 4; i++) bo[i] = { eyes: "open", bib: true }; },
+  L() {
+    return PORT ? { b: [[280, 760], [720, 760], [280, 1180], [720, 1180]], s: 1, bot: [500, 1430], fy: 1250 }
+      : { b: [[230, 700], [560, 700], [1040, 700], [1370, 700]], s: 1, bot: [800, 860], fy: 760 };
+  },
+  draw() {
+    const L = this.L();
+    let s = bg("#e3f6ef", "#cfe8d6", L.fy);
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = L.b[i];
+      s += `<rect x="${x - 108}" y="${y - 250}" width="216" height="250" rx="46" fill="#ffd6a5" ${ST}/><path d="M${x - 80} ${y} L${x - 96} ${y + 110} M${x + 80} ${y} L${x + 96} ${y + 110}" stroke="${INK}" stroke-width="10" stroke-linecap="round"/>` +
+        `<rect x="${x - 128}" y="${y - 12}" width="256" height="30" rx="14" fill="#f4a261" ${ST}/>`;
+      s += babyG(i, x, y - 4, L.s);
+      if (!this.fed[i]) s += `<g id="nb${i}" class="np" transform="translate(${x + 112} ${y - 318})"><circle cx="-46" cy="52" r="11" fill="#fff" ${ST}/><circle r="54" fill="#fff" ${ST}/><g transform="scale(.33) rotate(-20)">${bottleArt(1)}</g></g>`;
+    }
+    const [hx, hy] = L.bot;
+    s += `<ellipse cx="${hx}" cy="${hy + 118}" rx="90" ry="18" fill="rgba(0,0,0,.12)"/><g id="bottle" data-k="bottle" data-i="0" transform="translate(${hx} ${hy}) rotate(-8)">${bottleArt(1, "milk")}</g>`;
+    return s;
+  },
+  tap(k, i) {
+    if (k === "baby") { if (!this.fed[i] && !this.busy) this.feed(i); else { SFX.giggle(); hop(i); } }
+    else if (k === "bottle") { const n = this.fed.indexOf(false); if (n >= 0 && !this.busy) this.feed(n); else SFX.soft(); }
+  },
+  feed(i) {
+    this.busy = true;
+    const L = this.L(), [x, y] = L.b[i], s = L.s, [hx, hy] = L.bot, bot = $("bottle");
+    const nb = $("nb" + i); if (nb) nb.remove();
+    // the nipple points at the mouth, the bottle comes from the baby's right, tilted up
+    const tx = x + 15 * s + 122, ty = y - 4 - 190 * s - 57;
+    const moveB = (ax, ay, ar, bx, by, br, ms, done) => tween(ms, k => { const e = ease(k); bot.setAttribute("transform", `translate(${ax + (bx - ax) * e} ${ay + (by - ay) * e - 80 * hopAt(k)}) rotate(${ar + (br - ar) * e})`); }, done);
+    SFX.whoosh();
+    moveB(hx, hy, -8, tx, ty, -115, 520, () => {
+      setEyes(i, "happy"); setB(i, { mouth: "o" });
+      for (let n = 0; n < 5; n++) after(150 + n * 460, SFX.gulp);
+      const milk = $("milk");
+      tween(2400, k => { const mh = 168 * (1 - k); if (milk) { milk.setAttribute("y", 110 - mh); milk.setAttribute("height", mh); } }, () => {
+        setEyes(i, "open"); setB(i, { mouth: "smile" });
+        moveB(tx, ty, -115, hx, hy, -8, 450, () => { if (milk) { milk.setAttribute("y", -58); milk.setAttribute("height", 168); } });
+        after(380, () => {
+          SFX.burp(); hop(i, "b", 30); setEyes(i, "happy"); sparkAt(x, y - 330 * s, "💖");
+          this.fed[i] = true; this.busy = false;
+          after(900, () => setEyes(i, "open"));
+          if (this.fed.every(Boolean)) after(700, () => { burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j)); after(1900, finish); });
+        });
+      });
+    });
+  },
+  hint() {
+    const n = this.fed.indexOf(false); if (n < 0 || this.busy) return;
+    const L = this.L(), [x, y] = L.b[n]; glowAt(x, y - 170, 190);
+  }
+};
+
+/* ----- Diaper change ----- */
+// Steps: 0 take the dirty diaper off (tap the baby), 1 wipe, 2 powder, 3 clean diaper. The next one glows.
+SC.change = {
+  acts: [],
+  enter() {
+    const all = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+    this.dirty = all.slice(0, 2); this.done = []; this.cur = -1; this.step = 0; this.busy = true;
+    for (let i = 0; i < 4; i++) bo[i] = { eyes: "open", diaper: this.dirty.includes(i) ? "dirty" : "clean", stink: this.dirty.includes(i) };
+  },
+  after() { after(500, () => this.next()); },
+  L() {
+    return PORT ? { q: i => [230 + i * 180, 330, 0.4], table: [200, 1010, 600], baby: [500, 1012, 1.15], tools: [[220, 1410], [500, 1410], [780, 1410]], bin: [885, 1260], fy: 1300 }
+      : { q: i => [610 + i * 125, 255, 0.36], table: [520, 722, 520], baby: [780, 724, 1.1], tools: [[1330, 300], [1330, 540], [1330, 780]], bin: [300, 900], fy: 900 };
+  },
+  draw() {
+    const L = this.L();
+    let s = bg("#e7f0ff", "#d0e2ff", L.fy);
+    for (let y = 120; y < L.fy - 30; y += 120) s += `<path d="M-3000 ${y}H${W + 3000}" stroke="#d6e4fb" stroke-width="4"/>`;
+    for (let i = 0; i < 4; i++) {
+      const [x, y, sc] = L.q(i);
+      if (i === this.cur) s += `<circle cx="${x}" cy="${y - 60}" r="44" fill="none" stroke="#b8c9ea" stroke-width="6" stroke-dasharray="12 10"/>`;
+      else s += babyG(i, x, y, sc, "qbaby", "q") + (this.done.includes(i) ? `<text class="emo np" x="${x + 52}" y="${y - 110}" font-size="50" text-anchor="middle" dominant-baseline="central">⭐</text>` : "");
+    }
+    const [tx, ty, tw] = L.table;
+    s += `<rect x="${tx + 30}" y="${ty}" width="${tw - 60}" height="${PORT ? 250 : 230}" rx="16" fill="#fbe7c6" ${ST}/>` +
+      `<rect x="${tx + 60}" y="${ty + 60}" width="${tw - 120}" height="60" rx="12" fill="#f6d7a7" ${ST}/><rect x="${tx + 60}" y="${ty + 140}" width="${tw - 120}" height="60" rx="12" fill="#f6d7a7" ${ST}/>` +
+      `<circle cx="${tx + tw / 2}" cy="${ty + 90}" r="9" fill="${INK}"/><circle cx="${tx + tw / 2}" cy="${ty + 170}" r="9" fill="${INK}"/>` +
+      `<rect x="${tx}" y="${ty - 26}" width="${tw}" height="44" rx="22" fill="#ffc8dd" ${ST}/>`;
+    if (this.cur >= 0) { const [bx, by, bs] = L.baby; s += babyG(this.cur, bx, by - 20, bs); }
+    const [nx, ny] = L.bin;
+    s += `<g data-k="bin" data-i="0"><rect x="${nx - 62}" y="${ny - 150}" width="124" height="150" rx="18" fill="#90be6d" ${ST}/><path d="M${nx - 30} ${ny - 115}V${ny - 30}M${nx} ${ny - 115}V${ny - 30}M${nx + 30} ${ny - 115}V${ny - 30}" stroke="#6a994e" stroke-width="7" stroke-linecap="round"/>` +
+      `<g id="lid" data-t="translate(${nx - 70} ${ny - 150})" transform="translate(${nx - 70} ${ny - 150})"><rect x="0" y="-22" width="140" height="26" rx="12" fill="#6a994e" ${ST}/></g></g>`;
+    const icons = [
+      `<rect x="-62" y="-40" width="124" height="80" rx="22" fill="#a0c4ff" ${ST}/><path d="M-30 -40 Q0 -70 30 -40" fill="#fff" ${ST}/><rect x="-34" y="-10" width="68" height="16" rx="8" fill="#fff"/>`,
+      `<rect x="-36" y="-40" width="72" height="104" rx="22" fill="#fff" ${ST}/><rect x="-26" y="-74" width="52" height="38" rx="10" fill="#ffadc6" ${ST}/><circle cx="-12" cy="8" r="7" fill="#ffd6e0"/><circle cx="12" cy="26" r="7" fill="#ffd6e0"/><circle cx="10" cy="-12" r="6" fill="#ffd6e0"/>`,
+      `<g transform="scale(.62)">${diaperArt(false)}</g>`
+    ];
+    L.tools.forEach(([x, y], j) => {
+      s += `<g id="tool${j + 1}" data-k="tool" data-i="${j + 1}" data-t="translate(${x} ${y})" transform="translate(${x} ${y})"><circle r="${PORT ? 112 : 100}" fill="#fff" ${ST}/>${icons[j]}</g>`;
+    });
+    return s;
+  },
+  next() {
+    const n = this.dirty.find(i => !this.done.includes(i));
+    if (n === undefined) { burst(); for (let j = 0; j < 4; j++) after(j * 120, () => hop(j, "q")); after(1900, finish); return; }
+    this.cur = n; this.step = 0; this.busy = false; render(); hop(n, "b", 70); SFX.boing();
+  },
+  tap(k, i, el) {
+    if (k === "baby") { if (!this.busy) this.doStep(); }
+    else if (k === "tool") {
+      if (this.busy || this.cur < 0) return;
+      if (i === this.step) this.doStep();
+      else { SFX.soft(); wiggle(el); this.hint(); }
+    } else if (k === "qbaby") { SFX.giggle(); hop(i, "q", 30); }
+    else if (k === "bin") { SFX.plop(); wiggle($("lid")); }
+  },
+  doStep() {
+    if (this.cur < 0) return;
+    const L = this.L(), c = this.cur, [bx, by, bs] = L.baby, dy = by - 20 - 40 * bs, sv = $("sv");
+    const layer = html => { const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("class", "np"); g.innerHTML = html; sv.insertBefore(g, $("glow")); return g; };
+    this.busy = true;
+    const done = () => { this.step++; this.busy = false; if (this.step > 3) this.finishBaby(); };
+    if (this.step === 0) {
+      setB(c, { diaper: "none", stink: false, mouth: "o" }); SFX.whoosh();
+      const [nx, ny] = L.bin, lid = $("lid"), g = layer(`<g>${diaperArt(true)}</g>`), f = g.firstChild;
+      lid.setAttribute("transform", lid.dataset.t + " rotate(-35)");
+      tween(650, k => { const e = ease(k), sc = bs * 0.85 * (1 - 0.6 * e); f.setAttribute("transform", `translate(${bx + (nx - bx) * e} ${dy + (ny - 170 - dy) * e - 160 * hopAt(k)}) scale(${sc}) rotate(${k * 200})`); }, () => {
+        g.remove(); SFX.plop(); lid.setAttribute("transform", lid.dataset.t); wiggle(lid); setB(c, { mouth: "smile" }); done();
+      });
+    } else if (this.step === 1) {
+      const g = layer(`<g><rect x="-60" y="-36" width="120" height="72" rx="20" fill="#e0f0ff" ${ST}/><path d="M-36 -8 H36 M-36 12 H24" stroke="#a0c4ff" stroke-width="6" stroke-linecap="round"/></g>`), f = g.firstChild;
+      setEyes(c, "happy");
+      [0, 330, 660].forEach(t => after(t, SFX.wipe));
+      tween(1000, k => f.setAttribute("transform", `translate(${bx + Math.sin(k * Math.PI * 6) * 70 * bs} ${dy + 10}) rotate(${Math.sin(k * Math.PI * 6) * 12})`), () => {
+        g.remove(); sparkAt(bx, dy); setEyes(c, "open"); done();
+      });
+    } else if (this.step === 2) {
+      const tool = $("tool2"); wiggle(tool);
+      const pts = Array.from({ length: 7 }, () => [bx + (Math.random() - 0.5) * 170 * bs, dy + (Math.random() - 0.5) * 80 * bs]);
+      const g = layer(pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="10" fill="#fff" stroke="#e9ecef" stroke-width="3"/>`).join(""));
+      SFX.puff();
+      tween(900, k => { [...g.children].forEach((ci, j) => { ci.setAttribute("r", 10 + 34 * k + j * 2); ci.setAttribute("opacity", 1 - k * k); }); }, () => { g.remove(); setEyes(c, "happy"); after(500, () => setEyes(c, "open")); done(); });
+    } else {
+      const [ox, oy] = L.tools[2], g = layer(`<g>${diaperArt(false)}</g>`), f = g.firstChild;
+      SFX.whoosh();
+      tween(550, k => { const e = ease(k); f.setAttribute("transform", `translate(${ox + (bx - ox) * e} ${oy + (dy - oy) * e - 120 * hopAt(k)}) scale(${0.62 + (bs * 0.85 - 0.62) * e})`); }, () => {
+        g.remove(); setB(c, { diaper: "clean" }); SFX.snap(); after(120, SFX.giggle); setEyes(c, "happy"); hop(c); sparkAt(bx, by - 330 * bs, "💖"); done();
+      });
+    }
+  },
+  finishBaby() {
+    const c = this.cur; this.busy = true; this.done.push(c);
+    after(900, () => { bo[c] = { eyes: "open", diaper: "clean" }; this.cur = -1; render(); SFX.pop(); hop(c, "q", 40); after(450, () => this.next()); });
+  },
+  hint() {
+    if (this.busy || this.cur < 0) return;
+    const L = this.L();
+    if (this.step === 0) { const [bx, by, bs] = L.baby; glowAt(bx, by - 20 - 40 * bs, 120); }
+    else { const [x, y] = L.tools[this.step - 1]; glowAt(x, y, PORT ? 130 : 118); }
+  }
+};
+
+/* ----- Shape sorter ----- */
+SC.puzzle = {
+  acts: [],
+  enter() {
+    const names = Object.keys(SHAPES).sort(() => Math.random() - 0.5).slice(0, 4), cols = PCOL.slice().sort(() => Math.random() - 0.5);
+    const order = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+    this.items = names.map((sh, j) => ({ sh, col: cols[j], hole: j, home: order[j], in: false }));
+    this.drag = null; this.cheer = 0;
+    for (let i = 0; i < 4; i++) bo[i] = { eyes: "open" };
+  },
+  L() {
+    return PORT ? { box: [70, 300, 860, 260], hole: j => [175 + j * 217, 430], home: j => [[300, 820], [700, 820], [300, 1080], [700, 1080]][j], baby: i => [130 + i * 247, 1520, 0.7], fy: 1250 }
+      : { box: [400, 250, 800, 310], hole: j => [500 + j * 200, 405], home: j => [470 + j * 220, 790], baby: i => [[180, 560], [180, 960], [1420, 560], [1420, 960]][i].concat(0.62), fy: 640 };
+  },
+  pos(it) { return it.in ? this.L().hole(it.hole) : this.L().home(it.home); },
+  draw() {
+    const L = this.L(), [bx, by, bw, bh] = L.box;
+    let s = bg("#fdf0d5", "#f4d6a0", L.fy);
+    s += `<rect x="${bx}" y="${by + 26}" width="${bw}" height="${bh}" rx="34" fill="#c49a54"/><rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="34" fill="#e9c46a" ${ST}/>`;
+    this.items.forEach(it => { const [x, y] = L.hole(it.hole); s += `<g transform="translate(${x} ${y}) scale(1.08)"><path d="${SHAPES[it.sh]}" fill="#6b4f3a" stroke="#5a3f2b" stroke-width="6" stroke-linejoin="round"/></g>`; });
+    for (let i = 0; i < 4; i++) { const [x, y, sc] = L.baby(i); s += babyG(i, x, y, sc); }
+    this.items.forEach((it, j) => {
+      const [x, y] = this.pos(it);
+      s += `<g id="pc${j}" data-k="piece" data-i="${j}" transform="translate(${x} ${y})${it.in ? " scale(.98)" : ""}"><path d="${SHAPES[it.sh]}" fill="${it.col}" ${ST}/><circle cx="-18" cy="-18" r="9" fill="#fff" opacity=".55"/></g>`;
+    });
+    return s;
+  },
+  down(e, el) {
+    if (!el || el.dataset.k !== "piece" || this.drag) return false;
+    const j = +el.dataset.i, it = this.items[j];
+    if (it.in) { SFX.pop(); return true; }
+    const [px, py] = scenePt($("sv"), e.clientX, e.clientY), [x, y] = this.pos(it);
+    this.drag = { id: e.pointerId, j, dx: x - px, dy: y - py, sx: px, sy: py, moved: false, x, y };
+    el.parentNode.appendChild(el); el.setAttribute("transform", `translate(${x} ${y}) scale(1.12)`);
+    SFX.pop(); return true;
+  },
+  move(e) {
+    const d = this.drag; if (!d || e.pointerId !== d.id) return;
+    const [px, py] = scenePt($("sv"), e.clientX, e.clientY);
+    if (Math.hypot(px - d.sx, py - d.sy) > 25) d.moved = true;
+    if (!d.moved) return;
+    d.x = px + d.dx; d.y = py + d.dy; $("pc" + d.j).setAttribute("transform", `translate(${d.x} ${d.y}) scale(1.12)`);
+  },
+  up(e) {
+    const d = this.drag; if (!d || e.pointerId !== d.id) return;
+    this.drag = null;
+    const it = this.items[d.j], [hx, hy] = this.L().hole(it.hole);
+    if (!d.moved || Math.hypot(d.x - hx, d.y - hy) < 130) this.place(d.j, d.x, d.y);
+    else {
+      const [ox, oy] = this.L().home(it.home), el = $("pc" + d.j); SFX.soft();
+      tween(320, k => { const e2 = ease(k); el.setAttribute("transform", `translate(${d.x + (ox - d.x) * e2} ${d.y + (oy - d.y) * e2})`); });
+      glowAt(hx, hy, 100);
+    }
+  },
+  place(j, x0, y0) {
+    const it = this.items[j], [hx, hy] = this.L().hole(it.hole), el = $("pc" + j);
+    it.in = true; SFX.whoosh();
+    tween(380, k => { const e = ease(k); el.setAttribute("transform", `translate(${x0 + (hx - x0) * e} ${y0 + (hy - y0) * e - 90 * hopAt(k)}) scale(${1.12 - 0.14 * e})`); }, () => {
+      SFX.pop(); SFX.grow(); sparkAt(hx, hy);
+      const b = this.cheer++ % 4; hop(b); SFX.giggle(); setEyes(b, "happy"); after(800, () => setEyes(b, "open"));
+      if (this.items.every(t => t.in)) after(600, () => { burst(); for (let i = 0; i < 4; i++) { after(i * 120, () => hop(i)); setEyes(i, "happy"); } after(2000, finish); });
+    });
+  },
+  tap(k, i) { if (k === "baby") { SFX.giggle(); hop(i); } },
+  hint() { const j = this.items.findIndex(t => !t.in); if (j < 0) return; const [x, y] = this.pos(this.items[j]); glowAt(x, y, 100); }
+};
+
+/* ----- Painting (creative: palette, undo, sponge; finished pictures go on the wall) ----- */
+const PAINT = ["#ef476f", "#ff9f1c", "#ffd60a", "#06d6a0", "#118ab2", "#9b5de5"];
+SC.paint = {
+  // on a narrow portrait screen three buttons would cover the blue board button: the check mark moves into the scene
+  get acts() { return PORT ? ["undo", "sponge"] : ["undo", "hang", "sponge"]; },
+  col: PAINT[0], tool: "b", hist: [], drawing: null, count: 0,
+  enter() { for (let i = 0; i < 4; i++) bo[i] = { eyes: "open" }; this.drawing = null; },
+  L() {
+    return PORT ? { paper: [40, 220, 920], cell: j => [100 + j * 114, 1010], r: 48, baby: i => [130 + i * 247, 1500, 0.7], fy: 1180 }
+      : { paper: [320, 180, 880], cell: j => [110 + (j % 2) * 110, 250 + (j >> 1) * 112], r: 46, baby: i => [1360 + (i % 2) * 160, 560 + (i >> 1) * 400, 0.55], fy: 860 };
+  },
+  draw() {
+    const L = this.L(), [px, py, pw] = L.paper, ph = pw * 0.75, sc = pw / 1000;
+    let s = bg("#fff7e6", "#f6dcae", L.fy);
+    s += `<path d="M${px + pw * 0.2} ${py + ph} L${px + pw * 0.12} ${py + ph + 140} M${px + pw * 0.8} ${py + ph} L${px + pw * 0.88} ${py + ph + 140}" stroke="#bc8a5f" stroke-width="18" stroke-linecap="round"/>`;
+    s += `<clipPath id="pclip"><rect x="0" y="0" width="1000" height="750"/></clipPath>`;
+    s += `<g data-k="paper" data-i="0"><rect x="${px - 14}" y="${py - 14}" width="${pw + 28}" height="${ph + 28}" rx="18" fill="#d4a373" ${ST}/><rect x="${px}" y="${py}" width="${pw}" height="${ph}" fill="#fff"/>` +
+      `<g id="ink" transform="translate(${px} ${py}) scale(${sc})" clip-path="url(#pclip)">${inkSVG(mem.cur)}</g></g>`;
+    PAINT.forEach((c, j) => { const [x, y] = L.cell(j), on = this.col === c; s += `<g data-k="col" data-i="${j}">${on ? `<circle cx="${x}" cy="${y}" r="${L.r + 12}" fill="none" stroke="${INK}" stroke-width="10"/>` : ""}<circle cx="${x}" cy="${y}" r="${L.r}" fill="${c}" stroke="#fff" stroke-width="7"/></g>`; });
+    [["b", "🖌️"], ["p", "🐾"]].forEach(([t, e], n) => {
+      const [x, y] = L.cell(6 + n), on = this.tool === t;
+      s += `<g data-k="tool" data-i="${n}">${on ? `<circle cx="${x}" cy="${y}" r="${L.r + 12}" fill="none" stroke="${INK}" stroke-width="10"/>` : ""}<circle cx="${x}" cy="${y}" r="${L.r}" fill="#fff" stroke="#ced4da" stroke-width="5"/>` +
+        `<text class="emo" x="${x}" y="${y + 3}" font-size="${L.r * 1.15}" text-anchor="middle" dominant-baseline="central" fill="${this.col}">${e}</text></g>`;
+    });
+    if (PORT) s += `<g data-k="hang" data-i="0"><circle cx="500" cy="1175" r="62" fill="#95d5b2" ${ST}/><path d="M470 1177 L493 1200 L532 1152" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+    for (let i = 0; i < 4; i++) { const [x, y, b] = L.baby(i); s += babyG(i, x, y, b); }
+    return s;
+  },
+  local(e) { const L = this.L(), [px, py, pw] = L.paper, [x, y] = scenePt($("sv"), e.clientX, e.clientY), sc = pw / 1000; return [(x - px) / sc, (y - py) / sc]; },
+  down(e, el) {
+    if (!el || el.dataset.k !== "paper" || this.drawing) return false;
+    const [x, y] = this.local(e), s = this.tool === "p" ? { c: this.col, p: 1, pts: [x, y] } : { c: this.col, w: 34, pts: [x, y] };
+    mem.cur.push(s); this.hist.push("a");
+    const ink = $("ink"), g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.innerHTML = strokeSVG(s); ink.appendChild(g);
+    this.drawing = { id: e.pointerId, s, g, lx: x, ly: y };
+    s.p ? SFX.pop() : SFX.paint();
+    return true;
+  },
+  move(e) {
+    const d = this.drawing; if (!d || e.pointerId !== d.id) return;
+    const [x, y] = this.local(e), dist = Math.hypot(x - d.lx, y - d.ly);
+    if (d.s.p) { if (dist < 95) return; d.s.pts.push(x, y); d.g.insertAdjacentHTML("beforeend", pawSVG(x, y, d.s.c)); SFX.pop(); }
+    else { if (dist < 8 || d.s.pts.length > 1200) return; d.s.pts.push(x, y); d.g.firstChild.setAttribute("d", strokeD(d.s.pts)); }
+    d.lx = x; d.ly = y;
+  },
+  up(e) {
+    const d = this.drawing; if (!d || e.pointerId !== d.id) return;
+    this.drawing = null; save();
+    if (++this.count % 3 === 0) { const b = rand(4); hop(b); SFX.giggle(); setEyes(b, "happy"); after(700, () => setEyes(b, "open")); }
+  },
+  redraw() { const ink = $("ink"); if (ink) ink.innerHTML = inkSVG(mem.cur); },
+  tap(k, i) {
+    if (k === "col") { this.col = PAINT[i]; SFX.pop(); render(); }
+    else if (k === "tool") { this.tool = i ? "p" : "b"; SFX.pop(); render(); }
+    else if (k === "hang") this.on_hang();
+    else if (k === "baby") { SFX.giggle(); hop(i); }
+  },
+  on_undo() {
+    const h = this.hist.pop();
+    if (!h) { SFX.soft(); return; }
+    if (h === "a") mem.cur.pop(); else mem.cur.push(...h.w);
+    SFX.back(); this.redraw(); save();
+  },
+  on_sponge() {
+    if (!mem.cur.length) { SFX.soft(); return; }
+    this.hist.push({ w: mem.cur.splice(0) }); SFX.wipe(); this.redraw(); save();
+  },
+  on_hang() {
+    if (!mem.cur.length) { SFX.soft(); const [px, py, pw] = this.L().paper; glowAt(px + pw / 2, py + pw * 0.375, pw * 0.45); return; }
+    mem.pics.unshift(mem.cur.splice(0)); mem.pics.length = Math.min(mem.pics.length, 4); this.hist = []; save();
+    burst(); for (let i = 0; i < 4; i++) { after(i * 120, () => hop(i)); setEyes(i, "happy"); }
+    after(1600, finish);
+  },
+  hint() { const [px, py, pw] = this.L().paper; glowAt(px + pw / 2, py + pw * 0.375, pw * 0.3); }
+};
+
+/* ----- Nap: the end of the day ----- */
+// Tap a baby: it climbs into its cradle. Tap again: blanket, it falls asleep. All asleep: tap the mobile for the lullaby, night falls.
+let lull = null;
+function stopLullaby() { if (lull) { try { lull.gain.setValueAtTime(0, ac.currentTime); lull.disconnect(); } catch (_) {} lull = null; } }
+function lullaby() {
+  if (!ac) return 7000;
+  stopLullaby(); lull = ac.createGain(); lull.gain.value = 1; lull.connect(master);
+  // Au clair de la lune (traditional), music-box style
+  const N = [[392, 1], [392, 1], [392, 1], [440, 1], [494, 2], [440, 2], [392, 1], [494, 1], [440, 1], [440, 1], [392, 4]];
+  let t = 0; const q = 0.44;
+  for (let r = 0; r < 2; r++) N.forEach(([f, d]) => { tone(f, d * q * 0.95 + 0.3, "triangle", 0.15, null, t, lull); tone(f * 2, 0.6, "sine", 0.05, null, t, lull); t += d * q; });
+  return t * 500; // the end button comes halfway, the music keeps playing
+}
+SC.nap = {
+  acts: [],
+  enter() { this.st = [0, 0, 0, 0]; this.music = false; this.end = false; this.busy = false; for (let i = 0; i < 4; i++) bo[i] = { eyes: "open" }; },
+  L() {
+    return PORT ? { x: [130, 377, 624, 871], mat: 800, ms: 0.55, cb: 1400, cs: 0.76, mob: [450, 230], win: [740, 210], fy: 1060 }
+      : { x: [260, 620, 980, 1340], mat: 520, ms: 0.6, cb: 960, cs: 1, mob: [800, 110], win: [1330, 130], fy: 620 };
+  },
+  cradle(i) {
+    const L = this.L(), x = L.x[i], st = this.st[i];
+    let s = `<g transform="translate(${x} ${L.cb}) scale(${L.cs})"><g id="cr${i}" data-k="cradle" data-i="${i}">` +
+      `<path d="M-150 -18 Q0 40 150 -18" fill="none" stroke="#bc8a5f" stroke-width="16" stroke-linecap="round"/>` +
+      `<rect x="-150" y="-236" width="300" height="60" rx="30" fill="#e5989b" ${ST}/>`;
+    if (st >= 1) s += `<g transform="translate(0 -165) scale(.6)"><g id="bh${i}"><g id="ba${i}" data-k="cradle" data-i="${i}">${babyInner(i, bo[i])}</g></g></g>`;
+    if (st === 2) s += `<g id="bl${i}"><rect x="-132" y="-250" width="264" height="110" rx="34" fill="#a0c4ff" ${ST}/><path d="M-100 -218 H100 M-100 -182 H100" stroke="#fff" stroke-width="8" stroke-dasharray="20 16" stroke-linecap="round"/></g>`;
+    s += `<path d="M-156 -180 Q-150 -36 0 -36 Q150 -36 156 -180Z" fill="#ffcad4" ${ST}/><path d="M-120 -150 Q0 -120 120 -150" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".7"/>`;
+    if (st === 2) s += `<text class="emo zz np" x="110" y="-300" font-size="70" text-anchor="middle" dominant-baseline="central">💤</text>`;
+    return s + `</g></g>`;
+  },
+  draw() {
+    const L = this.L();
+    let s = bg("#d8e2ff", "#c3cdf5", L.fy);
+    const [wx, wy] = L.win;
+    s += `<rect x="${wx - 100}" y="${wy - 80}" width="200" height="170" rx="20" fill="#3a4a8a" ${ST}/><text class="emo np" x="${wx + 30}" y="${wy - 10}" font-size="64" text-anchor="middle" dominant-baseline="central">🌙</text><path d="M${wx} ${wy - 80}V${wy + 90}M${wx - 100} ${wy + 5}H${wx + 100}" stroke="${INK}" stroke-width="5"/>`;
+    const [mx, my] = L.mob;
+    s += `<g data-k="mobile" data-i="0"><path d="M${mx} -2000V${my}" stroke="${INK}" stroke-width="5"/><g id="mob" transform="translate(${mx} ${my})"><rect x="-130" y="-8" width="260" height="16" rx="8" fill="#ffd166" ${ST}/>` +
+      [[-120, 90, "⭐"], [0, 130, "🌙"], [120, 90, "⭐"]].map(([x, y, e]) => `<path d="M${x} 0V${y - 30}" stroke="${INK}" stroke-width="4"/><text class="emo" x="${x}" y="${y}" font-size="62" text-anchor="middle" dominant-baseline="central">${e}</text>`).join("") + `</g></g>`;
+    for (let i = 0; i < 4; i++) {
+      if (this.st[i] === 0) s += babyG(i, L.x[i], L.mat, L.ms);
+      s += this.cradle(i);
+    }
+    s += `<rect id="dim" class="np" x="-3000" y="-3000" width="${W + 6000}" height="${H + 6000}" fill="#0b1340" opacity="${this.music ? 0.45 : 0}"/>`;
+    if (this.music) s += `<g class="np">` + Array.from({ length: 14 }, (_, j) => `<text class="emo soft" x="${(j * 397) % W}" y="${60 + (j * 173) % (H * 0.45)}" font-size="40" text-anchor="middle" dominant-baseline="central">✨</text>`).join("") + `</g>`;
+    if (this.end) s += `<g data-k="again" data-i="0" id="again"><circle class="soft" cx="${W / 2}" cy="${H * 0.36}" r="140" fill="#fff3b0"/><circle cx="${W / 2}" cy="${H * 0.36}" r="115" fill="#ffd60a" stroke="#fb8500" stroke-width="8"/><text class="emo" x="${W / 2}" y="${H * 0.36 + 6}" font-size="120" text-anchor="middle" dominant-baseline="central">☀️</text></g>`;
+    return s;
+  },
+  tap(k, i) {
+    if (k === "baby" || k === "cradle") {
+      if (this.busy) return;
+      if (this.st[i] === 0) this.toCradle(i);
+      else if (this.st[i] === 1) this.sleep(i);
+      else { SFX.kiss(); const L = this.L(); sparkAt(L.x[i], L.cb - 300 * L.cs, "💗"); }
+    } else if (k === "mobile") {
+      const el = $("mob"), L = this.L();
+      if (!this.st.every(v => v === 2) || this.music) {
+        SFX.chime(); tween(600, q => el.setAttribute("transform", `translate(${L.mob[0] + Math.sin(q * Math.PI * 3) * 20} ${L.mob[1]})`));
+        if (!this.music) this.hint();
+        return;
+      }
+      this.music = true; const ms = lullaby();
+      const dim = $("dim"); tween(2500, q => dim.setAttribute("opacity", 0.45 * q), () => render());
+      after(ms, () => { this.end = true; render(); SFX.chime(); });
+    } else if (k === "again") {
+      mem.plan = [null, null, null, null]; mem.done = [false, false, false, false]; mem.days = (mem.days || 0) + 1; save();
+      slot = -1; SFX.tada(); go("board");
+    }
+  },
+  toCradle(i) {
+    this.busy = true;
+    const L = this.L(), x = L.x[i], sv = $("sv"), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "np"); g.innerHTML = babyInner(i, bo[i]); sv.insertBefore(g, $("dim"));
+    const old = $("ba" + i); if (old) old.parentNode.parentNode.remove();
+    const y0 = L.mat, y1 = L.cb - 165 * L.cs, s0 = L.ms, s1 = 0.6 * L.cs;
+    SFX.boing();
+    tween(700, k => { const e = ease(k); g.setAttribute("transform", `translate(${x} ${y0 + (y1 - y0) * e - 180 * hopAt(k)}) scale(${s0 + (s1 - s0) * e})`); }, () => {
+      g.remove(); this.st[i] = 1; this.busy = false; render(); SFX.plop(); setEyes(i, "happy"); after(600, () => setEyes(i, "open"));
+    });
+  },
+  sleep(i) {
+    this.st[i] = 2; setEyes(i, "closed"); render(); SFX.kiss();
+    const bl = $("bl" + i); if (bl) tween(500, k => bl.setAttribute("transform", `translate(0 ${110 * (1 - ease(k))})`));
+    [523, 440, 392].forEach((f, n) => tone(f, 0.5, "triangle", 0.1, null, 0.15 + n * 0.25));
+    const L = this.L(); sparkAt(L.x[i], L.cb - 300 * L.cs, "💗");
+    if (this.st.every(v => v === 2)) after(900, () => { if (!this.music) this.hint(); });
+  },
+  hint() {
+    const L = this.L();
+    if (this.end) { glowAt(W / 2, H * 0.36, 160); return; }
+    if (this.music) return;
+    const i = this.st.findIndex(v => v < 2);
+    if (i < 0) { glowAt(L.mob[0], L.mob[1] + 60, 160); return; }
+    if (this.st[i] === 0) glowAt(L.x[i], L.mat - 190 * L.ms, 130);
+    else glowAt(L.x[i], L.cb - 200 * L.cs, 170 * L.cs);
+  }
+};
+// cradles of sleeping babies rock gently, the mobile sways with the music
+ticks.push(() => {
+  if (sid !== "nap") return;
+  const N = SC.nap;
+  for (let i = 0; i < 4; i++) { const el = $("cr" + i); if (el && N.st[i] === 2) el.setAttribute("transform", `rotate(${Math.sin(now / 650 + i) * 3} 0 -20)`); }
+  if (N.music) { const m = $("mob"), L = N.L(); if (m) m.setAttribute("transform", `translate(${L.mob[0] + Math.sin(now / 500) * 16} ${L.mob[1]})`); }
+});
+
+measure(); go("board");
+window.onStart = () => { started = true; idle = 0; };
+addEventListener("resize", () => { const p = innerHeight > innerWidth; if (p !== PORT) { measure(); if (scene) { render(); setActs(); } } });
+// test hook: step the clock, tap an element by its data-k / data-i
+window.__game = {
+  step(ms) { for (let t = 0; t < ms; t += 16) tick(16); },
+  mem, go, scene: () => sid, sc: () => scene, SC,
+  tap(k, i = 0) {
+    const el = document.querySelector(`#sv [data-k="${k}"][data-i="${i}"]`); if (!el) return false;
+    const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, o = { bubbles: true, clientX: x, clientY: y, pointerId: 7, isPrimary: true };
+    el.dispatchEvent(new PointerEvent("pointerdown", o)); dispatchEvent(new PointerEvent("pointerup", o)); return true;
+  }
+};
+</script>
+<script id="fullscreen">/* Games always play fullscreen. A browser only allows it on a tap or a click, so it is asked on the first one (the big play button) and again if fullscreen was left. */
+(function () {
+  function go() {
+    var d = document, e = d.documentElement;
+    if (d.fullscreenElement || d.webkitFullscreenElement) return;
+    var f = e.requestFullscreen || e.webkitRequestFullscreen;
+    if (!f) return;
+    try { var p = f.call(e, { navigationUI: "hide" }); if (p && p.catch) p.catch(function () {}); } catch (_) {}
+  }
+  ["pointerdown", "pointerup", "keydown"].forEach(function (t) { addEventListener(t, go, true); });
+})();
+</script>
+</body>
+</html>
